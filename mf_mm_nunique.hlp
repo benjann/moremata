@@ -1,0 +1,108 @@
+{smcl}
+{* 22may2006}{...}
+{cmd:help mata mm_nunique()}
+{hline}
+
+{title:Title}
+
+{p 4 10 2}
+{bf:mm_nunique() -- Count number of distinct values}
+
+
+{title:Syntax}
+
+{p 8 23 2}
+{it:real scalar}
+{cmd:mm_nunique(}{it:transmorphic vector X}{cmd:)}
+
+{p 8 23 2}
+{it:real scalar}
+{cmd:mm_nuniqrows(}{it:transmorphic matrix Z}{cmd:)}
+
+
+{title:Description}
+
+{pstd}
+{cmd:mm_nunique()} returns the number of distinct values in vector
+{it:X}.
+
+{pstd}
+{cmd:mm_nuniqrows()} returns the number of unique rows in matrix
+{it:X}. {cmd:mm_nuniqrows(Z)} is equivalent to
+{cmd:rows(uniqrows(Z))}, but it is faster and uses less memory.
+
+
+{title:Remarks}
+
+{pstd}Examples:
+
+        {com}: X
+        {res}       {txt}1   2   3   4
+            {c TLC}{hline 17}{c TRC}
+          1 {c |}  {res}1   2   3   1{txt}  {c |}
+            {c BLC}{hline 17}{c BRC}
+
+        {com}: mm_nunique(X)
+        {res}  3
+
+        {res}
+        {com}: Z
+        {res}       {txt}1   2
+            {c TLC}{hline 9}{c TRC}
+          1 {c |}  {res}1   1{txt}  {c |}
+          2 {c |}  {res}2   2{txt}  {c |}
+          3 {c |}  {res}3   3{txt}  {c |}
+          4 {c |}  {res}1   1{txt}  {c |}
+            {c BLC}{hline 9}{c BRC}
+
+        {com}: mm_nuniqrows(Z)
+        {res}  3{txt}
+
+
+{pstd}Note that {cmd:mm_nunique()} is faster
+than {cmd:mm_nuniqrows()} but can only be applied to
+vectors. Furthermore, if the data vector is
+already sorted, {helpb mf_mm_panels:mm_npanels()} may be used
+which is faster than {cmd:mm_nunique()} .
+
+
+{title:Conformability}
+
+    {cmd:mm_nunique(}{it:X}{cmd:)}
+                  {it:X}:  {it:r x} 1 or 1 {it:x c}
+             {it:result}:  1 {it:x} 1
+
+    {cmd:mm_nuniqrows(}{it:Z}{cmd:)}
+                  {it:Z}:  {it:r x c}
+             {it:result}:  {it:1 x} 1
+
+
+{title:Diagnostics}
+
+{pstd}
+{cmd:mm_nunique()} returns {cmd:0} if length({it:X})==0.
+
+{pstd}
+{cmd:mm_nuniqrows()} returns {cmd:0} if rows({it:Z})==0 and returns
+{cmd:1} if rows({it:Z})>0 and cols({it:Z})==0.
+
+
+{title:Source code}
+
+{pstd}
+{help moremata_source##mm_nunique:mm_nunique.mata}
+
+
+{title:Author}
+
+{pstd} Ben Jann, University of Bern, jann@soz.unibe.ch
+
+
+{title:Also see}
+
+{psee}
+Online:  help for
+{bf:{help mf_uniqrows:[M-5] uniqrows()}},
+{helpb mf_mm_panels:mm_panels()},
+{bf:{help moremata}}
+{p_end}

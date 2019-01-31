@@ -1,0 +1,50 @@
+{smcl}
+{* 01mar2007}{...}
+{cmd:help mata mm_isconstant()}
+{hline}
+
+{title:Title}
+
+{pstd}
+{bf:mm_isconstant() -- Whether matrix is constant}
+
+
+{title:Syntax}
+
+        {it:real scalar} {cmd:mm_isconstant(}{it:X}{cmd:)}
+
+
+{title:Description}
+
+{pstd}{cmd:mm_isconstant()} returns 1 if all elements in {it:X} are equal
+and returns 0 otherwise.
+
+
+{title:Remarks}
+
+{pstd}None.
+
+
+{title:Diagnostics}
+
+{pstd}{cmd:mm_isconstant()} returns 1 if {it:X} is void.
+
+
+{title:Source code}
+
+{pstd}
+{help moremata_source##mm_isconstant:mm_isconstant.mata}
+
+
+{title:Author}
+
+{pstd} Ben Jann, University of Bern, jann@soz.unibe.ch
+
+
+{title:Also see}
+
+{psee}
+Online:  help for
+{bf:{help m4_utility:[M-4] utility}},
+{bf:{help moremata}}
+{p_end}

@@ -1,0 +1,195 @@
+{smcl}
+{* 03aug2007}{...}
+{cmd:help mata mm_ecdf()}
+{hline}
+
+{title:Title}
+
+{p 4 17 2}
+{bf:mm_ecdf() -- Cumulative distribution function}
+
+{title:Syntax}
+
+{p 8 23 2}
+{it:real matrix}
+{cmd:mm_ecdf(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:mid}]{cmd:)}
+
+{p 8 23 2}
+{it:real matrix}
+{cmd:mm_relrank(}{it:X}{cmd:,} {it:w}{cmd:,} {it:Q} [{cmd:,} {it:mid}]{cmd:)}
+
+{p 8 23 2}
+{it:real matrix}
+{cmd:mm_ranks(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:ties}{cmd:,} {it:mid}{cmd:,} {it:norm}]{cmd:)}
+
+
+{p 4 8 2}
+where
+
+{p 14 18 2}{it:X}:  {it:real matrix} containing data (rows are observations, columns variables)
+
+{p 14 18 2}{it:w}:  {it:real colvector} containing weights
+
+{p 12 18 2}{it:mid}:  {it:real scalar} indicating that midpoints be used
+
+{p 14 18 2}{it:Q}:  {it:real matrix} containing evaluation points
+
+{p 11 18 2}{it:ties}:  {it:real scalar} determining the treatment of ties; 
+{it:ties}==0: randomly split ties (default);
+{it:ties}==1: use highest rank in case of ties; 
+{it:ties}==2: use mean rank in case of ties;
+{it:ties}==3: use lowest rank in case of ties;
+{it:ties}==4: order ties by {it:w}
+
+{p 11 18 2}{it:norm}:  {it:real scalar} indicating that the ranks be normalized
+
+
+{title:Description}
+
+{pstd}
+{cmd:mm_ecdf()} returns the empirical cumulative distribution
+function (e.c.d.f.) of each column of {it:X}. Observations with equal values
+receive the same cumulative value.
+
+{pstd}
+{cmd:mm_relrank()} evaluates the e.c.d.f of
+{it:X} at the values provided by {it:Q}. That is,
+{cmd:mm_relrank()} returns the relative ranks of
+{it:Q} in the distribution of {it:X}. Note
+that {cmd:mm_relrank()} works column by column. If
+{it:Q} has one column and {it:X} has several columns, then the
+relative ranks of {it:Q} are computed in each column of
+{it:X}. If {it:X} has one column and {it:Q} has several columns, then the
+e.c.d.f of
+{it:X} is evaluated in each column of {it:Q}. If
+{it:X} and {it:Q} both have several columns, then the number of
+columns is required to be the same and relative ranks are
+computed column by column.
+
+{pstd}
+Note that
+
+{p 8 8 2}
+ {cmd:mm_relrank(}{it:x}{cmd:,} {it:w}{cmd:,} {it:x}{cmd:)}
+ = {cmd:mm_ecdf(}{it:x}{cmd:,} {it:w}{cmd:)}
+
+{pstd}
+if {it:x} is a column vector. Naturally, {cmd:mm_ecdf()} is faster.
+
+{pstd}
+{cmd:mm_ranks()} returns for each column of {it:X} the ranks of the values
+in {it:X}, where the smallest values are ranked highest (i.e. rank 1
+is returned for the smallest value, rank 2 for the second smallest,
+etc.). Seen differently, {cmd:mm_ranks()} returns the absolute cumulative
+frequency distribution of each column of {it:X} or, if {it:norm}!=0 is specified, 
+the relative cumulative distribution.
+
+{pstd}
+{it:w} specifies weights associated
+with the observations (rows) in {it:X}. Omit {it:w}, or specify {it:w} as 1 to
+obtain unweighted results. Using {it:w}!=1 in {cmd:mm_ranks()}
+does not seem to make much sense if the result is to be interpreted as
+ranks. It is useful, however, to compute the absolute frequency distribution
+function from weighted data.
+
+{pstd} 
+{it:mid}!=0 specifies to use midpoints in the e.c.d.f. That is, at 
+each step in the distribution, the value of the midpoint of the step is 
+returned. {it:mid}!=0 in {cmd:mm_relrank()} only affects the results for 
+{it:Q}-values that have an exact match in {it:X}. 
+
+
+{title:Remarks}
+
+{pstd}
+The formula for the empirical cumulative distribution function
+implemented in {cmd:mm_ecdf()} and {cmd:mm_relrank()} is:
+
+               { 0        if x < x(1)
+        F(x) = { W(i)/W   if x(i) <= x < x(i+1), i=1,...,n-1
+               { 1        if x >= x(n)
+
+{pstd}
+where x(1), x(2), ..., x(n) are the ordered observations,
+W(i) is the running sum of weights, and W is the overall
+sum of weights.
+
+{pstd}The default for {cmd:mm_ranks()} is to return
+ranks in random order where {it:x} is tied. Alternatively, specify {it:ties}==1
+to assign the highest occurring rank to tied observations,
+{it:ties}==2 to assign mean ranks, or
+{it:ties}==3 to assign the lowest rank. Example:
+
+        {com}: x = (1,2,2,3)'
+        {res}
+        {com}: x, mm_ranks(x,1,0), mm_ranks(x,1,1), mm_ranks(x,1,2),
+        >    mm_ranks(x,1,3)
+        {res}       {txt}  1     2     3     4     5
+            {c TLC}{hline 31}{c TRC}
+          1 {c |}  {res}  1     1     1     1     1{txt}  {c |}
+          2 {c |}  {res}  2     2     2   2.5     3{txt}  {c |}
+          3 {c |}  {res}  2     3     2   2.5     3{txt}  {c |}
+          4 {c |}  {res}  3     4     4     4     4{txt}  {c |}
+            {c BLC}{hline 31}{c BRC}{txt}
+
+{pstd}Furthermore, {it:ties}==4 ranks tied observations in order of
+{it:w} (observations with smallest weights are ranked highest). Where  
+{it:w} is constant, {it:ties}==4 is equivalent to {it:ties}==0.
+
+{pstd}Note that {cmd:mm_ecdf()} is closely related to
+{cmd:mm_ranks()}. In fact:
+
+        {cmd:mm_ecdf(x, w)} = {cmd:mm_ranks(x, w, 3, 0, 1)}
+
+
+{title:Conformability}
+
+    {cmd:mm_ecdf(}{it:X}{cmd:,} {it:w}{cmd:,} {it:mid}{cmd:)}:
+             {it:X}:  n {it:x} k
+             {it:w}:  n {it:x} 1 or 1 {it:x} 1
+           {it:mid}:  1 {it:x} 1
+        {it:result}:  n {it:x} k
+
+    {cmd:mm_relrank(}{it:X}{cmd:,} {it:w}{cmd:,} {it:Q}{cmd:,} {it:mid}{cmd:)}:
+             {it:X}:  n {it:x} 1 or n {it:x} k
+             {it:w}:  n {it:x} 1 or 1 {it:x} 1
+             {it:Q}:  r {it:x} 1 or r {it:x} k
+           {it:mid}:  1 {it:x} 1
+        {it:result}:  r {it:x} 1 or r {it:x} k
+
+    {cmd:mm_ranks(}{it:X}{cmd:,} {it:w}{cmd:,} {it:ties}{cmd:,} {it:mid}{cmd:,} {it:norm}{cmd:)}:
+             {it:X}:  n {it:x} k
+             {it:w}:  n {it:x} 1 or 1 {it:x} 1
+          {it:ties}:  1 {it:x} 1
+           {it:mid}:  1 {it:x} 1
+          {it:norm}:  1 {it:x} 1
+        {it:result}:  n {it:x} k
+
+
+{title:Diagnostics}
+
+{p 4 4 2}The functions return missing if
+{it:w} contains missing values. Missing values in {it:X} or {it:Q} are ranked
+lowest.
+
+
+{title:Source code}
+
+{p 4 4 2}
+{help moremata_source##mm_ecdf:mm_ecdf.mata},
+{help moremata_source##mm_relrank:mm_relrank.mata},
+{help moremata_source##mm_ranks:mm_ranks.mata}
+
+
+{title:Author}
+
+{p 4 4 2} Ben Jann, University of Bern, jann@soz.unibe.ch
+
+
+{title:Also see}
+
+{p 4 13 2}
+Online:  help for {bf:{help cumul}},
+{bf:{help relrank}} (if installed),
+{bf:{help moremata}}
+
