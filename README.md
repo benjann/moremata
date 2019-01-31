@@ -97,12 +97,12 @@ Stata module providing various Mata functions
   * `mm_callf()`: pass optional args to function
   * `mm_callf_setup()`: setup for `mm_callf()`
 
-To install the moremata in Stata, type
+To install moremata in Stata, type
 
     . ssc install moremata, replace
 
 or download `moremata.zip` from
 [RePEc](http://ideas.repec.org/c/boc/bocode/s455001.html)
-and follow the manual installation instructions in readme.txt.
+and follow the manual installation instructions in the readme therein.
 
 Stata version 9.2 or newer is required.
