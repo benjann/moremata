@@ -1,4 +1,4 @@
-*! version 1.0.0  23apr2019  Ben Jann
+*! version 1.0.1  23apr2019  Ben Jann
 version 11.2
 local Bool real scalar
 local Int  real scalar
@@ -313,8 +313,12 @@ void _mm_ebal_rmcol(`S' S)
         S.v    = optimize_result_value(S.O)
         S.g    = optimize_result_gradient(S.O)
     }
-    S.W = S.Q :* exp(quadcross(S.C', S.Z'))
-    if (S.nc==0) {
+    if (S.nc) {
+        S.W = S.Q :* exp(quadcross(S.C', S.Z'))
+    }
+    else {
+        S.W = quadcross(S.C', S.Z')
+        S.W = S.Q :* exp(S.W:-max(S.W))
         S.W = S.W * (S.N / quadsum(S.W))
     }
     S.balanced = (S.v < S.btol)
@@ -325,13 +329,15 @@ void _mm_ebal_eval(`Int' todo, `RR' Z, `S' S, `RS' v, `RR' g, `RM' H)
 {
     `RC' W
     
-    W = S.Q :* exp(quadcross(S.C', Z'))
     if (S.nc) {
+        W = S.Q :* exp(quadcross(S.C', Z'))
         g = quadcross(W, S.C)
         g[1] = g[1] - S.N
         v = max(abs(g)) / S.N
     }
     else {
+        W = quadcross(S.C', Z')
+        W = S.Q :* exp(W:-max(W)) // set exp(max)=1 to avoid numerical overflow
         W = W / quadsum(W)
         g = quadcross(W, S.C)
         v = max(abs(g))
