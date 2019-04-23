@@ -1,5 +1,5 @@
 {smcl}
-{* 01feb2017}{...}
+{* 23apr2019}{...}
 {cmd:help moremata}
 {hline}
 
@@ -114,6 +114,12 @@
 {col 41}draw random subset
 {col 22}{cmd:mm_rcomposition()}{...}
 {col 41}draw random composition
+
+{col 5}{it:Balancing/reweighting}
+
+{col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
+{col 22}{cmd:mm_ebal()}{...}
+{col 41}entropy balancing
 
 {col 5}{it:Means, variances, & correlations}
 
