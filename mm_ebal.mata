@@ -1,4 +1,4 @@
-*! version 1.0.1  23apr2019  Ben Jann
+*! version 1.0.2  24apr2019  Ben Jann
 version 11.2
 local Bool real scalar
 local Int  real scalar
@@ -93,16 +93,14 @@ struct _mm_ebal_struct {
     // degrees-of-freedom correction
     if (dfc) dfcf = (1-1/S.N) / (1-1/N0)
     else     dfcf = 1
-    // compute target moments, and prepare C, prepare base weights
-    M   = _mm_ebal_M(tar, cov, X1, w1, dfcf, nostd, sd=.)
-    S.C = (_mm_ebal_C(tar, cov, X0) :- M) :/ sd
-    if (S.nc) {
-        S.C = J(rows(X0),1,1), S.C
-        S.Q = w0
-    }
-    else S.Q = w0 / N0
-    // remove collinear terms
-    if (cols(S.C)>0) _mm_ebal_rmcol(S)
+    // compute target moments, prepare base weights, prepare C
+    M = _mm_ebal_M(tar, cov, X1, w1, dfcf, nostd, sd=.)
+    if (S.nc) S.Q = w0
+    else      S.Q = w0 / N0
+    S.C = _mm_ebal_C(tar, cov, X0)
+    if (cols(S.C)>0) _mm_ebal_rmcol(S, M, sd) // remove collinear terms
+    S.C = (S.C :- M) :/ sd
+    if (S.nc) S.C = J(rows(X0),1,1), S.C
     // prepare optimization object
     S.O = optimize_init()
     optimize_init_which(S.O, "min")
@@ -225,19 +223,18 @@ struct _mm_ebal_struct {
     return(C)
 }
 
-void _mm_ebal_rmcol(`S' S)
+void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
 {
     `RC'   D
     `IntC' p
 
     D = diagonal(invsym(quadcross(S.C, S.Q, S.C), 1::cols(S.C)))
         // argument 1::cols(S.C) => prioritize columns in order of C
-    if (S.nc) {
-        if (D[1]==0) _error(3498, 
-            "unexpected error; normalizing constraint dropped due to collinearity")
-    }
     p = select(1::cols(S.C), D:!=0)
-    if (length(p)<cols(S.C)) S.C = S.C[,p]
+    if (length(p)<cols(S.C)) {
+        S.C = S.C[,p]
+        M = M[p]; sd = sd[p]
+    }
 }
 
 `T' mm_ebal_btol(`S' S, | `RS' btol)
