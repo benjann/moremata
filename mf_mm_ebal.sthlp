@@ -1,5 +1,5 @@
 {smcl}
-{* 23apr2019}{...}
+{* 25apr2019}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
@@ -60,13 +60,13 @@
 
 {p 12 16 2}
     {it:dfc}!=0 applies degrees-of-freedom correction to balancing constraints
-    for variances and covariances; by default, {cmd:mm_ebal()} returns results
+    for variances and covariances; by default, {cmd:mm_ebal()} uses constraints
     that are consistent with computing variances and covariances in the
     reweighted control group based on weights that are normalized to sum to the
-    size of the treatment group (this also means that the results are
-    consistent with formulas that ignore degrees-of-freedom adjustment in
-    the denominator); if {it:dfc}!=0 is specified, the results are consistent
-    weights normalized to sum to the size of the control group; {it:dfc} only 
+    size of the treatment group (or with variance formulas that ignore 
+    degrees-of-freedom adjustment in the denominator); if {it:dfc}!=0 is 
+    specified, the results are consistent with
+    weights normalized to the size of the control group; {it:dfc} only 
     affects variances and covariances that are not collinear with lower 
     moments
 
