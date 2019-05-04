@@ -1,4 +1,4 @@
-*! version 1.0.2  24apr2019  Ben Jann
+*! version 1.0.3  04may2019  Ben Jann
 version 11.2
 local Bool real scalar
 local Int  real scalar
@@ -11,6 +11,8 @@ local RR   real rowvector
 local RM   real matrix
 local SS   string scalar
 local T    transmorphic
+local pRC  pointer (`RC') scalar
+local pRM  pointer (`RM') scalar
 local S    struct _mm_ebal_struct scalar
 mata:
 
@@ -108,7 +110,6 @@ struct _mm_ebal_struct {
     optimize_init_evaluatortype(S.O, "d2")
     optimize_init_conv_ignorenrtol(S.O, "on")
     optimize_init_valueid(S.O, "max difference")
-    optimize_init_argument(S.O, 1, S)
     // set starting values
     if (S.nc) S.Z = (ln(S.N/N0), J(1, cols(S.C)-1, 0))
     else      S.Z = J(1, cols(S.C), 0)
@@ -289,6 +290,7 @@ void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
 
 `Bool' mm_ebal(`S' S)
 {
+    
     if (S.nc==0 & cols(S.C)==0) {
         // no covariates; nothing to do
         S.Z = S.g = J(1,0,.)
@@ -296,6 +298,10 @@ void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
         S.rc = S.i = S.v = 0
     }
     else {
+        optimize_init_argument(S.O, 1, S.nc)
+        optimize_init_argument(S.O, 2, &S.Q)
+        optimize_init_argument(S.O, 3, &S.C)
+        optimize_init_argument(S.O, 4, S.N)
         optimize_init_params(S.O, S.Z)
         (void) _optimize(S.O)
         if (optimize_result_errorcode(S.O)) {
@@ -322,25 +328,27 @@ void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
     return(S.balanced)
 }
 
-void _mm_ebal_eval(`Int' todo, `RR' Z, `S' S, `RS' v, `RR' g, `RM' H)
+void _mm_ebal_eval(`Int' todo, `RR' Z, 
+    `Bool' nc, `pRC' Q, `pRM' C, `RS' N, 
+    `RS' v, `RR' g, `RM' H)
 {
     `RC' W
     
-    if (S.nc) {
-        W = S.Q :* exp(quadcross(S.C', Z'))
-        g = quadcross(W, S.C)
-        g[1] = g[1] - S.N
-        v = max(abs(g)) / S.N
+    if (nc) {
+        W = *Q :* exp(quadcross(*C', Z'))
+        g = quadcross(W, *C)
+        g[1] = g[1] - N
+        v = max(abs(g)) / N
     }
     else {
-        W = quadcross(S.C', Z')
-        W = S.Q :* exp(W:-max(W)) // set exp(max)=1 to avoid numerical overflow
+        W = quadcross(*C', Z')
+        W = *Q :* exp(W:-max(W)) // set exp(max)=1 to avoid numerical overflow
         W = W / quadsum(W)
-        g = quadcross(W, S.C)
+        g = quadcross(W, *C)
         v = max(abs(g))
     }
     if (todo==2) {
-        H = quadcross(S.C, W, S.C)
+        H = quadcross(*C, W, *C)
     }
 }
 

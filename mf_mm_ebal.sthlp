@@ -1,12 +1,12 @@
 {smcl}
-{* 25apr2019}{...}
+{* 02may2019}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
 {title:Title}
 
 {pstd}
-    {bf:mm_ebal() -- Entropy balancing}
+    {bf:mm_ebal() -- Entropy balancing (Stata 11 required)}
 
 
 {title:Syntax}
@@ -21,41 +21,41 @@
     where
 
 {p 12 16 2}
-    {it:X1} is the data matrix of the treatment group; rows are observations, columns 
+    {it:X1} is the data matrix of the treatment group; rows are observations, columns
     are variables; {it:X1} and {it:X0} must have the same number of columns
 
 {p 12 16 2}
-    {it:w1} is a column vector containing base weights of the treatment group; use 
-    {it:w1} = {cmd:1} for unweighted data; if not scalar, {it:w1} must have 
+    {it:w1} is a column vector containing base weights of the treatment group; use
+    {it:w1} = {cmd:1} for unweighted data; if not scalar, {it:w1} must have
     the same number of rows as {it:X1}
 
 {p 12 16 2}
-    {it:X0} is the data matrix of the control group; rows are observations, columns 
+    {it:X0} is the data matrix of the control group; rows are observations, columns
     are variables; {it:X1} and {it:X0} must have the same number of columns
 
 {p 12 16 2}
-    {it:w0} is a column vector containing base weights of the control group; use 
-    {it:w0} = {cmd:1} for unweighted data; if not scalar, {it:w0} must have 
+    {it:w0} is a column vector containing base weights of the control group; use
+    {it:w0} = {cmd:1} for unweighted data; if not scalar, {it:w0} must have
     the same number of rows as {it:X0}
 
 {p 12 16 2}
-    {it:target} specifies the target moments to be balanced; {it:target} is a vector containing 
-    elements equal to {cmd:1} (balance mean), {cmd:2} (balance mean and variance), or 
+    {it:target} specifies the target moments to be balanced; {it:target} is a vector containing
+    elements equal to {cmd:1} (balance mean), {cmd:2} (balance mean and variance), or
     {cmd:3} (balance mean, variance, and skewness); the elements of {it:target} will
     be applied to the variables one after the other; if {it:target} is shorter
-    then the number of variables, the element will be recycled; for example, 
-    {it:target} = {cmd:2} will balance all means and all variances; the default is 
+    then the number of variables, the element will be recycled; for example,
+    {it:target} = {cmd:2} will balance all means and all variances; the default is
     {it:target} = {cmd:1} (balance all means)
 
 {p 12 16 2}
-    {it:cov}!=0 balances the covariances 
+    {it:cov}!=0 balances the covariances
     (in addition to the moments requested by {it:target})
 
 {p 12 16 2}
-    {it:nc}!=0 includes the normalization constraint (target sum of weights) 
-    in the optimization problem, rather than rescaling the weights ex 
-    ante; in this case, if perfect balance is not possible, the sum of the 
-    balancing weights is no longer guaranteed to be equal to the size of the 
+    {it:nc}!=0 includes the normalization constraint (target sum of weights)
+    in the optimization problem, rather than rescaling the weights ex
+    ante; in this case, if perfect balance is not possible, the sum of the
+    balancing weights is no longer guaranteed to be equal to the size of the
     treatment group
 
 {p 12 16 2}
@@ -63,19 +63,19 @@
     for variances and covariances; by default, {cmd:mm_ebal()} uses constraints
     that are consistent with computing variances and covariances in the
     reweighted control group based on weights that are normalized to sum to the
-    size of the treatment group (or with variance formulas that ignore 
-    degrees-of-freedom adjustment in the denominator); if {it:dfc}!=0 is 
+    size of the treatment group (or with variance formulas that ignore
+    degrees-of-freedom adjustment in the denominator); if {it:dfc}!=0 is
     specified, the results are consistent with
-    weights normalized to the size of the control group; {it:dfc} only 
-    affects variances and covariances that are not collinear with lower 
+    weights normalized to the size of the control group; {it:dfc} only
+    affects variances and covariances that are not collinear with lower
     moments
 
 {p 12 16 2}
     {it:nostd}!=0 suppresses standardization of the constraint matrix; by default,
-    {cmd:mm_ebal()} divides the columns of the constraint matrix by the 
+    {cmd:mm_ebal()} divides the columns of the constraint matrix by the
     standard deviations of the corresponding terms in the treatment group (if the
-    standard deviations exist); this should make the optimization more stable as all 
-    constraints have a similar scaling and the balancing loss is expressed in terms of 
+    standard deviations exist); this should make the optimization more stable as all
+    constraints have a similar scaling and the balancing loss is expressed in terms of
     standardized differences; specify {it:nostd}!=0 to omit such standardization
 
 
@@ -87,7 +87,7 @@
 
 {p 8 8 2}
     where
-    {it:balanced} will be {cmd:1} if balance is achieved (balancing loss < {it:btol}) and 
+    {it:balanced} will be {cmd:1} if balance is achieved (balancing loss < {it:btol}) and
     {cmd:0} else
 
 
@@ -108,7 +108,7 @@
     Define optimization settings before running {cmd:mm_ebal()}:
 
 {p 8 12 2}
-    {cmd:mm_ebal_btol(}{it:S}{cmd:,} {it:btol}{cmd:)}{break}set the balancing 
+    {cmd:mm_ebal_btol(}{it:S}{cmd:,} {it:btol}{cmd:)}{break}set the balancing
     tolerance; default is {it:btol} = {cmd:1e-5}; balancing is achieved if the
     balancing loss is smaller than {it:btol}
 
@@ -119,45 +119,45 @@
     see {helpb mf_optimize##i_tracelevel:optimize()} for details
 
 {p 8 12 2}
-    {cmd:mm_ebal_maxiter(}{it:S}{cmd:,} {it:maxiter}{cmd:)}{break}set the maximum 
-    number of iterations; the default is {cmd:c(maxiter)} as set by 
+    {cmd:mm_ebal_maxiter(}{it:S}{cmd:,} {it:maxiter}{cmd:)}{break}set the maximum
+    number of iterations; the default is {cmd:c(maxiter)} as set by
     {helpb set maxiter} (16,000 by default)
 
 {p 8 12 2}
-    {cmd:mm_ebal_ptol(}{it:S}{cmd:,} {it:ptol}{cmd:)}{break}set the convergence 
+    {cmd:mm_ebal_ptol(}{it:S}{cmd:,} {it:ptol}{cmd:)}{break}set the convergence
     tolerance for the parameter vector (lambda coefficients); default is
     {it:ptol} = {cmd:1e-6}; convergence is reached if {it:ptol} or {it:vtol} is
     satisfied; also see {helpb mf_optimize##i_ptol:optimize()}
 
 {p 8 12 2}
-    {cmd:mm_ebal_vtol(}{it:S}{cmd:,} {it:vtol}{cmd:)}{break}set the convergence 
+    {cmd:mm_ebal_vtol(}{it:S}{cmd:,} {it:vtol}{cmd:)}{break}set the convergence
     tolerance for the balancing loss; default is {it:vtol} = {cmd:1e-7};
     convergence is reached if {it:ptol} or {it:vtol} is satisfied; also see
     {helpb mf_optimize##i_ptol:optimize()}
 
 {p 8 12 2}
-    {cmd:mm_ebal_difficult(}{it:S}{cmd:,} {it:flag}{cmd:)}{break}set the stepping 
-    algorithm to be used in nonconcave regions; {it:flag}=0 (the default) uses 
+    {cmd:mm_ebal_difficult(}{it:S}{cmd:,} {it:flag}{cmd:)}{break}set the stepping
+    algorithm to be used in nonconcave regions; {it:flag}=0 (the default) uses
     the standard algorithm; {it:flag}!=0 uses an alternative algorithm; see the
-    singular H methods in {helpb mf_optimize##i_singularH:optimize()} and 
+    singular H methods in {helpb mf_optimize##i_singularH:optimize()} and
     the description of the {cmd:difficult} option in {helpb maximize}
 
 {p 8 12 2}
-    {cmd:mm_ebal_nowarn(}{it:S}{cmd:,} {it:flag}{cmd:)}{break}set whether 
+    {cmd:mm_ebal_nowarn(}{it:S}{cmd:,} {it:flag}{cmd:)}{break}set whether
     the message "convergence not achieved" is to be displayed if convergence is
     not reached within the maximum number of iterations; {it:flag}=0 (the default)
     displays the message; {it:flag}!=0 suppresses the message
 
 {p 8 12 2}
-    {cmd:mm_ebal_Z(}{it:S}{cmd:,} {it:Z}{cmd:)}{break}set the starting value 
-    for the parameter vector (lambda coefficients); the default is 
-    {it:Z} =  J(1, {it:c}, 0) where {it:c} is the number of balancing constraints; if 
-    {it:nc}!=0 the default is {it:Z} =  (ln(N1/N0), J(1, {it:c}, 0)) where N1 
+    {cmd:mm_ebal_Z(}{it:S}{cmd:,} {it:Z}{cmd:)}{break}set the starting value
+    for the parameter vector (lambda coefficients); the default is
+    {it:Z} =  J(1, {it:c}, 0) where {it:c} is the number of balancing constraints; if
+    {it:nc}!=0 the default is {it:Z} =  (ln(N1/N0), J(1, {it:c}, 0)) where N1
     and N0 are the group sizes (sum of weights)
 
 {p 8 8 2}
-    If applied without 2nd argument, the above functions return the current value of the 
-    setting. For example, type {it:btol} = {cmd:mm_ebal_btol(}{it:S}{cmd:)} 
+    If applied without 2nd argument, the above functions return the current value of the
+    setting. For example, type {it:btol} = {cmd:mm_ebal_btol(}{it:S}{cmd:)}
     to obtain the current balancing tolerance setting.
 
 
@@ -168,7 +168,7 @@
     {it:balanced} = {cmd:mm_ebal_balanced(}{it:S}{cmd:)}{break}{cmd:1} if balance is achieved (balancing loss < {it:btol}), {cmd:0} else
 
 {p 8 12 2}
-    {it:conv} = {cmd:mm_ebal_conv(}{it:S}{cmd:)}{break}{cmd:1} if 
+    {it:conv} = {cmd:mm_ebal_conv(}{it:S}{cmd:)}{break}{cmd:1} if
     the optimization algorithm converged, {cmd:0} else
 
 {p 8 12 2}
@@ -180,26 +180,26 @@
     row vector containing the fitted parameter vector (lambda coefficients)
 
 {p 8 12 2}
-    {it:g} = {cmd:mm_ebal_g(}{it:S}{cmd:)}{break}row vector containing 
+    {it:g} = {cmd:mm_ebal_g(}{it:S}{cmd:)}{break}row vector containing
     the gradient at {it:Z}
 
 {p 8 12 2}
-    {it:v} = {cmd:mm_ebal_v(}{it:S}{cmd:)}{break}scalar containing the 
+    {it:v} = {cmd:mm_ebal_v(}{it:S}{cmd:)}{break}scalar containing the
     balancing loss at {it:Z}
 
 {p 8 12 2}
-    {it:i} = {cmd:mm_ebal_i(}{it:S}{cmd:)}{break}scalar containing the number 
+    {it:i} = {cmd:mm_ebal_i(}{it:S}{cmd:)}{break}scalar containing the number
     of iterations
 
 {p 8 12 2}
-    {it:N} = {cmd:mm_ebal_N(}{it:S}{cmd:)}{break}scalar containing the 
+    {it:N} = {cmd:mm_ebal_N(}{it:S}{cmd:)}{break}scalar containing the
     target sum of weights (size of the treatment group)
 
 {p 8 12 2}
     {it:C} = {cmd:mm_ebal_C(}{it:S}{cmd:)}{break}constraint matrix (rows are observations)
 
 {p 8 12 2}
-    {it:Q} = {cmd:mm_ebal_Q(}{it:S}{cmd:)}{break}column vector containing the 
+    {it:Q} = {cmd:mm_ebal_Q(}{it:S}{cmd:)}{break}column vector containing the
     (rescaled) base weights of the control group
 
 
@@ -218,9 +218,12 @@
     The code of {cmd:mm_ebal()} is loosely based on the Stata package {helpb ebalance}
     (version 1.5.4, 2015-01-29) by Hainmueller and Xu (2011, 2013) and on R package
     {cmd:ebal} (version 0.1-6, 2014-01-27) by Hainmueller (2014). Instead of using a
-    custom algorithm, however, {cmd:mm_ebal()} is implemented in terms of Mata's 
+    custom algorithm, however, {cmd:mm_ebal()} is implemented in terms of Mata's
     {helpb mf_optimize:optimize()}. Results will be highly accurate as long as a balancing
     solution exists.
+
+{pstd}
+    {cmd:mm_ebal()} requires Stata 11 or newer.
 
 
 {title:Examples}
@@ -228,8 +231,8 @@
 {dlgtab:Basic procedure}
 
 {pstd}
-    The basic procedure is to first define the balancing problem using 
-    {cmd:mm_ebal_init()}, then apply {cmd:mm_ebal()} to find the balancing 
+    The basic procedure is to first define the balancing problem using
+    {cmd:mm_ebal_init()}, then apply {cmd:mm_ebal()} to find the balancing
     weights, and then to retrieve the fitted weights using {cmd:mm_ebal_W()}. Here
     is an example:
 
@@ -276,8 +279,8 @@
 {dlgtab:Estimating an ATT based on the balanced sample}
 
 {pstd}
-    We can now use the balancing weights to estimate an average treatment 
-    effect on the treated (ATT). Using unbalanced data, the estimate of the effect 
+    We can now use the balancing weights to estimate an average treatment
+    effect on the treated (ATT). Using unbalanced data, the estimate of the effect
     of union status on wages is 1.46 USD:
 
         . {stata regress wage union}
@@ -293,8 +296,8 @@
 {dlgtab:Adjusting a sample to known population moments}
 
 {pstd}
-    Assume that the mean age in the relevant population is known to be 35 with a standard deviation of 2.5 
-    and that the mean grade is 12 with a standard deviation of 1.9. The population 
+    Assume that the mean age in the relevant population is known to be 35 with a standard deviation of 2.5
+    and that the mean grade is 12 with a standard deviation of 1.9. The population
     size is 1.2 million. You could adjust the sample to these values as follows:
 
         . {stata "mata:"}
@@ -323,21 +326,21 @@
 {phang}
     Hainmueller, J. (2012). Entropy Balancing for Causal Effects: A
     Multivariate Reweighting Method to Produce Balanced Samples in
-    Observational Studies. Political Analysis 
+    Observational Studies. Political Analysis
     20(1): 25-46. DOI: {browse "http://doi.org/10.1093/pan/mpr025":10.1093/pan/mpr025}
     {p_end}
 {phang}
-    Hainmueller, J. (2014). ebal: Entropy reweighting to create balanced 
+    Hainmueller, J. (2014). ebal: Entropy reweighting to create balanced
     samples. {browse "http://CRAN.R-project.org/package=ebal"}.
     {p_end}
 {phang}
-    Hainmueller, J., Y. Xu (2011). EBALANCE: Stata module to perform Entropy 
-    reweighting to create balanced samples. Statistical Software Components 
+    Hainmueller, J., Y. Xu (2011). EBALANCE: Stata module to perform Entropy
+    reweighting to create balanced samples. Statistical Software Components
     S457326, Boston College Department of Economics. {browse "http://ideas.repec.org/c/boc/bocode/s457326.html"}.
     {p_end}
 {phang}
-    Hainmueller, J., Y. Xu (2013). ebalance: A Stata Package for Entropy Balancing. 
-    Journal of Statistical Software 
+    Hainmueller, J., Y. Xu (2013). ebalance: A Stata Package for Entropy Balancing.
+    Journal of Statistical Software
     54(7):1-18. DOI: {browse "http://doi.org/10.18637/jss.v054.i07":10.18637/jss.v054.i07}
     {p_end}
 

@@ -33,7 +33,8 @@ Stata module providing various Mata functions
   * `mm_npartitionss()`: determine number of partitions
   * `mm_rsubset()`: draw random subset
   * `mm_rcomposition()`: draw random composition
-  * `mm_ebal()`: entropy balancing
+  * `mm_greedy()`: one-to-one and one-to-many matching
+  * `mm_ebal()`: entropy balancing (Stata 11 required)
   * `mm_colvar()`: variance, by column
   * `mm_meancolvar()`: mean and variance, by column
   * `mm_variance0()`: population variance

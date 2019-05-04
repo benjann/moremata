@@ -1,5 +1,5 @@
 {smcl}
-{* 23apr2019}{...}
+{* 02may2019}{...}
 {cmd:help moremata}
 {hline}
 
@@ -115,11 +115,15 @@
 {col 22}{cmd:mm_rcomposition()}{...}
 {col 41}draw random composition
 
-{col 5}{it:Balancing/reweighting}
+{col 5}{it:Matching/reweighting}
+
+{col 5}{bf:{help mf_mm_greedy:mm_greedy()}}{...}
+{col 22}{cmd:mm_greedy()}{...}
+{col 41}one-to-one and one-to-many matching
 
 {col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
 {col 22}{cmd:mm_ebal()}{...}
-{col 41}entropy balancing
+{col 41}entropy balancing (Stata 11 required)
 
 {col 5}{it:Means, variances, & correlations}
 
