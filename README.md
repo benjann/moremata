@@ -33,7 +33,9 @@ Stata module providing various Mata functions
   * `mm_npartitionss()`: determine number of partitions
   * `mm_rsubset()`: draw random subset
   * `mm_rcomposition()`: draw random composition
-  * `mm_greedy()`: one-to-one and one-to-many matching
+  * `mm_greedy()`: one-to-one and one-to-many matching without replacement
+  * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
+  * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
   * `mm_ebal()`: entropy balancing (Stata 11 required)
   * `mm_colvar()`: variance, by column
   * `mm_meancolvar()`: mean and variance, by column

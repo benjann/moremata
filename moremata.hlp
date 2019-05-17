@@ -119,7 +119,11 @@
 
 {col 5}{bf:{help mf_mm_greedy:mm_greedy()}}{...}
 {col 22}{cmd:mm_greedy()}{...}
-{col 41}one-to-one and one-to-many matching
+{col 41}one-to-one and one-to-many matching without replacement
+{col 22}{cmd:mm_greedy2()}{...}
+{col 41}like {cmd:mm_greedy()}, but returning edge-list
+{col 22}{cmd:mm_greedy_pairs()}{...}
+{col 41}transform result from {cmd:mm_greedy()} into edge-list
 
 {col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
 {col 22}{cmd:mm_ebal()}{...}

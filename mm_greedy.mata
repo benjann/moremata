@@ -1,16 +1,41 @@
-*! version 1.0.0  02may2019  Ben Jann
+*! version 1.0.1  17may2019  Ben Jann
 version 9.2
 local Int   real scalar
 local IntC  real colvector
 local IntM  real matrix
 local RS    real scalar
 local RC    real colvector
+local RM    real matrix
 local T     transmorphic
 local TM    transmorphic matrix
 local PidC  pointer(`Int') colvector
 local PidM  pointer(`Int') matrix
 local dist  pointer(function) scalar
 mata:
+
+`RM' mm_greedy2(`TM' T, `TM' C, `Int' n, `RS' calip, `dist' f, | `T' fopts)
+{
+    return(mm_greedy_pairs(mm_greedy(T, C, n, calip, f, fopts)))
+}
+
+`RM' mm_greedy_pairs(`IntM' P)
+{
+    `Int'  i, j, k, n
+    `IntC' N
+    `RM'   E
+    
+    N = rownonmissing(P)
+    k = sum(N)
+    E = J(k, 3, .)
+    for (i=rows(P); i; i--) {
+        n = N[i]
+        for (j=n; j; j--) {
+            E[k,] = (i, P[i,j], 1/n)
+            k--
+        }
+    }
+    return(E)
+}
 
 `IntM' mm_greedy(`TM' T, `TM' C, `Int' n, `RS' calip, `dist' f, | `T' fopts)
 {
@@ -28,6 +53,7 @@ mata:
     if (n<=1 | n>=.) return(_mm_greedy_match_1(ij, d, rows(T)))
     return(_mm_greedy_match_n(ij, d, rows(T), n))
 }
+
 `PidM' _mm_greedy_dist(`RC' d, `TM' T, `TM' C, `dist' f, `T' fopts)
 {
     `Int'  i, a, b, nT, nC, N
@@ -50,6 +76,7 @@ mata:
     }
     return(ij)
 }
+
 `PidM' _mm_greedy_dist_calip(`RC' d, `TM' T, `TM' C, `dist' f, `T' fopts,
     `RS' calip)
 {
