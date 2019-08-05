@@ -1,5 +1,5 @@
 {smcl}
-{* 02may2019}{...}
+{* 05aug2019}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
@@ -43,7 +43,7 @@
     elements equal to {cmd:1} (balance mean), {cmd:2} (balance mean and variance), or
     {cmd:3} (balance mean, variance, and skewness); the elements of {it:target} will
     be applied to the variables one after the other; if {it:target} is shorter
-    then the number of variables, the element will be recycled; for example,
+    then the number of variables, the elements will be recycled; for example,
     {it:target} = {cmd:2} will balance all means and all variances; the default is
     {it:target} = {cmd:1} (balance all means)
 
@@ -196,7 +196,12 @@
     target sum of weights (size of the treatment group)
 
 {p 8 12 2}
-    {it:C} = {cmd:mm_ebal_C(}{it:S}{cmd:)}{break}constraint matrix (rows are observations)
+    {it:C} = {cmd:mm_ebal_C(}{it:S}{cmd:)}{break}constraint matrix (excluding
+    collinear columns); rows are observations
+
+{p 8 12 2}
+    {it:CC} = {cmd:mm_ebal_CC(}{it:S}{cmd:)}{break}(non-redundant) collinear
+    columns from constraint matrix; rows are observations
 
 {p 8 12 2}
     {it:Q} = {cmd:mm_ebal_Q(}{it:S}{cmd:)}{break}column vector containing the
@@ -215,15 +220,25 @@
     balance the treatment and control groups with respect to the moments).
 
 {pstd}
-    The code of {cmd:mm_ebal()} is loosely based on the Stata package {helpb ebalance}
-    (version 1.5.4, 2015-01-29) by Hainmueller and Xu (2011, 2013) and on R package
-    {cmd:ebal} (version 0.1-6, 2014-01-27) by Hainmueller (2014). Instead of using a
-    custom algorithm, however, {cmd:mm_ebal()} is implemented in terms of Mata's
-    {helpb mf_optimize:optimize()}. Results will be highly accurate as long as a balancing
-    solution exists.
+    The code of {cmd:mm_ebal()} is loosely based on the Stata package 
+    {helpb ebalance} (version 1.5.4, 2015-01-29) by Hainmueller and Xu (2011, 
+    2013) and on R package {cmd:ebal} (version 0.1-6, 2014-01-27) by Hainmueller
+    (2014). Instead of using a custom algorithm, however, {cmd:mm_ebal()} is
+    implemented in terms of Mata's {helpb mf_optimize:optimize()}. Results will 
+    be highly accurate as long as a balancing solution exists.
 
 {pstd}
     {cmd:mm_ebal()} requires Stata 11 or newer.
+
+{pstd}
+    Remark on how {cmd:mm_ebal()} handles collinearity: (1) Terms that are
+    collinear across both groups will be ignored because the
+    corresponding balancing constraints are redundant (example: variance of a
+    binary variable). (2) Terms that are collinear only in the control group
+    will be ignored during optimization, however, since the corresponding 
+    balancing constraints are not redundant, these terms will be taken into
+    account when computing the final balancing loss after optimization has
+    completed (example: empty factor-variable level). 
 
 
 {title:Examples}

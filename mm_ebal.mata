@@ -1,25 +1,27 @@
-*! version 1.0.3  04may2019  Ben Jann
+*! version 1.0.4  05aug2019  Ben Jann
 version 11.2
-local Bool real scalar
-local Int  real scalar
-local IntV real vector
-local IntC real colvector
-local RS   real scalar
-local RV   real vector
-local RC   real colvector
-local RR   real rowvector
-local RM   real matrix
-local SS   string scalar
-local T    transmorphic
-local pRC  pointer (`RC') scalar
-local pRM  pointer (`RM') scalar
-local S    struct _mm_ebal_struct scalar
+local Bool  real scalar
+local BoolR real rowvector
+local Int   real scalar
+local IntV  real vector
+local IntC  real colvector
+local RS    real scalar
+local RV    real vector
+local RC    real colvector
+local RR    real rowvector
+local RM    real matrix
+local SS    string scalar
+local T     transmorphic
+local pRC   pointer (`RC') scalar
+local pRM   pointer (`RM') scalar
+local S     struct _mm_ebal_struct scalar
 mata:
 
 struct _mm_ebal_struct {
     `T'    O         // optimization object
     `RS'   N         // target group size (sum of weights)
-    `RM'   C         // constraint matrix
+    `RM'   C         // constraint matrix (excluding collinear columns)
+    `RM'   CC        // collinear columns from constraint matrix
     `RC'   Q         // base weights
     `RC'   W         // balancing weights
     `Bool' nc        // normalizing constraint included in optimization
@@ -35,6 +37,7 @@ struct _mm_ebal_struct {
 
 `RR'   mm_ebal_N(`S' S)        return(S.N)
 `RM'   mm_ebal_C(`S' S)        return(S.C)
+`RM'   mm_ebal_CC(`S' S)       return(S.CC)
 `RC'   mm_ebal_Q(`S' S)        return(S.Q)
 `RC'   mm_ebal_W(`S' S)        return(S.W)
 `Bool' mm_ebal_balanced(`S' S) return(S.balanced)
@@ -55,11 +58,12 @@ struct _mm_ebal_struct {
     `Bool' dfc,      // apply degrees of freedom correction
     `Bool' nostd)    // do not standardize data
 {
-    `S'    S         // main struct
-    `RM'   M         // target moments
-    `RR'   sd        // standard deviations of X1 terms
-    `RS'   N0        // size of control group (sum of weights)
-    `RS'   dfcf      // DF correction factor
+    `S'     S        // main struct
+    `RM'    C1       // expanded X1
+    `RM'    M        // target moments
+    `RR'    sd       // standard deviations of C1
+    `BoolR' collin   // collinear terms
+    `RS'    N0       // size of control group (sum of weights)
     
     // defaults
     if (args()<5)  tar   = 1
@@ -92,17 +96,47 @@ struct _mm_ebal_struct {
     if (N0<=0) _error(3498, "control group size (sum of weights) must be > 0")
     // - number of variables
     if (cols(X1)!=cols(X0)) _error(3200, "X1 and X0 must contain the same number of columns")
-    // degrees-of-freedom correction
-    if (dfc) dfcf = (1-1/S.N) / (1-1/N0)
-    else     dfcf = 1
-    // compute target moments, prepare base weights, prepare C
-    M = _mm_ebal_M(tar, cov, X1, w1, dfcf, nostd, sd=.)
+    // expand X1 and X0
+    C1  = _mm_ebal_C(tar, cov, X1)
+    S.C = _mm_ebal_C(tar, cov, X0)
+    // determine collinear columns (across both groups)
+    collin = _mm_ebal_collin((C1 \ S.C),
+             ((rows(w1)==1 ? J(rows(C1), 1, w1) : w1)
+            \ (rows(w0)==1 ? J(rows(S.C), 1, w0) : w0)))
+    // compute target moments
+    M = mean(C1, w1)
+    // apply degrees-of-freedom correction to target moments
+    if (dfc) _mm_ebal_dfc(tar, cov, M, cols(X1), (1-1/S.N) / (1-1/N0))
+    // remove collinear columns
+    if (any(collin)) {
+        C1  = select(C1, collin:==0)
+        M   = select(M, collin:==0)
+        S.C = select(S.C, collin:==0)
+    }
+    // determine scale for standardization
+    if (rows(C1)==1) sd = J(1, cols(C1), 1)
+    else {
+        if (nostd | cols(C1)==0) sd = J(1, cols(C1), 1)
+        else {
+            sd = sqrt(diagonal(variance(C1, w1)))'
+            _editvalue(sd, 0, 1) // (sd must not be zero)
+        }
+    }
+    // prepare constraints matrix
+    // - determine collinear columns
+    collin = _mm_ebal_collin(S.C, w0)
+    // - standardize constraints
+    S.C = (S.C :- M) :/ sd
+    // - put collinear columns aside
+    if (any(collin)) {
+        S.CC = select(S.C, collin)
+        S.C  = select(S.C, collin:==0)
+    }
+    // - add normalization constraint
+    if (S.nc) S.C = J(rows(X0),1,1), S.C
+    // prepare base weights
     if (S.nc) S.Q = w0
     else      S.Q = w0 / N0
-    S.C = _mm_ebal_C(tar, cov, X0)
-    if (cols(S.C)>0) _mm_ebal_rmcol(S, M, sd) // remove collinear terms
-    S.C = (S.C :- M) :/ sd
-    if (S.nc) S.C = J(rows(X0),1,1), S.C
     // prepare optimization object
     S.O = optimize_init()
     optimize_init_which(S.O, "min")
@@ -115,58 +149,6 @@ struct _mm_ebal_struct {
     else      S.Z = J(1, cols(S.C), 0)
     // done
     return(S)
-}
-
-`RM' _mm_ebal_M(`RV' t, `Bool' cov, `RM' X, `RC' w, `RS' dfc, `Bool' nostd, `RR' sd)
-{
-    `RS' i, j, k, l, c
-    `RM' V
-    `RM' M
-    
-    M = _mm_ebal_C(t, cov, X)
-    if (rows(M)==1) sd = J(1, cols(M), 1)
-    else {
-        if (nostd | cols(M)==0) sd = J(1, cols(M), 1)
-        else sd = editvalue(sqrt(diagonal(variance(M, w)))', 0, 1) // sd must not be zero
-    }
-    M = mean(M, w)
-    k = cols(X)
-    if (cols(M)==k) return(M)
-    if (dfc==1)     return(M)
-    c = k
-    l = length(t)
-    // variances
-    if (any(t:>=2)) {
-        V = J(2, cols(X), 1) // needed for skewness correction
-        for (i=1; i<=k; i++) {
-            if (t[mod(i-1, l) + 1] >= 2) {
-                c++
-                V[1,i] = M[c]
-                M[c]   = (M[c] - (1-dfc) * M[i]^2) / dfc
-                V[2,i] = M[c]
-            }
-        }
-    }
-    // covariances
-    if (cov) {
-        for (i=1; i<k; i++) {
-            for (j=i+1; j<=k; j++) {
-                c++
-                M[c] = (M[c] - (1-dfc) * M[i] * M[j]) / dfc
-            }
-        }
-    }
-    // skewnesses
-    if (anyof(t,3)) {
-        for (i=1; i<=k; i++) {
-            if (t[mod(i-1, l) + 1] == 3) {
-                c++
-                M[c] = (M[c] - (V[1,i] - dfc^1.5 * V[2,i]) * 3 *M[i]
-                             + (1 - dfc^1.5) * 2 * M[i]^3) / dfc^1.5
-            }
-        }
-    }
-    return(M)
 }
 
 `RM' _mm_ebal_C(`RV' t, `Bool' cov, `RM' X)
@@ -224,17 +206,56 @@ struct _mm_ebal_struct {
     return(C)
 }
 
-void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
+`BoolR' _mm_ebal_collin(`RM' C, `RC' w)
 {
-    `RC'   D
-    `IntC' p
+    `RR' m
+    `RM' CP
 
-    D = diagonal(invsym(quadcross(S.C, S.Q, S.C), 1::cols(S.C)))
-        // argument 1::cols(S.C) => prioritize columns in order of C
-    p = select(1::cols(S.C), D:!=0)
-    if (length(p)<cols(S.C)) {
-        S.C = S.C[,p]
-        M = M[p]; sd = sd[p]
+    if (cols(C)==0) return(J(1,0,.))
+    m  = mean(C, w)
+    CP = quadcrossdev(C, m, w, C, m)
+    return((diagonal(invsym(CP, 1..cols(CP))):==0)')
+}
+
+void _mm_ebal_dfc(`RV' t, `Bool' cov, `RM' M, `RS' k, `RS' dfc)
+{
+    `RS' i, j, l, c
+    `RM' V
+    
+    if (cols(M)==k) return
+    if (dfc==1)     return
+    c = k
+    l = length(t)
+    // variances
+    if (any(t:>=2)) {
+        V = J(2, k, 1) // needed for skewness correction
+        for (i=1; i<=k; i++) {
+            if (t[mod(i-1, l) + 1] >= 2) {
+                c++
+                V[1,i] = M[c]
+                M[c]   = (M[c] - (1-dfc) * M[i]^2) / dfc
+                V[2,i] = M[c]
+            }
+        }
+    }
+    // covariances
+    if (cov) {
+        for (i=1; i<k; i++) {
+            for (j=i+1; j<=k; j++) {
+                c++
+                M[c] = (M[c] - (1-dfc) * M[i] * M[j]) / dfc
+            }
+        }
+    }
+    // skewnesses
+    if (anyof(t,3)) {
+        for (i=1; i<=k; i++) {
+            if (t[mod(i-1, l) + 1] == 3) {
+                c++
+                M[c] = (M[c] - (V[1,i] - dfc^1.5 * V[2,i]) * 3 *M[i]
+                             + (1 - dfc^1.5) * 2 * M[i]^3) / dfc^1.5
+            }
+        }
     }
 }
 
@@ -290,7 +311,7 @@ void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
 
 `Bool' mm_ebal(`S' S)
 {
-    
+    // find solution
     if (S.nc==0 & cols(S.C)==0) {
         // no covariates; nothing to do
         S.Z = S.g = J(1,0,.)
@@ -316,14 +337,25 @@ void _mm_ebal_rmcol(`S' S, `RR' M, `RR' sd)
         S.v    = optimize_result_value(S.O)
         S.g    = optimize_result_gradient(S.O)
     }
+    // obtain balancing weights from solution and update balancing loss
     if (S.nc) {
         S.W = S.Q :* exp(quadcross(S.C', S.Z'))
+        if (cols(S.CC)>0) S.v = max((S.v, abs(quadcross(S.W, S.CC)) / S.N))
     }
     else {
         S.W = quadcross(S.C', S.Z')
         S.W = S.Q :* exp(S.W:-max(S.W))
-        S.W = S.W * (S.N / quadsum(S.W))
+        S.W = S.W / quadsum(S.W)
+        if (cols(S.CC)>0) S.v = max((S.v, abs(quadcross(S.W, S.CC))))
+        S.W = S.W * S.N
     }
+    if (cols(S.CC)>0) {
+        if (optimize_init_tracelevel(S.O)!="none") {
+            printf("{txt}Final fit including collinear terms:\n")
+            printf("               max difference = {res}%10.0g\n", S.v)
+        }
+    }
+    // check whether balancing criterion fulfilled
     S.balanced = (S.v < S.btol)
     return(S.balanced)
 }
