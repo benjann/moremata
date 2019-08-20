@@ -1,5 +1,5 @@
 {smcl}
-{* 05aug2019}{...}
+{* 20aug2019}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
@@ -315,6 +315,8 @@
     and that the mean grade is 12 with a standard deviation of 1.9. The population
     size is 1.2 million. You could adjust the sample to these values as follows:
 
+        . {stata sysuse nlsw88, clear}
+        . {stata drop if missing(age, grade)}
         . {stata "mata:"}
         : {stata age = st_data(., "age")}
         : {stata grade = st_data(., "grade")}
@@ -327,6 +329,51 @@
         : {stata sum(w)}
         : {stata mean(age, w), sqrt(variance(age, w))}
         : {stata mean(grade, w), sqrt(variance(grade, w))}
+        : {stata end}
+
+{dlgtab:Orthogonalization of variables}
+
+{pstd}
+    Entropy balancing can also be used, for example, to find weights that 
+    orthogonalize the data (such that correlations between variables are
+    zero). Here is an example:
+
+        . {stata sysuse nlsw88, clear}
+        . {stata drop if missing(age, hours, tenure)}
+        . {stata "mata:"}
+        : {stata X = st_data(., "age hours tenure")}
+        : {stata "C = X :- mean(X)"}
+        : {stata "C = C, C[,1]:*C[,2], C[,1]:*C[,3], C[,2]:*C[,3]"}
+        : {stata S = mm_ebal_init(J(1, cols(C), 0), rows(C), C, 1)}
+        : {stata (void) mm_ebal(S)}
+        : {stata w = mm_ebal_W(S)}
+        : {stata mean(X)}           // results from original data
+        : {stata variance(X)}
+        : {stata mean(X, w)}        // reweighted results
+        : {stata variance(X, w)}
+        : {stata end}
+
+{pstd}
+    The trick is to first center the data and then fit weights such that
+    the means of the pairwise products between the centered variables become zero.
+
+{pstd}
+    In the above example, the means of the variables are preserved, but the 
+    variances change. To preserve the variances in addition to the means, 
+    standardize the data (excluding degrees of freedom correction) and add the
+    squares of the standardized variables to the optimization problem:
+
+        . {stata "mata:"}
+        : {stata N = rows(X)}
+        : {stata "C = (X:-mean(X)) :/ sqrt(diagonal(variance(X))*(N-1)/N)'"}
+        : {stata "C = C, C:^2:-1, C[,1]:*C[,2], C[,1]:*C[,3], C[,2]:*C[,3]"}
+        : {stata S = mm_ebal_init(J(1, cols(C), 0), rows(C), C, 1)}
+        : {stata (void) mm_ebal(S)}
+        : {stata w = mm_ebal_W(S)}
+        : {stata mean(X)}           // results from original data
+        : {stata variance(X)}
+        : {stata mean(X, w)}        // reweighted results
+        : {stata variance(X, w)}
         : {stata end}
 
 
