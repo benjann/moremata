@@ -1,0 +1,62 @@
+v 3
+d moremata: module providing various Mata functions
+d 
+d Author: Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+d
+d Distribution-Date: 20200417
+f mf_mm_colrunsum.hlp
+f mf_mm_subset.hlp
+f mf_mm_regexr.hlp
+f mf_mm_bs.hlp
+f mf_mm_linbin.hlp
+f mf_mm_greedy.hlp
+f mf_mm_finvert.hlp
+f mf_mm_polint.hlp
+f moremata.hlp
+f mf_mm_cond.hlp
+f mf_mm_unorder2.hlp
+f mf_mm_locate.hlp
+f mf_mm_histogram.hlp
+f mf_mm_cauchy.hlp
+f lmoremata14.mlib
+f mf_mm_sample.hlp
+f mf_mm_nrroot.hlp
+f mf_mm_nunique.hlp
+f mf_mm_insheet.hlp
+f moremata_source.hlp
+f mf_mm_quantile.hlp
+f mf_mm_ebal.sthlp
+f mf_mm_benford.hlp
+f mf_mm_jk.hlp
+f mf_mm_which.hlp
+f moremata10_source.hlp
+f mf_mm_isconstant.hlp
+f mf_mm_sqrt.hlp
+f mf_mm_realofstr.hlp
+f mf_mm_cut.hlp
+f mf_mm_plot.hlp
+f mf_mm_nobs.hlp
+f mf_mm_posof.hlp
+f mf_mm_ipolate.hlp
+f mf_mm_collapse.hlp
+f mf_mm_gini.hlp
+f mf_mm_colvar.hlp
+f mf_mm_freq.hlp
+f mf_mm_panels.hlp
+f mf_mm_matlist.hlp
+f mf_mm_kern.hlp
+f mf_mm_invtokens.hlp
+f mf_mm_callf.hlp
+f mf_mm_strexpand.hlp
+f mf_mm_mgof.hlp
+f moremata11_source.hlp
+f mf_mm_pieces.hlp
+f lmoremata10.mlib
+f mf_mm_integrate.hlp
+f mf_mm_expand.hlp
+f mf_mm_rbinomial.hlp
+f lmoremata.mlib
+f mf_mm_ecdf.hlp
+f lmoremata11.mlib
+f mf_mm_root.hlp
+f moremata14_source.hlp
