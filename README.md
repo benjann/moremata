@@ -101,12 +101,199 @@ Stata module providing various Mata functions
   * `mm_callf()`: pass optional args to function
   * `mm_callf_setup()`: setup for `mm_callf()`
 
-To install moremata in Stata, type
+To install `moremata` from the SSC Archive, type
 
     . ssc install moremata, replace
 
-or download `moremata.zip` from
-[RePEc](http://ideas.repec.org/c/boc/bocode/s455001.html)
-and follow the manual installation instructions in the readme therein.
+in Stata. Stata version 9.2 or newer is required. Some functions may require
+newer Stata versions.
 
-Stata version 9.2 or newer is required.
+---
+
+Installation from GitHub:
+
+    . net install moremata, replace from(https://raw.githubusercontent.com/benjann/moremata/master/)
+
+---
+
+Main changes:
+
+    17apr2020
+    - installation files added to GitHub distribution
+
+    21aug2019
+    - mm_ebal(): handling of collinearity/redundant constraints improved
+
+    04may2019
+    - strange problem caused by mm_ebal(): it left junk behind in memory; this
+      had something to do with keeping an optimization object within a structure, 
+      but then passing the structure as an argument to the optimization object; this
+      fixed
+    - mm_greedy() added
+
+    26apr2019
+    - mm_ebal() added
+
+    30may2017
+    - mm_sqrt() added
+
+    01feb2017
+    - mm_regexr() added
+
+    01jun2015
+    - mm_pieces() now supports unicode (Stata 14) 
+
+    16may2014
+    - mm_finvert() now has optional argument to pass on to &f()
+
+    29jan2014
+    - mm_integrate_sr() and mm_integrate_sr38() added
+
+    19feb2009:
+    - mm_collapse() added
+
+    10feb2009:
+    - mm_rbinomial(): note added that Stata 10.1 provides -rbinomial()-
+    - mm_invtokens(): note added that Stata 10 provides -invtokens()-
+    - new mm_pieces() functiom using genuine Mata code instead of extended macro 
+      funtion -: piece-
+
+    26mar2008:
+    - mm_gini() updated so that it correctly handles ties. (Results depended on 
+      sort order in case of ties)
+
+    29feb2008:
+    - mm_cond() added
+
+    11jan2008
+    - redirection of colrunsum in Stata 10 improved; _mm_colrunsum10() now faster
+      if only 1 column
+    - mm_invtokens() now also works with column vectors and has a -noclean- option
+    - the default algorithm in mm_quantile() had precision problems if
+      noninteger weights were specified
+    - mm_quantile() now properly handles zero weights
+    - mm_mgof() now displays progress dots
+    - mm_mgof():
+      - error message in cases where noninteger f is not allowed
+      - mc method now rounds sum(f) to the nearest integer to prevent
+        sampling (n-1) obs in case of imprecision
+
+    29aug2007
+    - mm_matlist() added
+    - mm_colrunsum() now redirects itself to runningsum() if used in Stata 10
+
+    07aug2007
+    - mm_cauchy() functions added
+    - mm_colrunsum() now no longer uses the mean update formula; the mean update formula
+      is problematic with integers
+    - mm_ranks() now has a normalize option (so that max(ecdf/relrank) is exactly 1)
+      mm_gini(), mm_ecdf(), mm_relrank() updated
+    - linbin/fastlinbin/exactbin now support data outside of grid
+    - mm_ranks() has new syntax: new -mid- option for half-step (midpoint) method
+      (replaces method==5); mm_relrank() now also has the mid option
+
+    27jun2007
+    - mm_benford() added
+    - mm_upswor() now has a -nowarn- option
+    - mm_ranks() changed (method=5 introduced; adjust removed; __mm_ranks() 
+      for sorted data)
+    - mm_relrank() now based on mm_ranks()
+    - mm_nunique did not work with 'string rowvector' (because of transposeonly()); 
+      this is fixed
+    - mm_freq2() and _mm_freq2() added; _mm_freq() added
+    - mm_freq() now allows matrix as input
+    - mm_nuniqrows() is computed slightly differently now (faster if x has many 
+      columns)
+    - _mm_panels() is faster now
+    - mm_isconstant() added
+    - _mm_strexpand() added
+    - bug with single quotes in strings with mm_pieces() fixed
+    - mm_subset() etc. added
+    - mm_mgof() added
+    - mm_colrunsum(x) now works again if rows(x)==0 (the bug has been introduced
+      on 12apr2007)
+    - mm_which() now works if nothing is selected from a scalar
+
+    12apr2007
+    - mm_colrunsum() now uses the mean-update formula
+
+    05apr2007
+    - mm_pieces(), mm_npieces(), and _mm_pieces() added
+    - mm_kern.mata: makes use of new capability of findexternal() to find
+      functions; default kernel now epan2
+
+    03aug2006
+    - plot() added
+
+    13jul2006
+    - polint() added
+    - kernel integrals for xK(x) and x^2K(x) added
+    - slight changes to ipolate()
+    - mm_nrroot, mm_finvert added
+    - mm_locate, mm_hunt added
+    - mm_root() added
+    - fixed bug in mm_quantile
+    - mm_kern: kernel functions added
+    - default for m in makegrid() now 512 (previous: 401)
+    - fixed bug with missings in variance0, mse, sse
+    - w optional in quantile, iqrange, median, ecdf, ranks, freq, gini,
+      histogram
+    - P optional in quantile
+    - g optional in histogram
+    - mm_bs() and mm_jk() added
+    - callf() added
+    - slight change to mm_panels: info1 will be filled even if X1 is
+      absent; info1 will contain two columns if Y==. or void
+    - sse(), colsse() added
+    - mse(), colmse() added
+    - expand(), repeat() added
+    - fw option deleted from linbin(), fastlinbin(), and exactbin()
+    - nobs() added
+    - nobs() now used in histogram()
+    - quantile():
+      * weighted version for altdef (only frequency weights)
+      * speed improvements for unweighted algorithms
+    - quantile() now has an altdef option (interpolation)
+    - rank() now hat ties==4 option (order ties by w)
+    - p in quantile(x,w,p) may now be matrix
+    - q in relrank(x,w,q) may now be matrix
+
+    23may2006
+    - quantile, median, iqrange, ecdf, relrank, ranks now work with
+      matrix X (statistics are computed for each column of X)
+    - gini now works with matrix X (gini of each column of X)
+    - fixed bug with with mm_sample() if stratified and n==0
+    - mm_gini() added
+    - mm_(mean)variance0(), mm_(mean)colvar() added
+    - mm_rank() now has adjust option
+    - mm_panels() etc: input now transmorphic vector
+    - mm_nunique, mm_nuniqrows added
+    - mm_ranks() added, mm_ecdf() now in terms of mm_ranks()
+    - mm_npanels() added, mm_panels() can now be used with void strata
+       and void cluster
+    - mm_ipolate has new syntax (and is faster in most applications)
+      (extrapolation not supported anymore; now using closest extremes)
+    - mm_fastlinbin() added
+
+    14apr2006
+    - bug fixed in mm_sample() (nn[i] rather than n)
+    - bug fixed in mm_sample() (strata[i,2] rather than cluster[i])
+    - declarations fixed in rbinomial, cebinomial, outsheet
+    - stable sort order in -mm_linbin()- and -mm_exactbin()-
+
+    01apr2006
+    - mm_unorder2(), mm_jumble2(), mm__jumble2() added
+    - mm_sample() (etc.) added
+    - mm_outsheet(): append/replace option
+    - mm_panels() added
+    - relrank(), ecdf(): range(1,I,1) changed to (1::I)
+    - freq() added
+    - cut() added
+    - rbinomial() and cebinomial() added
+    - posof() function added
+    - insheet and infile:
+      * much faster now (code based on cat() version 2)
+      * now support reading specific range of file (line1-line2)
+
+    15sep2005
+    - released on SSC
