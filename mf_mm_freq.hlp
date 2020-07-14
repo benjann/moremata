@@ -1,5 +1,5 @@
 {smcl}
-{* 16may2007}{...}
+{* 09jul2020}{...}
 {cmd:help mata mm_freq()}
 {hline}
 
@@ -189,6 +189,5 @@ but assume that {it:x} is sorted.
 Online:  help for
 {bf:{help mf_uniqrows:[M-5] uniqrows()}},
 {bf:{help m4_utility:[M-4] utility}},
-{bf:{help mf_mm_levelsof:mm_levelsof()}},
 {bf:{help moremata}}
 {p_end}

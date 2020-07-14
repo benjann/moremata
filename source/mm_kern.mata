@@ -1,4 +1,4 @@
-*! version 1.0.1, Ben Jann, 30aug2006
+*! version 1.0.2, Ben Jann, 06jul2020
 version 9.2
 
 local kernels ///
@@ -23,7 +23,6 @@ string scalar _mm_unabkern(|string scalar k)
 	return(mm_strexpand(k, `klist', "epan2", 0, k+": invalid kernel"))
 }
 
-
 pointer scalar _mm_findkern(|string scalar k)
 {
 	pointer(real matrix function) scalar K
@@ -37,6 +36,14 @@ pointer scalar _mm_findkint(|string scalar k)
 	pointer(real matrix function) scalar K
 	K = findexternal("mm_kint_"+`kname'+"()")
 	if (K==NULL) _error(3499,"mm_kint_"+`kname'+"() not found")
+	return(K)
+}
+
+pointer scalar _mm_findkderiv(|string scalar k)
+{
+	pointer(real matrix function) scalar K
+	K = findexternal("mm_kderiv_"+`kname'+"()")
+	if (K==NULL) _error(3499,"mm_kderiv_"+`kname'+"() not found")
 	return(K)
 }
 
@@ -58,6 +65,11 @@ real matrix mm_kint(string scalar k, real scalar r, |real matrix x)
 	return(mm_callf(mm_callf_setup(_mm_findkint(_mm_unabkern(k)), args()-2, x), r))
 }
 
+real matrix mm_kderiv(string scalar k, real matrix x)
+{
+	return((*_mm_findkderiv(_mm_unabkern(k)))(x))
+}
+
 real matrix mm_kdel0(string scalar k)
 {
 	return((*_mm_findkdel0(_mm_unabkern(k)))())
@@ -71,6 +83,7 @@ real matrix mm_kdel0(string scalar k)
 // mm_kint_*(4,x): integral of z^2*K(z) from -infty to x
 // mm_kint_*(4): kernel variance
 // mm_kvar_*: variance
+// mm_kderiv*: derivative of kernel
 // mm_kdel0_*: canonical bandwidth
 
 // (scaled) Epanechnikov kernel function
@@ -95,6 +108,10 @@ real matrix mm_kint_epanechnikov(real scalar r, |real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_epanechnikov() return(1)
+real matrix mm_kderiv_epanechnikov(real matrix x)
+{
+	return(-0.3/sqrt(5)*x:*(abs(x):<sqrt(5)))
+}
 real scalar mm_kdel0_epanechnikov() return((3/5^1.5)^.2)
 
 
@@ -120,6 +137,10 @@ real matrix mm_kint_epan2(real scalar r, |real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_epan2() return(.2)
+real matrix mm_kderiv_epan2(real matrix x)
+{
+	return((-1.5*x):*(abs(x):<1))
+}
 real scalar mm_kdel0_epan2() return(15^.2)
 
 
@@ -145,6 +166,10 @@ real matrix mm_kint_biweight(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_biweight() return(1/7)
+real matrix mm_kderiv_biweight(real matrix x)
+{
+	return(3.75*(x:^3:-x):*(abs(x):<1))
+}
 real scalar mm_kdel0_biweight() return(35^.2)
 
 
@@ -170,6 +195,10 @@ real matrix mm_kint_triweight(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_triweight() return(1/9)
+real matrix mm_kderiv_triweight(real matrix x)
+{
+	return(6.5625*(x:^3:-x):*(abs(x):<1))
+}
 real scalar mm_kdel0_triweight() return((9450/143)^.2)
 
 
@@ -195,6 +224,10 @@ real matrix mm_kint_cosine(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_cosine() return(.5*(1/6-1/pi()^2))
+real matrix mm_kderiv_cosine(real matrix x)
+{
+	return(-2*pi()*sin(2*pi()*x):*(abs(x):<.5))
+}
 real scalar mm_kdel0_cosine() return((3/(.5*(1/6-1/pi()^2)^2))^.2)
 
 
@@ -216,6 +249,10 @@ real matrix mm_kint_gaussian(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_gaussian() return(1)
+real matrix mm_kderiv_gaussian(real matrix x)
+{
+	return(-x:*normalden(x))
+}
 real scalar mm_kdel0_gaussian() return((1/(4*pi()))^.1)
 
 
@@ -254,7 +291,13 @@ real matrix mm_kint_parzen(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_parzen() return(1/12)
+real matrix mm_kderiv_parzen(real matrix x)
+{
+	return(((-16*x+24*sign(x):*abs(x):^2):*(abs(x):<=.5)) +
+	 ((-8*sign(x):*(1:-abs(x)):^2):*(abs(x):>1/2:&abs(x):<=1)))
+}
 real scalar mm_kdel0_parzen() return((4832/35)^.2)
+
 
 // Rectangle kernel function
 real matrix mm_kern_rectangle(real matrix x)
@@ -278,6 +321,10 @@ real matrix mm_kint_rectangle(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_rectangle() return(1/3)
+real matrix mm_kderiv_rectangle(real matrix x)
+{
+	return(J(rows(x), cols(x), 0)) // actually, the derivative is infty at -1 and -infty at 1
+}
 real scalar mm_kdel0_rectangle() return((9/2)^.2)
 
 
@@ -307,6 +354,10 @@ real matrix mm_kint_triangle(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_triangle() return(1/6)
+real matrix mm_kderiv_triangle(real matrix x)
+{
+	return(-sign(x):*(abs(x):<1))
+}
 real scalar mm_kdel0_triangle() return(24^.2)
 
 end

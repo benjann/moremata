@@ -1,4 +1,4 @@
-*! version 1.0.2, Ben Jann, 16may2007
+*! version 1.0.3, Ben Jann, 09jul2020
 version 9.1
 mata:
 
@@ -72,28 +72,6 @@ real colvector _mm_freq2(transmorphic matrix x,
     result[|j \ i-1|] = J(i-j, 1, (rows(w)==1 ?
         (i-j)*w : sum(w[|j \ i-1|])))
     return(result)
-}
-
-transmorphic matrix _mm_uniqrows( // uniqrows() for sorted X
- transmorphic matrix x)
-{
-        real scalar             i, j, n, ns
-        transmorphic matrix     res
-
-        if (rows(x)==0) return(J(0,cols(x), missingof(x)))
-        if (cols(x)==0) return(J(1,0, missingof(x)))
-
-        ns = 1
-        n = rows(x)
-        for (i=2;i<=n;i++) {
-                if (x[i-1,]!=x[i,]) ns++
-        }
-        res = J(ns, cols(x), x[1,1])
-        res[1,] = x[1,]
-        for (i=j=2;i<=n;i++) {
-                if (x[i-1,]!=x[i,]) res[j++,] = x[i,]
-        }
-        return(res)
 }
 
 end

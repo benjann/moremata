@@ -13,12 +13,15 @@
 
 {p 8 12 2}
 {it:real colvector}
-{cmd:mm_ipolate(}{it:x}{cmd:,} {it:y}{cmd:,} {it:xnew}{cmd:)}
+{cmd:mm_ipolate(}{it:x}{cmd:,} {it:y}{cmd:,} {it:xnew} [{cmd:,} {it:outer}]{cmd:)}
 
 {p 8 12 2}
 {it:real colvector}
-{cmd:mm_ipolate(}{it:x}{cmd:,} {it:y}{cmd:,} {it:xnew}{cmd:,} {it:outer}{cmd:)}
+{cmd:_mm_ipolate(}{it:x}{cmd:,} {it:y}{cmd:,} {it:xnew} [{cmd:,} {it:outer}]{cmd:)}
 
+{p 8 12 2}
+{it:real colvector}
+{cmd:mm_fastipolate(}{it:x}{cmd:,} {it:y}{cmd:,} {it:xnew} [{cmd:,} {it:outer}]{cmd:)}
 
 {p 4 8 2}
 where
@@ -37,10 +40,16 @@ the values in {it:xnew}. Averages of {it:y} are used where {it:x}
 values are tied.
 
 {p 4 4 2} {it:outer}!=0 specifies that the (average) {it:y}
-value corresponding to min({it:x}) (max({it:x})) be returned
-for {it:xnew} values below (above) the support of {it:x}. The
-default is to return missing for
-{it:xnew} values that are outside the support of {it:x}.
+value corresponding to min({it:x}) or max({it:x}) be returned
+for {it:xnew} values below or above the support of {it:x}, respectively. The
+default is to return missing for {it:xnew} values that are outside
+the support of {it:x}.
+
+{p 4 4 2} {cmd:_mm_ipolate()} is like {cmd:mm_ipolate()} but assumes that {it:x} and 
+{it:xnew} are in ascending sort order.
+
+{p 4 4 2} {cmd:mm_fastipolate()} is like {cmd:mm_ipolate()} but assumes that {it:x} and 
+{it:xnew} are in ascending sort order and that the values in {it:x} are unique.
 
 
 {title:Remarks}
@@ -68,8 +77,7 @@ default is to return missing for
 {title:Diagnostics}
 
 {p 4 4 2}
-{cmd:mm_ipolate()} does not take any special action to treat missing
-values.
+The functions do not take any special action to treat missing values.
 
 
 {title:Source code}
@@ -80,7 +88,7 @@ values.
 
 {title:Author}
 
-{p 4 4 2} Ben Jann, University of Bern, jann@soz.unibe.ch
+{p 4 4 2} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 
 
 {title:Also see}

@@ -1,5 +1,5 @@
 {smcl}
-{* 30aug2006}{...}
+{* 06jul2020}{...}
 {cmd:help mata mm_kern()}
 {hline}
 
@@ -20,6 +20,10 @@
 {cmd:mm_kint(}{it:k}{cmd:,} {it:real scalar l} [{cmd:,} {it:real matrix z}]{cmd:)}
 
 {p 8 20 2}
+{it:real matrix}
+{cmd:mm_kderiv(}{it:k}{cmd:,} {it:real matrix z}{cmd:)}
+
+{p 8 20 2}
 {it:real scalar}
 {cmd:mm_kdel0(}{it:k}{cmd:)}
 
@@ -38,6 +42,10 @@ where{bind:       }{it:k}:  {it:string scalar} containing {cmd:"{ul:e}panechniko
 {p 8 20 2}
 {it:real matrix}
 {cmd:mm_kint_}{it:name}{cmd:(}{it:real scalar l} [{cmd:,} {it:real matrix z}]{cmd:)}
+
+{p 8 20 2}
+{it:real matrix}
+{cmd:mm_kderiv_}{it:name}{cmd:(}{it:real matrix z}{cmd:)}
 
 {p 8 20 2}
 {it:real scalar}
@@ -77,14 +85,19 @@ Note that {cmd:mm_kint(}{it:k}{cmd:, 2)} returns the so-called
 returns the variance of the kernel function.
 
 {pstd}
+{cmd:mm_kderiv(}{it:k}{cmd:,} {it:z}{cmd:)} returns the value of the first derivative of kernel
+function {it:k} at input value {it:z}.
+
+{pstd}
 {cmd:mm_kdel0(}{it:k}{cmd:)} returns the
 canonical bandwidth of kernel function {it:k}.
 
 {pstd}Instead of using the wrappers {cmd:mm_kern()},
 {cmd:mm_kint()}, and {cmd:mm_kdel0()} you may prefer to apply
 {cmd:mm_kern_}{it:name}{cmd:()}, {cmd:mm_kint_}{it:name}{cmd:()},
- and {cmd:mm_kdel0_}{it:name}{cmd:()} directly, where {it:name} stands
- for {cmd:epanechnikov}, {cmd:epan2},
+{cmd:mm_kderiv_}{it:name}{cmd:()},
+and {cmd:mm_kdel0_}{it:name}{cmd:()} directly, where {it:name} stands
+for {cmd:epanechnikov}, {cmd:epan2},
 {cmd:biweight}, {cmd:triweight}, {cmd:cosine},
 {cmd:gaussian}, {cmd:parzen}, {cmd:rectangle}, or
 {cmd:triangle}.
@@ -110,6 +123,11 @@ The formulas for the kernels and their properties can be found in
              {it:z}:  {it:r x c}
         {it:result}:  {it:r x c} (or 1 {it:x} 1 if {it:z} is omitted).
 
+    {cmd:mm_kderiv(}{it:k}{cmd:,} {it:z}{cmd:)}:
+             {it:k}:  1 {it:x} 1
+             {it:z}:  {it:r x c}
+        {it:result}:  {it:r x c}.
+
     {cmd:mm_kdel0(}{it:k}{com:)}:
              {it:k}:  1 {it:x} 1
         {it:result}:  1 {it:x} 1.
@@ -123,6 +141,10 @@ The formulas for the kernels and their properties can be found in
              {it:z}:  {it:r x c}
         {it:result}:  {it:r x c} (or 1 {it:x} 1 if {it:z} is omitted).
 
+    {cmd:mm_kderiv_}{it:name}{cmd:(}{it:z}{cmd:)}:
+             {it:z}:  {it:r x c}
+        {it:result}:  {it:r x c}.
+
     {cmd:mm_kdel0_}{it:name}{cmd:()}:
         {it:result}:  1 {it:x} 1.
 
@@ -130,9 +152,13 @@ The formulas for the kernels and their properties can be found in
 {title:Diagnostics}
 
 {pstd}
-If argument {it:k} in {cmd:mm_kern()}, {cmd:mm_kint()}, and
+If argument {it:k} in {cmd:mm_kern()}, {cmd:mm_kint()}, {cmd:mm_kderiv()}, and
 {cmd:mm_kdel0()} is empty (i.e. {it:k}==""), the {cmd:epan2} kernel
 is used.
+
+{pstd}
+{cmd:mm_kderiv_rectangle()} will return 0 everywhere, even though the true derivative
+is infinity at the lower boundary and minus infinity at the upper boundary.
 
 
 {title:Source code}
@@ -150,7 +176,7 @@ Ben Jann, University of Bern, jann@soz.unibe.ch
 {title:Aknowledgements}
 
 {pstd}
-Shouts to Matthias Naef for helping me with the math.
+Shouts to Matthias Naef for helping me with the integrals.
 
 
 {title:Also see}

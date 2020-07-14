@@ -1,5 +1,5 @@
 {smcl}
-{* 20dec2007}{...}
+{* 14jul2020}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -12,17 +12,28 @@
 {title:Syntax}
 
 {p 8 23 2}
-{it:real matrix}{space 3}
-{cmd:mm_quantile(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:altdef}]{cmd:)}
+{it:real matrix}{bind:    }
+{cmd:mm_quantile(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
 
 {p 8 23 2}
-{it:real rowvector}
-{cmd:mm_median(}{it:X} [{cmd:,} {it:w}]{cmd:)}
+{it:real rowvector}{bind: }
+{cmd:mm_median(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:fw}]{cmd:)}
 
 {p 8 23 2}
-{it:real rowvector}
-{cmd:mm_iqrange(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:altdef}]{cmd:)}
+{it:real rowvector}{bind: }
+{cmd:mm_iqrange(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
 
+{p 8 23 2}
+{it:real colvector}{bind: }
+{cmd:_mm_quantile(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:p}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+
+{p 8 23 2}
+{it:real scalar}{bind:    }
+{cmd:_mm_median(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:fw}]{cmd:)}
+
+{p 8 23 2}
+{it:real scalar}{bind:    }
+{cmd:_mm_iqrange(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
 
 {p 4 8 2}
 where
@@ -31,27 +42,35 @@ where
 
 {p 14 18 2}{it:w}:  {it:real colvector} containing weights
 
-{p 14 18 2}{it:P}:  {it:real matrix} containing probabilities
-(default is {it:P} = (0, .25, .5, .75, 1)')
+{p 14 18 2}{it:P}:  {it:real matrix} containing evaluation probabilities; default is {it:P} = (0, .25, .5, .75, 1)'
 
-{p 9 18 2}{it:altdef}:  {it:real scalar} causing interpolation formula to be used
+{p 12 18 2}{it:def}:  {it:real scalar} selecting quantile definition; default is {it:def} = 2
+
+{p 13 18 2}{it:fw}:  {it:real scalar} causing weights to be interpreted as frequency weights
+
+{p 14 18 2}{it:x}:  {it:real colvector} containing data (single variable)
+
+{p 14 18 2}{it:p}:  {it:real colvector} containing evaluation probabilities; default is {it:p} = (0, .25, .5, .75, 1)'
 
 
 {title:Description}
 
-{p 4 4 2}{cmd:mm_quantile()} applies to {it:P} the inverse
+{pstd}
+{cmd:mm_quantile()} applies to {it:P} the inverse
 empirical cumulative distribution function of {it:X} (the
 so called quantile function). That is, {cmd:mm_quantile()}
-returns the quantiles {it:X} corresponding to the
+returns the quantiles of {it:X} corresponding to the
 probabilities provided by {it:P}. For example,
 
 {p 8 8 2}
 {cmd:mm_quantile(x, 1, 0.25)}
 
-{p 4 4 2}
-returns the first quartile (i.e. the 0.25-quantile) of {cmd:x}.
+{pstd}
+returns the first quartile (i.e. the 0.25-quantile) of {cmd:x}. Note that
+missing values in {it:X} are not allowed.
 
-{p 4 4 2}Note that {cmd:mm_quantile()} works column by column. If
+{pstd}
+{cmd:mm_quantile()} works column by column. If
 {it:P} has one column and {it:X} has several columns, then the
 quantiles corresponding to {it:P} are computed for each column of
 {it:X}. If {it:X} has one column and {it:P} has several columns, then the
@@ -60,93 +79,203 @@ quantile function of {it:X} is applied to each column of {it:P}. If
 columns is required to be the same and quantiles are
 computed column by column.
 
-{p 4 4 2}{cmd:mm_median()} and {cmd:mm_iqrange()} are wrappers
-for {cmd:mm_quantile()} and return the median (the 0.5-quantile)
+{pstd}
+Argument {it:w} specifies weights associated
+with the observations (rows) in {it:X}. Omit {it:w}, or specify {it:w} as 1 to
+obtain unweighted results. Note that missing values or negative values in
+{it:w} are not allowed. Also see argument {it:fw} below on methodological details
+for weighted quantiles.
+
+{pstd}
+Argument {it:def} selects the quantile definition to be used. The definitions are
+based on Hyndman and Fan (1996). Let Q(p) denote the p-quantile of X, let N be the sample size,
+and let X_(j) be the j-th observation from sorted X. The definitions then are as follows:
+
+{phang2}
+    {it:def}=1: Inverse of the empirical cumulative distribution function (ECDF). That is,
+    Q(p) = X_(j), where j is selected such that (j-1) < pN <= j.
+
+{phang2}
+    {it:def}=2: Like definition 1 but using averages where the ECDF is flat. Again,
+    select j set such that (j-1) < pN <= j. Then Q(p) = X_(j) if (j-1) < pN < j and
+    Q(p) = (X_(j) + X_(j+1))/2 if pN = j.
+
+{phang2}
+    {it:def}=3: Nearest order statistic to pN. Again, select j set such that
+    (j-1) < pN <= j. Then Q(p) = X_(j-1) if pN is closer
+    to (j-1) and Q(p) = X_(j) is pN is closer to j. If pN lies exactly
+    in the middle between (j-1) and j, then
+    Q(p) = X_(j) if j is even and Q(p) = X_(j-1) if j is odd.
+
+{phang2}
+    {it:def}=4: Linear interpolation of the EDCF. Let p_j = j/N
+    be the value of the ECDF at observations X_j. Quantile Q(p) is
+    then obtained by the linear interpolation of (p_j, X_j), j=1,...,N, at
+    point p.
+
+{phang2}
+    {it:def}=5: Linear interpolation using p_j = (j - 0.5) / N.
+
+{phang2}
+    {it:def}=6: Linear interpolation using p_j = j / (N + 1).
+
+{phang2}
+    {it:def}=7: Linear interpolation using p_j = (j - 1) / (N - 1).
+
+{phang2}
+    {it:def}=8: Linear interpolation using p_j = (j - 1/3) / (N + 1/3).
+
+{phang2}
+    {it:def}=9: Linear interpolation using p_j = (j - 3/8) / (N + 1/4).
+
+{pmore}
+Quantile functions based on definitions 1 to 3 are discontinuous; quantile
+functions based on definitions 4 to 9 are continuous. Based on an analysis of
+various properties of the different
+definitions, Hyndman and Fan (1996) suggest definition 8 as the optimal choice.
+
+{pmore}
+Definition 2 is the default definition used by
+{cmd:mm_quantile()}, {cmd:mm_iqrange()}, and {cmd:mm_median()}. Definition 2 is
+also the definition that is used by
+Stata commands {helpb summarize} and {helpb _pctile}, whereas Stata command
+{helpb centile} (as well as {helpb _pctile} with option {cmd:altdef}) uses
+definition 6.
+
+{pstd}
+Argument {it:fw}!=0 requests that the weights are to be treated as frequency
+weights (this is only relevant for definitions 3 to 9; for definitions 1 and 2,
+the distinction between frequency weights and other types of weights is
+irrelevant). If {it:fw}!=0 is specified, the quantiles are computed in a way
+such that results from the weighted data are identical to the results you would
+get from expanded data (i.e., from data in which the observations are
+duplicated {it:w} times and the weights are set to 1). Naturally, such an analogy only
+works if {it:w} is integer, although non-integer weights are allowed. In essence, the approach
+works by introducing imaginary steps in the CDF at all integer values of the
+running sum of {it:w} and then applying the above formulas to the union of
+these imaginary points and the observed, possibly non-integer points.
+
+{pstd}
+If {it:fw} is omitted or if {it:fw}=0, then the above formulas are applied to
+the empirical CDF of the weighted data, where each existing observation induces a step
+in the CDF proportional to the size of {it:w}. The quantile definitions differ in
+how exactly they obtain the CDF (i.e., the p_j values) and in how they
+interpolate between the points. The scaling of the weights generally matters, as
+{cmd:mm_quantile()} does not normalize the weights (that is, N is defined by the sum
+of the weights). Exceptions are definitions 1, 2, and 4 for which the scaling of the
+weights is irrelevant (furthermore, for definition 3, the scaling of the weights is only
+relevant for evaluation points that exactly hit the middle of a step in the
+CDF; {cmd:mm_quantile()} will apply the following rule in such a situation: use
+the lower value if the running sum of the weights at the lower value is equal
+to an even integer, else use the upper value).
+
+{pstd}
+{cmd:mm_median()} and {cmd:mm_iqrange()} are wrappers
+for {cmd:mm_quantile()} that return the median (the 0.5-quantile)
 and the inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
 
-{p 4 4 2} {it:w} specifies weights associated
-with the observations (rows) in {it:X}. Omit {it:w}, or specify {it:w} as 1 to
-obtain unweighted results. Note that the arguments in the above
-functions must not contain missing values.
+{pstd}
+{cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} are
+like {cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()}, but assume
+that the data is sorted (in ascending order) and non-missing and that the
+weights are strictly positive and non-missing. The functions are fast, especially
+in the unweighted case (once the data is sorted, unweighted quantiles can be taken in
+practically no time). However, the function will return invalid results if applied to
+unsorted data (or if any of the other assumptions is violated). Only a
+single column of data and a single column of evaluation
+probabilities is allowed by these functions.
 
-{p 4 4 2} {it:altdef}!=0 in {cmd:mm_quantile()} and {cmd:mm_iqrange()}
-uses an interpolation formula for calculating the quantiles (see remarks
-below).
 
+{title:Example}
 
-{title:Remarks}
+    {com}: x = rnormal(10000, 1, 0, 1)
+    {res}
+    {com}: mm_quantile(x, 1, (0.25 \ 0.5 \ 0.75))
+    {res}       {txt}           1
+        {c TLC}{hline 16}{c TRC}
+      1 {c |}  {res}-.6724194826{txt}  {c |}
+      2 {c |}  {res} .0005707902{txt}  {c |}
+      3 {c |}  {res}  .677781255{txt}  {c |}
+        {c BLC}{hline 16}{c BRC}
 
-{p 4 4 2} Example:
-
-        {com}: x = invnormal(uniform(10000,1))
-        {res}
-        {com}: mm_quantile(x, 1, (0.25 \ 0.5 \ 0.75))
-        {res}       {txt}           1
-            {c TLC}{hline 16}{c TRC}
-          1 {c |}  {res}-.6673752219{txt}  {c |}
-          2 {c |}  {res}-.0021958246{txt}  {c |}
-          3 {c |}  {res} .6880046299{txt}  {c |}
-            {c BLC}{hline 16}{c BRC}
-
-        {com}: mm_median(x, 1), mm_iqrange(x, 1)
-        {res}       {txt}           1              2
-            {c TLC}{hline 31}{c TRC}
-          1 {c |}  {res}-.0021958246    1.355379852{txt}  {c |}
-            {c BLC}{hline 31}{c BRC}{txt}
-
-{p 4 4 2}
-The default for {cmd:mm_quantile()} is to apply a
-discontinuous quantile function using averages where the empirical
-distribution function is
-flat (this corresponds to Definition 2 in Hyndman and Fan 1996). The same method is
-used by {bf:{help summarize}} and is the default method in
-{bf:{help _pctile}}. However, if
-{it:altdef}!=0 is specified, a piecewise linear continuous function
-according to Definition 6 in Hyndman and Fan (1996) is applied. This
-is also used by {bf:{help centile}} and by {bf:{help _pctile}}
-with the {cmd:altdef} option.
-
-{p 4 4 2}Unlike  {bf:{help centile}} and {bf:{help _pctile}},
-{cmd:mm_quantile()} allows using weights with the interpolation
-method ({it:altdef}!=0). This functionality, however, is only intended
-to be used with (integer) frequency weights.
+    {com}: mm_median(x, 1), mm_iqrange(x, 1)
+    {res}       {txt}          1             2
+        {c TLC}{hline 29}{c TRC}
+      1 {c |}  {res}.0005707902   1.350200738{txt}  {c |}
+        {c BLC}{hline 29}{c BRC}{txt}
 
 
 {title:Conformability}
 
-    {cmd:mm_quantile(}{it:X}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:altdef}{cmd:)}:
-             {it:X}:  n {it:x} 1 or n {it:x} k
-             {it:w}:  n {it:x} 1 or 1 {it:x} 1
-             {it:P}:  r {it:x} 1 or r {it:x} k
-        {it:altdef}:  1 {it:x} 1
-        {it:result}:  r {it:x} 1 or r {it:x} k
+    {cmd:mm_quantile(}{it:X}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+             {it:X}:  {it:r1 x c1}
+             {it:w}:  {it:r1 x} 1 or 1 {it:x} 1
+             {it:P}:  {it:r2 x c2}
+           {it:def}:  1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  {it:r2 x c2} or {it:r2 x c1}
 
-    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:)}:
-             {it:X}:  n {it:x} k
-             {it:w}:  n {it:x} 1 or 1 {it:x} 1
-        {it:result}:  1 {it:x} k
+    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:)}:
+             {it:X}:  {it:r x c}
+             {it:w}:  {it:r x} 1 or 1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  1 {it:x c}
 
-    {cmd:mm_iqrange(}{it:X}{cmd:,} {it:w}{cmd:,} {it:altdef}{cmd:)}:
-             {it:X}:  n {it:x} k
-             {it:w}:  n {it:x} 1 or 1 {it:x} 1
-        {it:altdef}:  1 {it:x} 1
-        {it:result}:  1 {it:x} k
+    {cmd:mm_iqrange(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+             {it:X}:  {it:r x c}
+             {it:w}:  {it:r x} 1 or 1 {it:x} 1
+           {it:def}:  1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  1 {it:x c}
+
+    {cmd:_mm_quantile(}{it:x}{cmd:,} {it:w}{cmd:,} {it:p}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+             {it:x}:  {it:r1 x} 1
+             {it:w}:  {it:r1 x} 1 or 1 {it:x} 1
+             {it:p}:  {it:r2 x} 1
+           {it:def}:  1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  {it:r2 x} 1
+
+    {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:)}:
+             {it:X}:  {it:r x} 1
+             {it:w}:  {it:r x} 1 or 1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  1 {it:x} 1
+
+    {cmd:mm_iqrange(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+             {it:x}:  {it:r x} 1
+             {it:w}:  {it:r x} 1 or 1 {it:x} 1
+           {it:def}:  1 {it:x} 1
+            {it:fw}:  1 {it:x} 1
+        {it:result}:  1 {it:x} 1
 
 
 {title:Diagnostics}
 
-{p 4 4 2}{cmd:mm_quantile()}: {it:p} < 0 is treated as {it:p} = 0,
-{it:p} > 1 as {it:p} = 1.
+{pstd}
+Evaluation probabilities smaller than 0 are treated as 0; evaluation probabilities
+larger than 1 (including missing) are treated as 1.
 
-{p 4 4 2}Weights should not be negative.
+{pstd}
+{cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()} return error if
+{it:X} contains missing values or if {it:w} contains negative values or missing
+values (zero weights are allowed, but will be omitted from the computations; be
+aware that this is not true for {cmd:_mm_quantile()}, {cmd:_mm_median()}, and
+{cmd:_mm_iqrange()}; these functions assume the weights to be strictly positive
+and may return invalid results if {it:w} is zero for some observations).
+Missing is returned if {it:X} is void. Void is returned if {it:P} is void.
 
-{p 4 4 2}Results may be misleading if {it:altdef}!=0 is used with
-non-integer weights.
+{pstd}
+{cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} assume {it:x} to
+non-missing and sorted (in ascending order) and assume {it:w} to be non-missing
+and strictly positive. The functions return invalid results if these assumptions
+are violated. Missing is returned if
+{it:x} is void. Void is returned if {it:p} is void.
 
 
 {title:Source code}
 
-{p 4 4 2}
+{pstd}
 {help moremata_source##mm_quantile:mm_quantile.mata},
 {help moremata_source##mm_median:mm_median.mata},
 {help moremata_source##mm_iqrange:mm_iqrange.mata}
@@ -154,13 +283,15 @@ non-integer weights.
 
 {title:References}
 
-{phang}Hyndman, R. J., Fan, Y. (1996). Sample Quantiles in
+{phang}
+Hyndman, R. J., Fan, Y. (1996). Sample Quantiles in
 Statistical Packages. The American Statistician 50:361-365.
 
 
 {title:Author}
 
-{p 4 4 2} Ben Jann, University of Bern, jann@soz.unibe.ch
+{pstd}
+Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 
 
 {title:Also see}
@@ -169,6 +300,4 @@ Statistical Packages. The American Statistician 50:361-365.
 Online:  help for
 {bf:{help mf_mm_ecdf:mm_ecdf()}},
 {bf:{help summarize}}, {bf:{help pctile}}, {bf:{help centile}},
-{bf:{help invcdf}} (if installed),
 {bf:{help moremata}}
-{p_end}

@@ -3,13 +3,15 @@ Stata module providing various Mata functions
 
   * `mm_kern()`: various kernel functions
   * `mm_kint()`: kernel integral functions
+  * `mm_kderiv()`: kernel derivative functions
   * `mm_kdel0()`: canonical bandwidth of kernel
-  * `mm_quantile()`: quantile function
-  * `mm_median()`: median
-  * `mm_iqrange()`: inter-quartile range
-  * `mm_ecdf()`: cumulative distribution function
-  * `mm_relrank()`: grade transformation
-  * `mm_ranks()`: ranks/cumulative frequencies
+  * `mm_quantile()`: compute quantiles
+  * `mm_median()`: compute median
+  * `mm_iqrange()`: compute inter-quartile range
+  * `mm_ecdf()`: compute cumulative distribution function
+  * `mm_ecdf2()`: cumulative distribution at unique values
+  * `mm_ranks()`: compute ranks/cumulative frequencies
+  * `mm_relrank()`: compute relative ranks (grade transformation)
   * `mm_freq()`: compute frequency counts
   * `mm_histogram()`: produce histogram data
   * `mm_mgof()`: multinomial goodness-of-fit tests
@@ -33,7 +35,7 @@ Stata module providing various Mata functions
   * `mm_npartitionss()`: determine number of partitions
   * `mm_rsubset()`: draw random subset
   * `mm_rcomposition()`: draw random composition
-  * `mm_greedy()`: one-to-one and one-to-many matching without replacement
+  * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
   * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
   * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
   * `mm_ebal()`: entropy balancing (Stata 11 required)
@@ -58,15 +60,26 @@ Stata module providing various Mata functions
   * `mm_integrate_sr()`: univariate function integration (Simpson's rule)
   * `mm_integrate_38()`: univariate function integration (Simpson's 3/8 rule)
   * `mm_ipolate()`: linear interpolation
+  * `_mm_ipolate()`: linear interpolation (assuming sorted data)
+  * `mm_fastipolate()`: linear interpolation (assuming sorted and unique data)
   * `mm_polint()`: polynomial inter-/extrapolation
   * `mm_sqrt()`: square root of a symmetric positive definite matrix
   * `mm_plot()`: Draw twoway plot
   * `_mm_plot()`: Draw twoway plot
+  * `mm_group()`: create group index
+  * `_mm_group()`: create group index, without sorting
   * `mm_panels()`: identify nested panel structure
   * `_mm_panels()`: identify panel sizes
   * `mm_npanels()`: identify number of panels
-  * `mm_nunique()`: count number of distinct values
-  * `mm_nuniqrows()`: count number of unique rows
+  * `mm_nunique()`: count number of unique values in vector
+  * `mm_unique()`: obtain unique values from vector
+  * `mm_unique_tag()`: tag unique values in vector
+  * `mm_nuniqrows()`: count number of unique rows in matrix
+  * `mm_uniqrows()`: obtain unique rows from matrix
+  * `mm_uniqrows_tag()`: tag unique rows in matrix
+  * `mm_diff()`: compute lagged differences
+  * `mm_rowdiff()`: compute lagged differences within rows
+  * `mm_coldiff()`: compute lagged differences within columns
   * `mm_isconstant()`: whether matrix is constant
   * `mm_nobs()`: number of observations
   * `mm_colrunsum()`: running sum of each column
@@ -79,11 +92,16 @@ Stata module providing various Mata functions
   * `mm_which()`: positions of nonzero elements
   * `mm_locate()`: search an ordered vector
   * `mm_hunt()`: consecutive search
+  * `mm_clip()`: clip/limit the values in a matrix
+  * `mm_clipmin()`: limit the minimum
+  * `mm_clipmax()`: limit the maximum
   * `mm_cond()`: matrix conditional operator
   * `mm_expand()`: duplicate single rows/columns
   * `_mm_expand()`: duplicate rows/columns in place
   * `mm_repeat()`: duplicate contents as a whole
   * `_mm_repeat()`: duplicate contents in place
+  * `mm_sort()`: stable sorting
+  * `mm_order()`: stable ordering
   * `mm_unorder2()`: stable version of `unorder()`
   * `mm_jumble2()`: stable version of `jumble()`
   * `mm__jumble2()`: stable version of `_jumble()`
@@ -117,6 +135,50 @@ Installation from GitHub:
 ---
 
 Main changes:
+
+    14jul2020
+    - mm_quantile() has been rewritten; it now supports all 9 quantile definitions
+      from from Hyndman and Fan (1996); weights are supported for all 
+      definitions; new argument -fw- requests treating the weights as frequency
+      weights
+      ***
+      IMPORTANT CHANGE:
+          argument -altdef- in mm_quantile() and mm_iqrange() has been replaced
+          by argument -def- that can take on values 1 to 9; altdef!=0 in the 
+          previous version is equivalent to def=6 in the new version
+      ***
+    - new functions _mm_quantile(), _mm_median(), and _mm_iqrange() that assume
+      sorted data
+    - new functions mm_unique(), mm_unique_tag(), mm_uniqrows(), 
+      mm_uniqrows_tag() to obtain or tag unique values in a vector or unique
+      rows in a matrix; mm_uniqrows() differs from official uniqrows() in that
+      it has an option to determin the order in which the result is returned
+    - new functions _mm_nunique(), _mm_unique(), _mm_unique_tag(), 
+      _mm_nuniqrows(), _mm_uniqrows(), and _mm_uniqrows_tag() to count, obtain,
+      or tag unique values/rows without sorting the data
+    - function mm_ipolate() is now faster, especially if there are ties
+    - new _mm_ipolate() function that assumes sorted data
+    - new mm_fastipolate() function that assumes sorted and unique data 
+    - new mm_group() function for creating a group index
+    - new mm_sort()/mm_order() functions for stable sorting
+    - new mm_diff() function for lagged differences
+    - new mm_clip() function to clip/limit values in a matrix
+    - new mm_kderiv() function for kernel derivatives
+    - new mm_ecdf2()/_mm_ecdf2() functions that return the CDF at unique values
+      of X
+    - argument -mid- in mm_ranks() did not make sense with ties=0 or ties=4; 
+      this is fixed
+    - function mm_relrank() has been reqritten; it now has additional 
+      arguments support breaking ties and to compute nonnormalized ranks
+    - new _mm_ecdf() function that assumes sorted data
+    - new _mm_ranks() function that assumes sorted data
+    - new _mm_relrank() function that assumes sorted data
+    - mm_ranks() now uses quad precision in Stata 10 or newer
+    - mm_ecdf(), mm_ranks(), and mm_relrank() now have separate help files
+    - mm_colrunsum() now has argument -missing- to treat missing values as missing
+      (instead of zero) and argument -quad- to request quad precision in Sata 10 
+      or newer
+    - mm_isconstant() now uses allof() instead of all() and is thus faster
 
     17apr2020
     - installation files added to GitHub distribution

@@ -1,5 +1,5 @@
 {smcl}
-{* 01mar2007}{...}
+{* 13jul2020}{...}
 {cmd:help mata mm_isconstant()}
 {hline}
 
@@ -38,7 +38,7 @@ and returns 0 otherwise.
 
 {title:Author}
 
-{pstd} Ben Jann, University of Bern, jann@soz.unibe.ch
+{pstd} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 
 
 {title:Also see}

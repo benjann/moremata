@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_kern}{bf:mm_kern.mata}{asis}
-*! version 1.0.1, Ben Jann, 30aug2006
+*! version 1.0.2, Ben Jann, 06jul2020
 version 9.2
 
 local kernels ///
@@ -28,7 +28,6 @@ string scalar _mm_unabkern(|string scalar k)
 	return(mm_strexpand(k, `klist', "epan2", 0, k+": invalid kernel"))
 }
 
-
 pointer scalar _mm_findkern(|string scalar k)
 {
 	pointer(real matrix function) scalar K
@@ -42,6 +41,14 @@ pointer scalar _mm_findkint(|string scalar k)
 	pointer(real matrix function) scalar K
 	K = findexternal("mm_kint_"+`kname'+"()")
 	if (K==NULL) _error(3499,"mm_kint_"+`kname'+"() not found")
+	return(K)
+}
+
+pointer scalar _mm_findkderiv(|string scalar k)
+{
+	pointer(real matrix function) scalar K
+	K = findexternal("mm_kderiv_"+`kname'+"()")
+	if (K==NULL) _error(3499,"mm_kderiv_"+`kname'+"() not found")
 	return(K)
 }
 
@@ -63,6 +70,11 @@ real matrix mm_kint(string scalar k, real scalar r, |real matrix x)
 	return(mm_callf(mm_callf_setup(_mm_findkint(_mm_unabkern(k)), args()-2, x), r))
 }
 
+real matrix mm_kderiv(string scalar k, real matrix x)
+{
+	return((*_mm_findkderiv(_mm_unabkern(k)))(x))
+}
+
 real matrix mm_kdel0(string scalar k)
 {
 	return((*_mm_findkdel0(_mm_unabkern(k)))())
@@ -76,6 +88,7 @@ real matrix mm_kdel0(string scalar k)
 // mm_kint_*(4,x): integral of z^2*K(z) from -infty to x
 // mm_kint_*(4): kernel variance
 // mm_kvar_*: variance
+// mm_kderiv*: derivative of kernel
 // mm_kdel0_*: canonical bandwidth
 
 // (scaled) Epanechnikov kernel function
@@ -100,6 +113,10 @@ real matrix mm_kint_epanechnikov(real scalar r, |real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_epanechnikov() return(1)
+real matrix mm_kderiv_epanechnikov(real matrix x)
+{
+	return(-0.3/sqrt(5)*x:*(abs(x):<sqrt(5)))
+}
 real scalar mm_kdel0_epanechnikov() return((3/5^1.5)^.2)
 
 
@@ -125,6 +142,10 @@ real matrix mm_kint_epan2(real scalar r, |real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_epan2() return(.2)
+real matrix mm_kderiv_epan2(real matrix x)
+{
+	return((-1.5*x):*(abs(x):<1))
+}
 real scalar mm_kdel0_epan2() return(15^.2)
 
 
@@ -150,6 +171,10 @@ real matrix mm_kint_biweight(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_biweight() return(1/7)
+real matrix mm_kderiv_biweight(real matrix x)
+{
+	return(3.75*(x:^3:-x):*(abs(x):<1))
+}
 real scalar mm_kdel0_biweight() return(35^.2)
 
 
@@ -175,6 +200,10 @@ real matrix mm_kint_triweight(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_triweight() return(1/9)
+real matrix mm_kderiv_triweight(real matrix x)
+{
+	return(6.5625*(x:^3:-x):*(abs(x):<1))
+}
 real scalar mm_kdel0_triweight() return((9450/143)^.2)
 
 
@@ -200,6 +229,10 @@ real matrix mm_kint_cosine(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_cosine() return(.5*(1/6-1/pi()^2))
+real matrix mm_kderiv_cosine(real matrix x)
+{
+	return(-2*pi()*sin(2*pi()*x):*(abs(x):<.5))
+}
 real scalar mm_kdel0_cosine() return((3/(.5*(1/6-1/pi()^2)^2))^.2)
 
 
@@ -221,6 +254,10 @@ real matrix mm_kint_gaussian(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_gaussian() return(1)
+real matrix mm_kderiv_gaussian(real matrix x)
+{
+	return(-x:*normalden(x))
+}
 real scalar mm_kdel0_gaussian() return((1/(4*pi()))^.1)
 
 
@@ -259,7 +296,13 @@ real matrix mm_kint_parzen(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_parzen() return(1/12)
+real matrix mm_kderiv_parzen(real matrix x)
+{
+	return(((-16*x+24*sign(x):*abs(x):^2):*(abs(x):<=.5)) +
+	 ((-8*sign(x):*(1:-abs(x)):^2):*(abs(x):>1/2:&abs(x):<=1)))
+}
 real scalar mm_kdel0_parzen() return((4832/35)^.2)
+
 
 // Rectangle kernel function
 real matrix mm_kern_rectangle(real matrix x)
@@ -283,6 +326,10 @@ real matrix mm_kint_rectangle(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_rectangle() return(1/3)
+real matrix mm_kderiv_rectangle(real matrix x)
+{
+	return(J(rows(x), cols(x), 0)) // actually, the derivative is infty at -1 and -infty at 1
+}
 real scalar mm_kdel0_rectangle() return((9/2)^.2)
 
 
@@ -312,6 +359,10 @@ real matrix mm_kint_triangle(| real scalar r, real matrix x)
 	else _error(3300)
 }
 //real scalar mm_kvar_triangle() return(1/6)
+real matrix mm_kderiv_triangle(real matrix x)
+{
+	return(-sign(x):*(abs(x):<1))
+}
 real scalar mm_kdel0_triangle() return(24^.2)
 
 end
@@ -319,203 +370,505 @@ end
 
 *! {smcl}
 *! {marker mm_quantile}{bf:mm_quantile.mata}{asis}
-*! version 1.0.8  20dec2007  Ben Jann
+*! version 2.0.0  13jul2020  Ben Jann
 version 9.2
 mata:
 
 real matrix mm_quantile(real matrix X, | real colvector w,
- real matrix P, real scalar altdef)
+    real matrix P, real scalar d, real scalar fw)
 {
-    real rowvector result
-    real scalar c, cX, cP, r, i
-
+    real colvector p
+    pointer (real matrix) scalar XX, ww
+    
     if (args()<2) w = 1
     if (args()<3) P = (0, .25, .50, .75, 1)'
-    if (args()<4) altdef = 0
+    if (args()<4) d = 2
+    if (args()<5) fw = 0
+    if (!anyof(1::9, d)) {
+        display("{err}{it:def} must be an integer in [1,9]")
+        _error(3300)
+    }
+    if (missing(X) | missing(w)) _error(3351)
+    if (any(w:<0)) {
+        display("{err}{it:w} must not be negative")
+        _error(3300)
+    }
+    // drop zero frequency observations (i.e. observations for which w = 0)
+    XX = &X; ww = &w
+    if (rows(w)!=1) {
+        if (rows(w)!=rows(X)) _error(3200)
+        if (anyof(w,0)) {
+            p = select(1::rows(w), w)
+            if (cols(p)==0) p = J(0,1,.) // select() may return 0x0
+            XX = &(X[p,])
+            ww = &(w[p])
+        }
+    }
+    else if (w==0) {
+        XX = &(J(0,cols(X),.))
+        ww = &(J(0,1,.))
+    }
+    // compute quantiles
     if (cols(X)==1 & cols(P)!=1 & rows(P)==1)
-     return(mm_quantile(X, w, P', altdef)')
-    if (missing(P) | missing(X) | missing(w)) _error(3351)
-    if (rows(w)!=1 & rows(w)!=rows(X)) _error(3200)
-    r = rows(P)
-    c = max(((cX=cols(X)), (cP=cols(P))))
-    if (cX!=1 & cX<c) _error(3200)
-    if (cP!=1 & cP<c) _error(3200)
-    if (rows(X)==0 | r==0 | c==0) return(J(r,c,.))
-    if (c==1) return(_mm_quantile(X, w, P, altdef))
-    result = J(r, c, .)
-    if (cP==1) for (i=1; i<=c; i++)
-     result[,i] = _mm_quantile(X[,i], w, P, altdef)
-    else if (cX==1) for (i=1; i<=c; i++)
-     result[,i] = _mm_quantile(X, w, P[,i], altdef)
-    else for (i=1; i<=c; i++)
-     result[,i] = _mm_quantile(X[,i], w, P[,i], altdef)
-    return(result)
+        return(_mm_quantile_sort(*XX, *ww, P', d, fw)')
+    if (cols(X)!=1 & cols(P)!=1 & cols(X)!=cols(P)) _error(3200)
+    return(_mm_quantile_sort(*XX, *ww, P, d, fw))
 }
 
-real colvector _mm_quantile(
- real colvector X,
- real colvector w,
- real colvector P,
- real scalar altdef)
+real matrix _mm_quantile_sort(real matrix X, real colvector w,
+    real matrix P, real scalar d, real scalar fw)
 {
-    real colvector g, j, j1, p
-    real scalar N
+    real scalar    i, c, c1, c2
+    real colvector p, sX, sw
+    real matrix    Q
 
-    if (w!=1) return(_mm_quantilew(X, w, P, altdef))
-    N = rows(X)
-    p = order(X,1)
-    if (altdef) g = P*N + P
-    else g = P*N
-    j = floor(g)
-    if (altdef) g = g - j
-    else g = 0.5 :+ 0.5*((g - j):>0)
-    j1 = j:+1
-    j = j :* (j:>=1)
-    _editvalue(j, 0, 1)
-    j = j :* (j:<=N)
-    _editvalue(j, 0, N)
-    j1 = j1 :* (j1:>=1)
-    _editvalue(j1, 0, 1)
-    j1 = j1 :* (j1:<=N)
-    _editvalue(j1, 0, N)
-    return((1:-g):*X[p[j]] + g:*X[p[j1]])
-}
-
-real colvector _mm_quantilew(
- real colvector X,
- real colvector w,
- real colvector P,
- real scalar altdef)
-{
-    real colvector Q, pi, pj
-    real scalar i, I, j, jj, J, rsum, W
-    pointer scalar ww
-
-    I  = rows(X)
-    ww = (rows(w)==1 ? &J(I,1,w) : &w)
-    if (altdef) return(_mm_quantilewalt(X, *ww, P))
-    W  = quadsum(*ww)
-    pi = order(X, 1)
-    if (anyof(*ww, 0)) {
-        pi = select(pi,(*ww)[pi]:!=0)
-        I = rows(pi)
-    }
-    pj = order(P, 1)
-    J  = rows(P)
-    Q  = J(J, 1, .)
-    j  = 1
-    jj = pj[1]
-    rsum = 0
-    for (i=1; i<=I; i++) {
-        rsum = rsum + (*ww)[pi[i]]
-        if (i<I) {
-            if (rsum<P[jj]*W) continue
-            if (X[pi[i]]==X[pi[i+1]]) continue
+    c1 = cols(X); c2 = cols(P)
+    c = max((c1,c2))
+    Q = J(rows(P), c, .)
+    if (c1==c2) {
+        for (i=c; i; i--) {
+            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
+            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
+            Q[,i] = _mm_quantile(sX, sw, P[,i], d, fw)
         }
-        while (1) {
-            if (rsum>P[jj]*W | i==I) Q[jj] = X[pi[i]]
-            else Q[jj] = (X[pi[i]] + X[pi[i+1]])/2
-            j++
-            if (j>J) break
-            jj = pj[j]
-            if (i<I & rsum<P[jj]*W) break
-        }
-        if (j>J) break
+        return(Q)
     }
-    return(Q)
+    if (c1==1) {
+        if (rows(w)==1) {; p = order(X,1); sX = X[p]; sw = w; }
+        else {; p = order((X,w),(1,2)); sX = X[p]; sw = w[p]; }
+        for (i=c; i; i--) Q[,i] = _mm_quantile(sX, sw, P[,i], d, fw)
+        return(Q)
+    }
+    if (c2==1) {
+        for (i=c; i; i--) {
+            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
+            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
+            Q[,i] = _mm_quantile(sX, sw, P, d, fw)
+        }
+        return(Q)
+    }
+    _error(3200)
 }
 
-real colvector _mm_quantilewalt(
- real colvector X,
- real colvector w,
- real colvector P)
-{
-    real colvector Q, pi, pj
-    real scalar i, I, j, jj, J, rsum, rsum0, W, ub, g
-
-    W  = quadsum(w) + 1
-    pi = order(X, 1)
-    if (anyof(w, 0)) pi = select(pi, w[pi]:!=0)
-    I  = rows(pi)
-    pj = order(P, 1)
-    J  = rows(P)
-    Q  = J(J, 1, .)
-    rsum = w[pi[1]]
-    for (j=1; j<=J; j++) {
-        jj = pj[j]
-        if (P[jj]*W <= rsum) Q[jj] = X[pi[1]]
-        else break
+real colvector _mm_quantile(real colvector X, | real colvector w, 
+    real colvector p, real scalar d, real scalar fw)
+{   // X assumed sorted and non-missing
+    // w assumed non-missing and strictly positive
+    real colvector q, o
+    
+    if (args()<2) w = 1
+    if (args()<3) p = (0, .25, .50, .75, 1)'
+    if (args()<4) d = 2
+    if (args()<5) fw = 0
+    if (rows(w)!=1) {
+        if (rows(w)!=rows(X)) _error(3200)
+        if (rows(w)==0) return(J(rows(p), 1, .))
     }
-    for (i=2; i<=I; i++) {
-        rsum0 = rsum
-        rsum = rsum + w[pi[i]]
-        if (i<I & rsum < P[jj]*W) continue
-        while (1) {
-            ub = rsum0+1
-            if (P[jj]*W>=ub | X[pi[i]]==X[pi[i-1]]) Q[jj] = X[pi[i]]
+    // case 1: w can be ignored if w = 1 for all obs (all definitions)
+    if (allof(w,1)) {
+        return(__mm_quantile(X, editmissing(p,1), d))
+    }
+    // case 2: w can be ignored if constant and d = 1 or 2
+    if (d==1 | d==2) {
+        if (allof(w, w[1])) {
+            return(__mm_quantile(X, editmissing(p,1), d))
+        }
+    }
+    // case 3: weighted estimation
+    o = order(p,1) // __mm_quantile_w() requires sorted p
+    q = o          // just to dimension q
+    q[o] = __mm_quantile_w(X, w, p[o], d, fw)
+    return(q)
+}
+
+real colvector __mm_quantile(real colvector X, real colvector p, real scalar d)
+{
+    real scalar     n, eps
+    real colvector  pn, j, j1, h
+
+    n = rows(X)
+    if ((rows(p)*n)==0) return(J(rows(p), 1, .)) // no obs or rows(p)==0
+    if (n==1)           return(J(rows(p), 1, X)) // only one obs
+    if      (d==1) pn = p :* n
+    else if (d==2) pn = p :* n
+    else if (d==3) pn = p :* n :- .5
+                                                // pn = a + p*(n + 1 - a - b)
+    else if (d==4) pn = p :* n                  //      a = 0, b = 1
+    else if (d==5) pn = p :* n :+ .5            //      a = b = 0
+    else if (d==6) pn = p :* (n + 1)            //      a = b = 0 
+    else if (d==7) pn = 1 :+ p :* (n - 1)       //      a = b = 1
+    else if (d==8) pn = 1/3 :+ p :* (n + 1/3)   //      a = b = 1/3
+    else if (d==9) pn = 3/8 :+ p :* (n + 1/4)   //      a = b = 3/8
+    else {
+        display("{err}{it:def} must be an integer in [1,9]")
+        _error(3300)
+    }
+    if (d<=3) {
+        j = floor(pn)
+        if      (d==1) h = (pn:>j)
+        else if (d==2) h = ((pn:>j) :+ 1) / 2
+        else           h = (pn:>j) :| mod(j,2)
+    }
+    else {
+        eps = 4 * epsilon(1) // handle rounding error as in R's quantile()
+        j = floor(pn :+ eps)
+        h = pn - j
+        h = h :* (abs(h):>=eps)
+    }
+    j1 = mm_clip(j:+1, 1, n)
+    _mm_clip(j, 1, n)
+    return((1:-h) :* X[j] :+ h :* X[j1])
+}
+
+real colvector __mm_quantile_w(real colvector X, real colvector w, real colvector p, 
+    real scalar d, real scalar fw)
+{
+    real matrix W
+    
+    if (rows(X)==0) return(J(rows(p), 1, .))
+    if (rows(X)==1) return(J(rows(p), 1, X))
+    // frequency weights or d=1,2 (for which type of weights is irrelevant)
+    if (fw | d==1 | d==2) {
+        W = _mm_ecdf2(X, w, 0, 1) // W = (uniq X, runningsum(w))
+        if (d==1) return(__mm_quantile_w_1(W[,1], W[,2], p))
+        if (d==2) return(__mm_quantile_w_2(W[,1], W[,2], p))
+        if (d==3) return(__mm_quantile_w_3(W[,1], W[,2], p))
+        if (d==4) return(__mm_quantile_w_d(W[,1], W[,2], p,   0,   0))
+        if (d==5) return(__mm_quantile_w_d(W[,1], W[,2], p,  .5,   0))
+        if (d==6) return(__mm_quantile_w_d(W[,1], W[,2], p,   0,   1))
+        if (d==7) return(__mm_quantile_w_d(W[,1], W[,2], p,   1,  -1))
+        if (d==8) return(__mm_quantile_w_d(W[,1], W[,2], p, 1/3, 1/3))
+        if (d==9) return(__mm_quantile_w_d(W[,1], W[,2], p, 3/8, 1/4))
+        display("{err}{it:def} must be an integer in [1,9]")
+        _error(3300)
+    }
+    // other cases
+    if (rows(w)==1) W = (1::rows(X)) * w
+    else {
+        W = mm_colrunsum(w, 1, 1) // use quad precision
+        if (W[rows(W)]>=.) W = J(rows(W),1,.)
+    }
+    if (d==3) return(__mm_quantile_w_3b(X, W, p))
+    else {
+        if      (d==4) W =  W                   /  W[rows(W)]
+        else if (d==5) W = (W - mm_diff(0\W)/2) /  W[rows(W)]
+        else if (d==6) W =  W                   / (W[rows(W)] + 1)
+        else if (d==7) W = (W :- 1)             / (W[rows(W)] - 1)
+        else if (d==8) W = (W :- 1/3)           / (W[rows(W)] + 1/3)
+        else if (d==9) W = (W :- 3/8)           / (W[rows(W)] + 1/4)
+        else {
+            display("{err}{it:def} must be an integer in [1,9]")
+            _error(3300)
+        }
+        return(mm_fastipolate(W, X, p, 1))
+    }
+}
+
+real colvector __mm_quantile_w_1(real colvector x, real colvector W, real colvector p)
+{
+    real scalar    i, j, pi
+    real colvector P, q
+    
+    j = rows(W) 
+    P = p * W[j]
+    i = rows(p)
+    q = J(i,1,.)
+    for (; i; i--) {
+        pi = P[i]
+        for (; j>1; j--) {
+            if (W[j-1]<pi) break
+        }
+        q[i] = x[j]
+    }
+    return(q)
+}
+
+real colvector __mm_quantile_w_2(real colvector x, real colvector W, real colvector p)
+{
+    real scalar    i, j, r, pi
+    real colvector P, q
+    
+    j = r = rows(W) 
+    P = p * W[j]
+    i = rows(p)
+    q = J(i,1,.)
+    for (; i; i--) {
+        pi = P[i]
+        for (; j>1; j--) {
+            if (W[j-1]<pi) break
+        }
+        if (W[j]==pi) {
+            if (j==r) q[i] = x[j]
+            else      q[i] = (x[j] + x[j+1])/2
+        }
+        else q[i] = x[j]
+    }
+    return(q)
+}
+
+real colvector __mm_quantile_w_3(real colvector x, real colvector W, real colvector p)
+{
+    real scalar    i, j, pi, lo, up, d0, d1
+    real colvector P, q
+    
+    j = rows(W)
+    P = p * W[j]
+    i = rows(p)
+    q = J(i,1,.)
+    for (; i; i--) {
+        pi = P[i]
+        // find j such that W[j-1] < pi <= W[j]
+        for (; j>1; j--) {
+            if (W[j-1]<pi) break
+        }
+        // reached bottom
+        if (j==1) { 
+            q[|1\i|] = J(i,1, x[1])
+            break
+        }
+        // if pi is larger than or equal to the next integer after W[j-1],
+        // then use the upper x-value; decide between lower and upper x-value
+        // only if pi is between W[j-1] and next integer
+        lo = W[j-1]
+        up = floor(lo) + 1
+        if (pi>=up) q[i] = x[j]
+        else {
+            // set upper boundary to minimum between W[j] and next integer
+            // after W[j-1]
+            up = min( (W[j], up) )
+            // obtain distances between pi and boundaries
+            d0 = pi - lo
+            d1 = up - pi
+            // case 1: pi closer to upper boundary
+            if (d1<d0) q[i] = x[j]
+            // case 2: pi closer to lower boundary
+            else if (d0<d1) q[i] = x[j-1]
+            // case 3: equal distance
             else {
-                g = (ub - P[jj]*W) / (ub - rsum0)
-                Q[jj] = X[pi[i-1]]*g + X[pi[i]]*(1-g)
+                // use x-value from lower boundary if lower boundary is even;
+                // else use x-value from upper boundary; this is an arbitrary
+                // decision
+                if (!mod(lo,2)) q[i] = x[j-1]
+                else            q[i] = x[j]
             }
-            j++
-            if (j>J) break
-            jj = pj[j]
-            if (i<I & rsum < P[jj]*W) break
         }
-        if (j>J) break
     }
-    return(Q)
+    return(q)
 }
+
+real colvector __mm_quantile_w_3b(real colvector x, real colvector W, real colvector p)
+{
+    real scalar    i, j, pi, d0, d1
+    real colvector P, q
+    
+    j = rows(W)
+    P = p * W[j]
+    i = rows(p)
+    q = J(i,1,.)
+    for (; i; i--) {
+        pi = P[i]
+        for (; j>1; j--) {
+            if (W[j-1]<pi) break
+        }
+        // reached bottom
+        if (j==1) { 
+            q[|1\i|] = J(i,1, x[1])
+            break
+        }
+        // obtain distances
+        d0 = pi - W[j-1]
+        d1 = W[j] - pi
+        // case 1: pi closer to upper boundary
+        if (d1<d0) q[i] = x[j]
+        // case 2: pi closer to lower boundary
+        else if (d0<d1) q[i] = x[j-1]
+        // case 3: equal distance
+        else {
+            // use x-value from lower boundary if lower boundary is even;
+            // else use x-value from upper boundary; this is an arbitrary
+            // decision
+            if (!mod(W[j-1],2)) q[i] = x[j-1]
+            else                q[i] = x[j]
+        }
+    }
+    return(q)
+}
+
+real colvector __mm_quantile_w_d(real colvector x, real colvector W, 
+    real colvector p, real scalar a, real scalar b)
+{
+    real scalar    i, j, pi, lo, up, h, T
+    real colvector q, pk
+    
+    j  = rows(W)
+    T  = W[j] + b
+    pk = (W :- a) / T
+    i  = rows(p)
+    q  = J(i,1,.)
+    for (; i; i--) {
+        pi = p[i]
+        // find j such that pk[j-1] < pi <= pk[j]
+        for (; j>1; j--) {
+            if (pk[j-1]<pi) break
+        }
+        // reached bottom
+        if (j==1) {
+            q[|1\i|] = J(i,1, x[1])
+            break
+        }
+        // if pi is larger than or equal to pk of next integer after W[j-1],
+        // then use the upper x-value; interpolate only if pi is between 
+        // pk[j-1] and pk of next integer
+        up = (floor(W[j-1]) + 1 - a) / T
+        if (pi>=up) q[i] = x[j]
+        else {
+            lo   = pk[j-1]
+            up   = min( (pk[j], up) )
+            h    = (pi - lo) / (up - lo)
+            q[i] = (1-h) * x[j-1] + h * x[j]
+        }
+    }
+    return(q)
+}
+
+
 end
 
 
 *! {smcl}
 *! {marker mm_median}{bf:mm_median.mata}{asis}
-*! version 1.0.3, Ben Jann, 22jun2006
+*! version 1.1.0  Ben Jann  13jul2020
 version 9.2
 mata:
 
-real rowvector mm_median(real matrix X, | real colvector w)
+real rowvector mm_median(real matrix X, | real colvector w, real scalar fw)
 {
-	if (args()==1) w = 1
-	return(mm_quantile(X, w, .5))
+    if (args()<2) w = 1
+    if (args()<3) fw = 0
+    return(mm_quantile(X, w, .5, 2, fw))
 }
+
+real scalar _mm_median(real colvector X, | real colvector w, real scalar fw)
+{   // X assumed sorted and non-missing
+    // w assumed non-missing and strictly positive
+    if (args()<2) w = 1
+    if (args()<3) fw = 0
+    return(_mm_quantile(X, w, .5, 2, fw))
+}
+
 end
 
 
 *! {smcl}
 *! {marker mm_iqrange}{bf:mm_iqrange.mata}{asis}
-*! version 1.0.4, Ben Jann, 22jun2006
+*! version 1.1.0  Ben Jann  13jul2020
 version 9.2
 mata:
 
-real matrix mm_iqrange(real matrix X, | real colvector w,
- real scalar altdef)
+real matrix mm_iqrange(real matrix X, | real colvector w, real scalar def, 
+    real scalar fw)
 {
-	real matrix q
+    real matrix q
 
-	if (args()<2) w = 1
-	if (args()<3) altdef = 0
-	q = mm_quantile(X, w, (.25 \ .75), altdef)
-	return(q[2,]-q[1,])
+    if (args()<2) w = 1
+    if (args()<3) def = 2
+    if (args()<4) fw = 0
+    q = mm_quantile(X, w, (.25 \ .75), def, fw)
+    return(q[2,] - q[1,])
 }
+
+real scalar _mm_iqrange(real colvector X, | real colvector w, real scalar def, 
+    real scalar fw)
+{   // X assumed sorted and non-missing
+    // w assumed non-missing and strictly positive
+    real matrix q
+
+    if (args()<2) w = 1
+    if (args()<3) def = 2
+    if (args()<4) fw = 0
+    q = _mm_quantile(X, w, (.25 \ .75), def, fw)
+    return(q[2] - q[1])
+}
+
 end
 
 
 *! {smcl}
 *! {marker mm_ecdf}{bf:mm_ecdf.mata}{asis}
-*! version 1.0.7  03aug2007  Ben Jann
+*! version 1.1.0  10jul2020  Ben Jann
 version 9.2
 mata:
 
-real matrix mm_ecdf(real matrix X, | real colvector w, real scalar mid)
+real matrix mm_ecdf(real matrix X, | real colvector w, real scalar mid, 
+    real scalar nonorm, real scalar brk)
 {
-    real scalar W
+    if (args()<2) w = 1
+    if (args()<3) mid = 0
+    if (args()<4) nonorm = 0
+    if (args()<5) brk = 0
+    return(mm_ranks(X, w, (brk!=0 ? 0 : 3), mid, (nonorm!=0 ? 0 : 1)))
+}
+
+real colvector _mm_ecdf(real colvector X, | real colvector w, real scalar mid, 
+    real scalar nonorm, real scalar brk)
+{
+    if (args()<2) w = 1
+    if (args()<3) mid = 0
+    if (args()<4) nonorm = 0
+    if (args()<5) brk = 0
+    return(_mm_ranks(X, w, (brk!=0 ? 0 : 3), mid, (nonorm!=0 ? 0 : 1)))
+}
+
+real matrix mm_ecdf2(real colvector X, | real colvector w, real scalar mid, 
+    real scalar nonorm)
+{
+    real colvector p
 
     if (args()<2) w = 1
     if (args()<3) mid = 0
+    if (args()<4) nonorm = 0
+    if (rows(X)==0) return(J(0,2,.))
+    if (rows(w)==1) {
+        p = order(X,1)
+        return(_mm_ecdf2(X[p], w, mid, nonorm))
+    }
+    if (rows(w)!=rows(X)) _error(3200)
+    p = order((X,w),(1,2))
+    return(_mm_ecdf2(X[p], w[p], mid, nonorm))
+}
 
-    return(mm_ranks(X, w, 3, mid, 1))
+real matrix _mm_ecdf2(real colvector X, | real colvector w, real scalar mid, 
+    real scalar nonorm)
+{
+    real scalar    n
+    real colvector p, cdf
+
+    if (args()<2) w = 1
+    if (args()<3) mid = 0
+    if (args()<4) nonorm = 0
+
+    // compute running sum
+    n = rows(X)
+    if (rows(w)==1) cdf = (1::n) * w
+    else {
+        if (rows(w)!=n) _error(3200)
+        // treat missing values as missing and use quad precision
+        cdf = mm_colrunsum(w, 1, 1)
+        if (cdf[n]>=.) cdf = J(n,1,.)
+    }
+
+    // remove ties (select last obs in each group)
+    p = select(1::n, _mm_unique_tag(X, 1))
+    cdf = cdf[p]
+    
+    // normalize
+    if (!nonorm) cdf = cdf / cdf[rows(cdf)]
+    
+    // midrank adjustment
+    if (mid) cdf = cdf :- mm_diff(0\cdf)/2
+    
+    // return result
+    return(X[p], cdf)
 }
 
 end
@@ -523,90 +876,312 @@ end
 
 *! {smcl}
 *! {marker mm_relrank}{bf:mm_relrank.mata}{asis}
-*! version 1.0.7  03aug2007  Ben Jann
+*! version 1.1.0  13jul2020  Ben Jann
 version 9.2
 mata:
 
 real matrix mm_relrank(
     real matrix X,
     real colvector w,
-    real matrix Q,
-    | real scalar mid)
+    real matrix Y,
+    | real scalar mid,
+      real scalar nonorm, 
+      real scalar brk,
+      real colvector w2)
 {
-    real rowvector result
-    real scalar c, cX, cQ, r, i
-
     if (args()<4) mid = 0
-
-    if (cols(X)==1 & cols(Q)!=1 & rows(Q)==1) return(mm_relrank(X, w, Q', mid)')
+    if (args()<5) nonorm = 0
+    if (args()<6) brk = 0
+    if (args()<7) w2 = 1
     if (rows(w)!=1 & rows(w)!=rows(X)) _error(3200)
-    r = rows(Q)
-    c = max(((cX=cols(X)), (cQ=cols(Q))))
-    if (cX!=1 & cX<c) _error(3200)
-    if (cQ!=1 & cQ<c) _error(3200)
-    if (rows(X)==0 | r==0 | c==0) return(J(r,c,.))
-    if (c==1) return(_mm_relrank(X, w, Q, mid))
-    result = J(r, c, .)
-    if (cQ==1)
-     for (i=1; i<=c; i++) result[,i] = _mm_relrank(X[,i], w, Q, mid)
-    else if (cX==1)
-     for (i=1; i<=c; i++) result[,i] = _mm_relrank(X, w, Q[,i], mid)
-    else
-     for (i=1; i<=c; i++) result[,i] = _mm_relrank(X[,i], w, Q[,i], mid)
-    return(result)
+    if (rows(w2)!=1 & rows(w2)!=rows(Y)) _error(3200)
+    if (cols(X)==1 & cols(Y)!=1 & rows(Y)==1 & rows(w2)==1)
+        return(_mm_relrank_sort(X, w, Y', mid, nonorm, brk, w2)')
+    return(_mm_relrank_sort(X, w, Y, mid, nonorm, brk, w2))
+}
+
+real matrix _mm_relrank_sort(
+    real matrix X,
+    real colvector w,
+    real matrix Y,
+    real scalar mid,
+    real scalar nonorm, 
+    real scalar brk,
+    real colvector w2)
+{
+    real scalar    i, c, c1, c2
+    real colvector p, sX, sw, p2, sY, sw2
+    real matrix    R
+
+    c1 = cols(X); c2 = cols(Y)
+    c = max((c1,c2))
+    R = J(rows(Y), c, .)
+    if (c1==c2) {
+        for (i=c; i; i--) {
+            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
+            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
+            if (rows(w2)==1) {; p2 = order(Y[,i],1); sY = Y[p2,i]; sw2 = w2; }
+            else {; p2 = order((Y[,i],w2),(1,2)); sY = Y[p2,i]; sw2 = w2[p2]; }
+            R[p2,i] = _mm_relrank(sX, sw, sY, mid, nonorm, brk, sw2)
+        }
+        return(R)
+    }
+    if (c1==1) {
+        if (rows(w)==1) {; p = order(X,1); sX = X[p]; sw = w; }
+        else {; p = order((X,w),(1,2)); sX = X[p]; sw = w[p]; }
+        for (i=c; i; i--) {
+            if (rows(w2)==1) {; p2 = order(Y[,i],1); sY = Y[p2,i]; sw2 = w2; }
+            else {; p2 = order((Y[,i],w2),(1,2)); sY = Y[p2,i]; sw2 = w2[p2]; }
+            R[p2,i] = _mm_relrank(sX, sw, sY, mid, nonorm, brk, sw2)
+        }
+        return(R)
+    }
+    if (c2==1) {
+        if (rows(w2)==1) {; p2 = order(Y,1); sY = Y[p2]; sw2 = w2; }
+        else {; p2 = order((Y,w2),(1,2)); sY = Y[p2]; sw2 = w2[p2]; }
+        for (i=c; i; i--) {
+            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
+            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
+            R[p2,i] = _mm_relrank(sX, sw, sY, mid, nonorm, brk, sw2)
+        }
+        return(R)
+    }
+    _error(3200)
 }
 
 real colvector _mm_relrank(
- real colvector X,
- real colvector w,
- real colvector Q,
- real scalar mid)
+    real colvector X,
+    real colvector w,
+    real colvector Y,
+    | real scalar mid,
+      real scalar nonorm, 
+      real scalar brk,
+      real colvector w2)
 {
-    real colvector P, cdf, pi, pj, sortx
-    real scalar i, I, j, J
-
-    I = rows(X)
-    pi = order((X,(1::I)),(1,2)) //stable sort order
-    sortx = X[pi]
-    cdf = __mm_ranks(sortx, (rows(w)!=1 ? w[pi] : w), 3, 0, 1)
-
-    J = rows(Q)
-    pj = order(Q, 1)
-    P = J(J, 1, 0)
-    i = I
-    for(j=J; j>=1; j--) {
-        for (; i>=1; i--) {
-            if (sortx[i]<=Q[pj[j]]) break
-        }
-        if (i<1) break
-        P[pj[j]] = cdf[i]
+    real matrix cdf
+    
+    if (args()<4) mid = 0
+    if (args()<5) nonorm = 0
+    if (args()<6) brk = 0
+    if (args()<7) w2 = 1
+    if (rows(X)==0 | rows(Y)==0) return(J(rows(Y),1,.))
+    
+    // obtain CDF at unique values of X
+    cdf = _mm_ecdf2(X, w, 0, nonorm)
+    
+    // compute relative ranks
+    if (brk==0) {
+        if (mid==0) return(_mm_relrank_1(Y, cdf[,1], cdf[,2]))
+                    return(_mm_relrank_2(Y, cdf[,1], cdf[,2]))
     }
-    if (mid==0) return(P)
-
-    cdf = _mm_ranks_mid(sortx, cdf, mid)
-    i = 1
-    for (j=1; j<=J; j++) {
-        for (; i<I; i++) {
-            if (sortx[i]>=Q[pj[j]]) break
-        }
-        if (sortx[i]==Q[pj[j]]) P[pj[j]] = cdf[i]
+    if (rows(w2)==1) {
+        if (mid==0) return(_mm_relrank_3(Y, cdf[,1], cdf[,2]))
+                    return(_mm_relrank_4(Y, cdf[,1], cdf[,2]))
     }
-    return(P)
+    if (mid==0)     return(_mm_relrank_5(Y, w2, cdf[,1], cdf[,2]))
+                    return(_mm_relrank_6(Y, w2, cdf[,1], cdf[,2]))
 }
+
+real colvector _mm_relrank_1(real colvector x, real colvector y, real colvector cdf)
+{    // case 1: brk = 0, mid = 0
+    real scalar    i, j, xi
+    real colvector r
+    
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) r[i] = cdf[j]
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+real colvector _mm_relrank_2(real colvector x, real colvector y, real colvector cdf)
+{   // case 2: brk = 0, mid = 1
+    real scalar    i, j, xi
+    real colvector r, step
+    
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    step = mm_diff(0\cdf)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) {
+            if (y[j]==xi) r[i] = cdf[j] - step[j]/2
+            else          r[i] = cdf[j]
+        }
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+real colvector _mm_relrank_3(real colvector x, real colvector y, real colvector cdf)
+{
+    // case 3: brk = 1, mid = 0, no weights
+    real scalar    i, j, k, xi
+    real colvector r, step
+
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    step = mm_diff(0\cdf)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) {
+            r[i] = cdf[j]
+            if (y[j]==xi) {
+                for (k=i-1; k; k--) { // find ties in x
+                    if (x[k]<xi) break
+                }
+                if ((++k)==i) continue // no ties
+                r[|k\i-1|] = cdf[j] :- step[j] :* (i:-(k::i-1)) / (i-k+1)
+                i = k
+            }
+        }
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+real colvector _mm_relrank_4(real colvector x, real colvector y, real colvector cdf)
+{
+    // case 4: brk = 1, mid = 1, no weights
+    real scalar    i, j, k, xi
+    real colvector r, step
+    
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    step = mm_diff(0\cdf)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) {
+            if (y[j]==xi) {
+                for (k=i-1; k; k--) { // find ties in x
+                    if (x[k]<xi) break
+                }
+                if ((++k)==i) {
+                    r[i] = cdf[j] - step[j] * 0.5
+                    continue
+                }
+                r[|k\i|] = cdf[j] :- step[j] :* ((i+.5):-(k::i)) / (i-k+1)
+                i = k
+            }
+            else r[i] = cdf[j]
+        }
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+real colvector _mm_relrank_5(real colvector x, real colvector w, 
+    real colvector y, real colvector cdf)
+{
+    // case 5: brk = 1, mid = 0, weighted
+    real scalar    i, j, k, xi, W
+    real colvector r, step, ww
+    
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    step = mm_diff(0\cdf)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) {
+            r[i] = cdf[j]
+            if (y[j]==xi) {
+                for (k=i-1; k; k--) { // find ties in x
+                    if (x[k]<xi) break
+                }
+                if ((++k)==i) continue // no ties
+                ww = mm_colrunsum(w[|k\i|])
+                W  = ww[rows(ww)]
+                if (W==0) {
+                    r[|k\i-1|] = cdf[j] :- step[j] :* (i:-(k::i-1)) / (i-k+1)
+                }
+                else {
+                    ww = ww[|1\rows(ww)-1|]
+                    r[|k\i-1|] = cdf[j] :- step[j] :* (W:-ww) / W
+                }
+                i = k
+            }
+        }
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+real colvector _mm_relrank_6(real colvector x, real colvector w, 
+    real colvector y, real colvector cdf)
+{
+    // case 6: brk = 1, mid = 1, weighted
+    real scalar    i, j, k, xi, W
+    real colvector r, step, ww
+    
+    i = rows(x)
+    r = J(i, 1, 0)
+    j = rows(y)
+    step = mm_diff(0\cdf)
+    for (; i; i--) {
+        xi = x[i]
+        for (; j; j--) {
+            if (y[j]<=xi) break
+        }
+        if (j) {
+            if (y[j]==xi) {
+                for (k=i-1; k; k--) { // find ties in x
+                    if (x[k]<xi) break
+                }
+                if ((++k)==i) {
+                    r[i] = cdf[j] - step[j] * 0.5
+                    continue // no ties
+                }
+                ww = mm_colrunsum(w[|k\i|])
+                W  = ww[rows(ww)]
+                if (W==0) {
+                    // if all observations have zero weight
+                    r[|k\i|] = cdf[j] :- step[j] :* ((i+.5):-(k::i)) / (i-k+1)
+                }
+                else {
+                    ww = ww - 0.5 * w[|k\i|]
+                    r[|k\i|] = cdf[j] :- step[j] :* (W:-ww) / W
+                }
+                i = k
+            }
+            else r[i] = cdf[j]
+        }
+        else break // x[i] is smaller than min(y)
+    }
+    return(r)
+}
+
 end
 
 
 *! {smcl}
 *! {marker mm_ranks}{bf:mm_ranks.mata}{asis}
-*! version 1.0.6  03aug2007  Ben Jann
+*! version 1.1.0  13jul2020  Ben Jann
 version 9.2
 mata:
 
 real matrix mm_ranks(real matrix X, | real colvector w,
  real scalar method, real scalar mid, real scalar norm)
 {
-    real rowvector result
     real scalar c, r, i
+    real matrix result
 
     if (args()<2) w = 1
     if (args()<3) method = 0
@@ -616,106 +1191,116 @@ real matrix mm_ranks(real matrix X, | real colvector w,
     r = rows(X)
     if (rows(w)!=1 & rows(w)!=r) _error(3200)
     if (c<1) return(J(r,0,.))
-    if (c==1) return(_mm_ranks(X, w, method, mid, norm))
+    if (c==1) return(_mm_ranks_sort(X, w, method, mid, norm))
     result = J(r, c, .)
     for (i=1; i<=c; i++) {
-        result[,i] = _mm_ranks(X[,i], w, method, mid, norm)
+        result[,i] = _mm_ranks_sort(X[,i], w, method, mid, norm)
     }
     return(result)
 }
 
-real colvector _mm_ranks(real colvector x, real colvector w,
+real colvector _mm_ranks_sort(real colvector x, real colvector w,
  real scalar method, real scalar mid, real scalar norm)
 {
     real scalar    I
-    real colvector p
+    real colvector p, r
 
     I = rows(x)
     if (I==0) return(J(0,1,.))
-    if (method==4 & rows(w)!=1) p = order((x,w),(1,2)) // -set sortseed- for reproducibility
-    else if (method==0 | method==4) p = order(x,1) // -set sortseed- for reproducibility
-    else if (method==1 & rows(w)!=1) p = order((x,w,(1::I)),(1,2,3)) // stable sort order
-    else p = order((x,(1::I)),(1,2)) // stable sort order
-    return(__mm_ranks(x[p],(rows(w)!=1 ? w[p] : w), method, mid, norm)[invorder(p)])
+    if      (method==4 & rows(w)!=1) p = order((x,w),(1,2))
+    else if (method==0 | method==4)  p = order(x,1)
+    else if (rows(w)!=1) p = order((x,w),(1,2)) // include w for stable results
+    else p = order(x,1)
+    r = __mm_ranks(x[p], (rows(w)!=1 ? w[p] : w), method, mid, norm)
+    r[p] = r
+    return(r)
+}
+
+real colvector _mm_ranks(real colvector x, | real colvector w,
+ real scalar method, real scalar mid, real scalar norm) // sorted input assumed
+{
+    if (args()<2) w = 1
+    if (args()<3) method = 0
+    if (args()<4) mid = 0
+    if (args()<5) norm = 0
+    if (rows(w)!=1 & rows(w)!=rows(x)) _error(3200)
+    return(__mm_ranks(x, w, method, mid, norm))
 }
 
 real colvector __mm_ranks(real colvector x, real colvector w,
- real scalar method, real scalar mid, real scalar norm)   // sorted input assumed
-{
-    return(_mm_ranks_mid(x, ___mm_ranks(x, w, method, norm), mid))
-}
-
-real colvector ___mm_ranks(real colvector x, real colvector w,
- real scalar method, real scalar norm)                    // sorted input assumed
+ real scalar method, real scalar mid, real scalar norm) // sorted input assumed
 {
     real scalar    i, I, i0, i1
     real colvector ranks, R
     pointer scalar wR
+    pragma unset   R
 
+    // compute running sum
     I = rows(x)
     if (I==0) return(J(0,1,.))
     if (rows(w)!=1) {
-        if (missing(w)) return(J(I,1,.))
-        ranks = mm_colrunsum(w)
+        // treat missing values as missing and use quad precision
+        ranks = mm_colrunsum(w, 1, 1)
+        if (ranks[I]>=.) return(J(I,1,.))
     }
     else ranks = (1::I) * w
+    
+    // normalize
     if (norm) ranks = ranks / ranks[I]
-    if (method==0 | method==4) return(ranks)    // no treatment of ties
-    if (method==3) {                            // ties lowest
+    
+    // handle ties
+    if (method==3) {            // use lowest rank
         for(i=I-1; i>=1; i--) {
             if (x[i]==x[i+1]) ranks[i] = ranks[i+1]
         }
-        if (method==3) return(ranks)
     }
-    if (method==1) {                            // ties highest
+    else if (method==1) {       // use highest rank
         for(i=2; i<=I; i++) {
             if (x[i]==x[i-1]) ranks[i] = ranks[i-1]
         }
-        return(ranks)
     }
-    if (method!=2) _error(3498,"ties = " + strofreal(method) + " not allowed")
-    i0 = i1 = 1                                 // ties mean
-    if (rows(w)==1) wR = &1
-    else wR = &R
-    for(i=2; i<=I; i++) {
-        if (x[i0]==x[i]) {
-            i1++
-            if (i<I) continue
+    else if (method==2) {       // use average rank
+        i0 = i1 = 1
+        if (rows(w)==1) wR = &1
+        else wR = &R
+        for(i=2; i<=I; i++) {
+            if (x[i0]==x[i]) {
+                i1++
+                if (i<I) continue
+            }
+            if (i0<i1) {
+                R = (i0 \ i1)
+                ranks[|R|] = J(i1-i0+1,1,1) :* mean(ranks[|R|], w[|*wR|])
+            }
+            i0 = i1 = i
         }
-        if (i0<i1) {
-            R = (i0 \ i1)
-            ranks[|R|] = J(i1-i0+1,1,1) :* mean(ranks[|R|], w[|*wR|])
-        }
-        i0 = i1 = i
     }
+    else if (method!=0 & method!=4) {
+        _error(3498,"ties = " + strofreal(method) + " not allowed")
+    }
+    
+    // apply midpoint adjustment
+    if (mid) {
+        i0 = i1 = 0
+        for (i=1; i<=I; i++) {
+            if (ranks[i]>i0) {
+                i1 = i0 + (ranks[i]-i0)/2
+                i0 = ranks[i]
+            }
+            ranks[i] = i1
+        }
+    }
+    
+    // done
     return(ranks)
 }
 
-real colvector _mm_ranks_mid(real colvector x, real colvector ranks,
-    real scalar mid)
-{
-    real scalar     r, lr, i
-
-    if (rows(ranks)<1 | mid==0) return(ranks)
-    r = ranks[1]
-    ranks[1] =  r/2
-    lr = r
-    for(i=2; i<=rows(ranks); i++) {
-        if (x[i]==x[i-1]) ranks[i] = ranks[i-1]
-        else {
-            r = ranks[i]
-            ranks[i] = lr + (r-lr)/2
-            lr = r
-        }
-    }
-    return(ranks)
-}
 end
 
 
 *! {smcl}
 *! {marker mm_freq}{bf:mm_freq.mata}{asis}
-*! version 1.0.2, Ben Jann, 16may2007
+*! version 1.0.3, Ben Jann, 09jul2020
 version 9.1
 mata:
 
@@ -789,28 +1374,6 @@ real colvector _mm_freq2(transmorphic matrix x,
     result[|j \ i-1|] = J(i-j, 1, (rows(w)==1 ?
         (i-j)*w : sum(w[|j \ i-1|])))
     return(result)
-}
-
-transmorphic matrix _mm_uniqrows( // uniqrows() for sorted X
- transmorphic matrix x)
-{
-        real scalar             i, j, n, ns
-        transmorphic matrix     res
-
-        if (rows(x)==0) return(J(0,cols(x), missingof(x)))
-        if (cols(x)==0) return(J(1,0, missingof(x)))
-
-        ns = 1
-        n = rows(x)
-        for (i=2;i<=n;i++) {
-                if (x[i-1,]!=x[i,]) ns++
-        }
-        res = J(ns, cols(x), x[1,1])
-        res[1,] = x[1,]
-        for (i=j=2;i<=n;i++) {
-                if (x[i-1,]!=x[i,]) res[j++,] = x[i,]
-        }
-        return(res)
 }
 
 end
@@ -3759,67 +4322,94 @@ end
 
 *! {smcl}
 *! {marker mm_ipolate}{bf:mm_ipolate.mata}{asis}
-*! version 1.0.6, Ben Jann, 10jul2006
+*! version 2.0.0, Ben Jann, 10jul2006
 version 9.2
 mata:
 
-real colvector mm_ipolate(real colvector x, real colvector y,
- real colvector xnew, | real scalar outer)
+real colvector mm_ipolate(real colvector x0, real colvector y0,
+    real colvector x1, | real scalar outer)
 {
-	real scalar i, j0b, j0e, j1b, j1e, r, xlo, xup, xi, y0, y1
-	real colvector p, pnew, ynew
-
-	r = rows(x)
-	if (rows(y)!=r) _error(3200)
-	if (r<1) return(J(rows(xnew), 1, .))
-	if (args()<4) outer = 0
-
-	p = order(x, 1)
-	pnew = order(xnew, 1)
-	ynew = J(rows(xnew),1,.)
-	xlo = x[p[1]]; xup = x[p[rows(p)]]
-	j0b = j1e = j0e = 1
-	for (i=1; i<=rows(xnew); i++) {
-		xi = xnew[pnew[i]]
-		if (outer==0) {
-			if (xi<xlo) continue
-			if (xi>xup) return(ynew)
-		}
-		while (j0e<r) {
-			if (x[p[j0e+1]]>xi) break
-			j0e++
-			if (x[p[j0e]]>x[p[j0b]]) j0b = j0e
-		}
-		if (j0e>=j1e) {
-			j1b = j0e
-			while (j1b<=r) {
-				if (x[p[j1b]]>=xi) break
-				j1b++
-			}
-			if (j1b>r) j1b = r
-			j1e = j1b
-			while (j1e<r) {
-				if (x[p[j1e+1]]>x[p[j1b]]) break
-				j1e++
-			}
-		}
-		y0 = (j0b==j0e ? y[p[j0b]] : mean(y[p[|j0b \ j0e|]],1))
-		y1 = (j1b==j1e ? y[p[j1b]] : mean(y[p[|j1b \ j1e|]],1))
-		if (outer) {
-			if (xi<xlo) {
-				ynew[pnew[i]] = y1
-				continue
-			}
-			if (xi>xup) {
-				ynew[pnew[|i \ rows(pnew)|]] = J(rows(pnew)-i+1,1,y0)
-				return(ynew)
-			}
-		}
-		ynew[pnew[i]] = ( j0e==j1e ? y0 :
-		 y0 + (y1-y0) *  (xi-x[p[j0e]])/(x[p[j1b]]-x[p[j0e]]) )
-	}
-	return(ynew)
+    real colvector p0, p1, y1
+    
+    if (args()<4) outer = 0
+    if (rows(y0)!=rows(x0)) _error(3200)
+    p0 = order(x0,1)
+    p1 = order(x1,1)
+    y1 = J(rows(x1),1,.)
+    y1[p1] = _mm_ipolate(x0[p0], y0[p0], x1[p1], outer)
+    return(y1)
 }
+
+real colvector _mm_ipolate(real colvector x0, real colvector y0,
+    real colvector x1, | real scalar outer)
+{   // x0 and x1 assumed sorted
+    real scalar    n, i, ai, bi
+    real colvector a, b, x, y
+
+    if (args()<4) outer = 0
+    n = rows(x0)
+    if (rows(y0)!=n) _error(3200)
+    if (n<=1) return(mm_fastipolate(x0, y0, x1, outer))
+    // collapse data
+    a = x0:!=(x0[n]\x0[|1\n-1|]) // tag first obs within panel
+    a[1] = 1                     // (should x0 be constant)
+    a = select(1::n, a)          // get index of first obs within panel
+    if ((i=rows(a))==n) return(mm_fastipolate(x0, y0, x1, outer)) // no ties
+    b = x0:!=(x0[|2\.|]\x0[1])   // tag last obs within panel
+    b[n] = 1                     // (should x0 be constant)
+    b = select(1::n, b)          // get index of last obs within panel
+    x = y = J(i,1,.)
+    for (;i;i--) {
+        ai = a[i]; bi = b[i]
+        x[i] = x0[ai]
+        if (ai==bi) {
+            y[i] = y0[ai]
+            continue
+        }
+        y[i] = mean(y0[|ai\bi|],1)
+    }
+    return(mm_fastipolate(x, y, x1, outer))
+}
+
+real colvector mm_fastipolate(real colvector x0, real colvector y0,
+    real colvector x1, | real scalar outer)
+{   // x0 and x1 assumed sorted; x0 assumed unique
+    real scalar    n, i, j
+    real colvector y1
+
+    if (args()<4) outer = 0
+    j = rows(x0); n = i = rows(x1)
+    if (rows(y0)!=j) _error(3200)
+    if (j<1) return(J(n, 1, .))
+    y1 = J(n,1,.)
+    // handle values of x1 > max(x0)
+    for (;i;i--) {
+        if (x1[i]<=x0[j]) break
+    }
+    if (outer) {
+        if (i<n) y1[|i+1\.|] = J(n-i, 1, y0[j])
+    }
+    // handle values of x1 within minmax(x0)
+    for (;i;i--) {
+        for (;j;j--) {
+            if (x0[j]==x1[i]) {
+                y1[i] = y0[j]
+                break
+            }
+            if (x0[j]<x1[i]) {
+                y1[i] = y0[j] + (y0[j+1]-y0[j]) * (x1[i]-x0[j])/(x0[j+1]-x0[j])
+                break
+            }
+        }
+        if (!j) break
+    }
+    // handle values of x1 < min(x0)
+    if (outer) {
+        if (i) y1[|1\i|] = J(i, 1, y0[1])
+    }
+    return(y1)
+}
+
 end
 
 
@@ -3978,6 +4568,49 @@ end
 
 
 *! {smcl}
+*! {marker mm_group}{bf:mm_group.mata}{asis}
+*! version 1.0.0  09jul2020  Ben Jann
+version 9.2
+mata:
+
+real colvector mm_group(transmorphic matrix X, | real rowvector idx)
+{
+    real scalar    r, c
+    real colvector p
+    
+    r = rows(X); c = cols(X)
+    if (args()<2) {
+        if (r<=1 | c==0) return(J(r,1,1))
+        p = order(X, 1..c)
+        p[p] = _mm_group(X[p,])
+    }
+    else {
+        if (length(idx)>c) _error(3200)
+        if (r<=1 | c==0) return(J(r,1,1))
+        p = order(X, idx)
+        p[p] = _mm_group(X[p, abs(idx)])
+    }
+    return(p)
+}
+
+real colvector _mm_group(transmorphic matrix X)
+{
+    real scalar r, c
+    real colvector p
+    
+    r = rows(X); c = cols(X)
+    if (r<=1 | c==0) return(J(r,1,1))
+    if (c==1) p = (X :!= (X[r] \ X[|1\r-1|]))
+    else      p = (rowsum(X :!= (X[r,] \ X[|1,1 \ r-1,.|])) :!= 0)
+    return(mm_colrunsum(p))
+}
+
+end
+
+
+
+
+*! {smcl}
 *! {marker mm_panels}{bf:mm_panels.mata}{asis}
 *! version 1.0.3, Ben Jann, 03may2007
 version 9.2
@@ -4082,36 +4715,240 @@ end
 
 *! {smcl}
 *! {marker mm_nunique}{bf:mm_nunique.mata}{asis}
-*! version 1.0.2  16may2007
+*! version 1.1.0  09jul2020  Ben Jann
 version 9.2
 mata:
 
-real scalar mm_nunique(transmorphic vector x)
+real scalar mm_nunique(transmorphic vector X)
 {
-	if (cols(x)==1) return(mm_npanels(sort(x,1)))
-	else {
-		if (iscomplex(x))
-		  return(mm_npanels(sort(transposeonly(x),1)))
-		else
-		  return(mm_npanels(sort(x',1)))
-	}
+    return(sum(mm_unique_tag(X)))
 }
 
-real scalar mm_nuniqrows(transmorphic matrix x)
+transmorphic vector mm_unique(transmorphic vector X, | real scalar order)
 {
-	real scalar i, n, ns
-	real colvector p
+    if (rows(X)*cols(X)==0)  return(X)
+    if (order==1 | order==2) return(select(X, mm_unique_tag(X, order)))
+    // sorted
+    if (cols(X)==1)    return(sort(select(X, mm_unique_tag(X)),1))
+    if (!iscomplex(X)) return(sort(select(X, mm_unique_tag(X))',1)')
+    return(transposeonly(sort(transposeonly(select(X, mm_unique_tag(X))),1)))
+}
 
-	if (rows(x)==0) return(0)
-	if (cols(x)==0) return(1)
+/*
+real vector mm_unique_idx(transmorphic vector X, | real scalar order)
+{
+    if (rows(X)*cols(X)==0) return(J(rows(X),cols(X),.))
+    if (cols(X)==1) return(select(1::rows(X), mm_unique_tag(X, order)))
+                    return(select(1..cols(X), mm_unique_tag(X, order)))
+}
+*/
 
-	p = order(x, 1..cols(x))
-	ns = 1
-	n = rows(x)
-	for (i=2;i<=n;i++) {
-		if (x[p[i-1],]!=x[p[i],]) ns++
-	}
-	return(ns)
+real vector mm_unique_tag(transmorphic vector X, | real scalar order)
+{
+    real vector p
+    
+    if (rows(X)*cols(X)==0) return(J(rows(X),cols(X),.))
+    if (order==1) {
+        // use stable sort order and tag first occurrence
+        if (cols(X)==1)        p = mm_order(X,1,1)
+        else if (iscomplex(X)) p = mm_order(transposeonly(X),1,1)'
+        else                   p = mm_order(X',1,1)'
+        p[p] = _mm_unique_tag(X[p])
+    }
+    else if (order==2) {
+        // use stable sort order and tag last occurrence
+        if (cols(X)==1)        p = mm_order(X,1,1)
+        else if (iscomplex(X)) p = mm_order(transposeonly(X),1,1)'
+        else                   p = mm_order(X',1,1)'
+        p[p] = _mm_unique_tag(X[p], 1)
+    }
+    else {
+        // use non-stable sort order (tag random element within ties)
+        if (cols(X)==1)        p = order(X,1)
+        else if (iscomplex(X)) p = order(transposeonly(X),1)'
+        else                   p = order(X',1)'
+        p[p] = _mm_unique_tag(X[p])
+    }
+    return(p)
+}
+
+real scalar _mm_nunique(transmorphic vector X)
+{
+    return(sum(_mm_unique_tag(X)))
+}
+
+transmorphic vector _mm_unique(transmorphic vector X)
+{
+    if (rows(X)*cols(X)==0) return(X)
+    return(select(X, _mm_unique_tag(X)))
+}
+
+/*
+real vector _mm_unique_idx(transmorphic vector X, | real scalar last)
+{
+    if (args()<2) last = 0
+    if (rows(X)*cols(X)==0) return(J(rows(X),cols(X),.))
+    if (cols(X)==1) return(select(1::rows(X), _mm_unique_tag(X, last)))
+                    return(select(1..cols(X), _mm_unique_tag(X, last)))
+}
+*/
+
+real vector _mm_unique_tag(transmorphic vector X, | real scalar last)
+{
+    real scalar r, c
+    real vector p
+
+    if (args()<2) last = 0
+    r = rows(X); c = cols(X)
+    if (r*c==0)      return(J(r,c,.))
+    if (r==1 & c==1) return(J(1,1,1))
+    if (last) {
+        if (c==1) {
+            p = (X :!= (X[|2\.|] \ X[1]))
+            p[r] = 1 // should X be constant
+            return(p)
+        }
+        p = (X :!= (X[|2\.|] , X[1]))
+        p[c] = 1 // should X be constant
+        return(p)
+    }
+    if (c==1) {
+        p = (X :!= (X[r] \ X[|1\r-1|]))
+        p[1] = 1 // should X be constant
+        return(p)
+    }
+    p = (X :!= (X[c] , X[|1\c-1|]))
+    p[1] = 1 // should X be constant
+    return(p)
+}
+
+real scalar mm_nuniqrows(transmorphic matrix X)
+{
+    return(sum(mm_uniqrows_tag(X)))
+}
+
+transmorphic matrix mm_uniqrows(transmorphic matrix X, | real scalar order)
+{
+    if (rows(X)==0) return(X)
+    if (order==1 | order==2) return(select(X, mm_uniqrows_tag(X, order)))
+    return(mm_sort(select(X, mm_uniqrows_tag(X))))
+}
+
+/*
+real vector mm_uniqrows_idx(transmorphic matrix X, | real scalar order)
+{
+    if (rows(X)==0) return(J(0,1,.))
+    return(select(1::rows(X), mm_uniqrows_tag(X, order)))
+}
+*/
+
+real vector mm_uniqrows_tag(transmorphic matrix X, | real scalar order)
+{
+    real vector p
+    
+    if (rows(X)==0) return(J(0,1,.))
+    if (order==1) {
+        p = mm_order(X,.,1)
+        p[p] = _mm_uniqrows_tag(X[p,])
+    }
+    else if (order==2) {
+        p = mm_order(X,.,1)
+        p[p] = _mm_uniqrows_tag(X[p,], 1)
+    }
+    else {
+        p = mm_order(X,.,0)
+        p[p] = _mm_uniqrows_tag(X[p,])
+    }
+    return(p)
+}
+
+real scalar _mm_nuniqrows(transmorphic matrix X)
+{
+    return(sum(_mm_uniqrows_tag(X)))
+}
+
+transmorphic vector _mm_uniqrows(transmorphic matrix X)
+{
+    if (rows(X)==0) return(X)
+    return(select(X, _mm_uniqrows_tag(X)))
+}
+
+/*
+real vector _mm_uniqrows_idx(transmorphic matrix X, | real scalar last)
+{
+    if (args()<2) last = 0
+    if (rows(X)==0) return(J(0,1,.))
+    return(select(1::rows(X), _mm_uniqrows_tag(X, last)))
+}
+*/
+
+real vector _mm_uniqrows_tag(transmorphic matrix X, | real scalar last)
+{
+    real scalar r, c
+    real vector p
+
+    if (args()<2) last = 0
+    r = rows(X); c = cols(X)
+    if (r==0) return(J(0,1,.))
+    if (r==1) return(J(1,1,1))
+    if (last) {
+        if (c==0) p = J(r,1,0)
+        else      p = (rowsum(X :!= (X[|2,1 \ .,.|] \ X[1,])):!=0)
+        p[r] = 1 // should X be constant
+        return(p)
+    }
+    if (c==0) p = J(r,1,0)
+    else      p = (rowsum(X :!= (X[r,] \ X[|1,1 \ r-1,.|])):!=0)
+    p[1] = 1 // should X be constant
+    return(p)
+}
+
+end
+
+
+
+*! {smcl}
+*! {marker mm_diff}{bf:mm_diff.mata}{asis}
+*! version 1.0.0  Ben Jann  07jul2020
+version 9.2
+mata:
+
+numeric vector mm_diff(numeric vector x, | real scalar lag0)
+{
+    real scalar n, lag
+    
+    if (lag0>=.) lag =  1
+    else         lag = abs(trunc(lag0))
+    n = length(x)
+    if (n<=lag) {
+        if (cols(x)!=1) return(J(1,0,missingof(x)))
+        return(J(0,1,missingof(x)))
+    }
+    return(x[|1+lag \ .|] :- x[|1 \ n-lag|])
+}
+
+numeric matrix mm_rowdiff(numeric matrix x, | real scalar lag0)
+{
+    real scalar n, lag
+    
+    if (lag0>=.) lag =  1
+    else         lag = abs(trunc(lag0))
+    n = cols(x)
+    if (n<=lag)     return(J(rows(x),0,missingof(x)))
+    if (rows(x)==0) return(J(0, n-lag, missingof(x)))
+    return(x[|1,1+lag \ .,.|] :- x[|1,1 \ .,n-lag|])
+}
+
+numeric matrix mm_coldiff(numeric matrix x, | real scalar lag0)
+{
+    real scalar n, lag
+    
+    if (lag0>=.) lag =  1
+    else         lag = abs(trunc(lag0))
+    n = rows(x)
+    if (n<=lag)     return(J(0,cols(x),missingof(x)))
+    if (cols(x)==0) return(J(n-lag, 0, missingof(x)))
+    return(x[|1+lag,1 \ .,.|] :- x[|1,1 \ n-lag,.|])
 }
 
 end
@@ -4119,14 +4956,14 @@ end
 
 *! {smcl}
 *! {marker mm_isconstant}{bf:mm_isconstant.mata}{asis}
-*! version 1.0.0, Ben Jann, 01mar2007
+*! version 1.0.1, Ben Jann, 13jul2020
 version 9.0
 mata:
 
 real scalar mm_isconstant(X)
 {
-	if (length(X)<2) return(1)
-	return(all(X:==X[1,1]))
+    if (length(X)<2) return(1)
+    return(allof(X, X[1,1]))
 }
 
 end
@@ -4148,42 +4985,46 @@ end
 
 *! {smcl}
 *! {marker mm_colrunsum}{bf:mm_colrunsum.mata}{asis}
-*! version 1.0.8  11jan2008  Ben Jann
-version 9.0       
-mata:             
-                  
-numeric matrix mm_colrunsum(numeric matrix A)
+*! version 1.0.9  09jul2020  Ben Jann
+version 9.0
+mata:
+
+numeric matrix mm_colrunsum(numeric matrix A, | real scalar mis, real scalar qd)
 {
     numeric matrix B
 
-    if (stataversion()>=1000) return(_mm_colrunsum_goto10(A))
-
+    if (args()<2) mis = 0
+    if (stataversion()>=1000) {
+        if (args()<3) qd = 0
+        return(_mm_colrunsum_goto10(A, mis, qd))
+    }
     if (isfleeting(A)) {
-        _mm_colrunsum(A)
+        _mm_colrunsum(A, mis)
         return(A)
     }
-    _mm_colrunsum(B=A)
+    _mm_colrunsum(B=A, mis)
     return(B)
 }
 
-void _mm_colrunsum(numeric matrix Z)
+void _mm_colrunsum(numeric matrix Z, real scalar mis)
 {
     real scalar i
 
-    _editmissing(Z, 0)
+    if (mis==0) _editmissing(Z, 0)
     for (i=2; i<=rows(Z); i++) Z[i,] = Z[i-1,] + Z[i,]
 
 //    // running sum using mean-update formula; see Gould 2006, SJ 6(4)
-//    _editmissing(Z, 0)
+//    if (mis==0) _editmissing(Z, 0)
 //    if (rows(Z)<2) return
 //    for (i=2; i<=rows(Z); i++) Z[i,] = Z[i-1,] + (Z[i,]-Z[i-1,])/i
 //    Z = Z :* (1::rows(Z))
 
 }
 
-numeric matrix _mm_colrunsum_goto10(numeric matrix Z)
+numeric matrix _mm_colrunsum_goto10(numeric matrix Z, real scalar mis, real scalar qd)
 {
-    return(_mm_colrunsum10(Z))
+    if (qd) return(_mm_quadcolrunsum10(Z, mis))
+    return(_mm_colrunsum10(Z, mis))
 }
 
 
@@ -4535,6 +5376,118 @@ end
 
 
 *! {smcl}
+*! {marker mm_clip}{bf:mm_clip.mata}{asis}
+*! version 1.0.0  11jul2020  Ben Jann
+version 9.2
+mata:
+
+real matrix mm_clip(real matrix X, real scalar min, real scalar max, | real scalar miss)
+{
+    real matrix R
+    
+    if (args()<4) miss = 0
+    if (isfleeting(X)) {
+        _mm_clip(X, min, max, miss)
+        return(X)
+    }
+    R = X
+    _mm_clip(R, min, max, miss)
+    return(R)
+}
+
+void _mm_clip(real matrix X, real scalar min, real scalar max, | real scalar miss)
+{
+    real scalar i, j, r, x
+    
+    if (args()<4) miss = 0
+    if (min>max) _error(3300)
+    r = rows(X)
+    if (miss) {
+        for (j=cols(X); j; j--) {
+            for (i=r; i; i--) {
+                x = X[i,j]
+                if (x>=.) continue
+                if (x<min)      X[i,j] = min
+                else if (x>max) X[i,j] = max
+            }
+        }
+        return
+    }
+    for (j=cols(X); j; j--) {
+        for (i=r; i; i--) {
+            x = X[i,j]
+            if (x<min)      X[i,j] = min
+            else if (x>max) X[i,j] = max
+        }
+    }
+}
+
+real matrix mm_clipmin(real matrix X, real scalar min)
+{
+    real matrix R
+    
+    if (isfleeting(X)) {
+        _mm_clipmin(X, min)
+        return(X)
+    }
+    R = X
+    _mm_clipmin(R, min)
+    return(R)
+}
+
+void _mm_clipmin(real matrix X, real scalar min)
+{
+    real scalar i, j, r
+    
+    r = rows(X)
+    for (j=cols(X); j; j--) {
+        for (i=r; i; i--) {
+            if (X[i,j]<min) X[i,j] = min
+        }
+    }
+}
+
+real matrix mm_clipmax(real matrix X, real scalar max, | real scalar miss)
+{
+    real matrix R
+    
+    if (args()<3) miss = 0
+    if (isfleeting(X)) {
+        _mm_clipmax(X, max, miss)
+        return(X)
+    }
+    R = X
+    _mm_clipmax(R, max, miss)
+    return(R)
+}
+
+void _mm_clipmax(real matrix X, real scalar max, | real scalar miss)
+{
+    real scalar i, j, r, x
+    
+    if (args()<3) miss = 0
+    r = rows(X)
+    if (miss) {
+        for (j=cols(X); j; j--) {
+            for (i=r; i; i--) {
+                x = X[i,j]
+                if (x>=.) continue
+                if (x>max) X[i,j] = max
+            }
+        }
+        return
+    }
+    for (j=cols(X); j; j--) {
+        for (i=r; i; i--) {
+            if (X[i,j]>max) X[i,j] = max
+        }
+    }
+}
+
+end
+
+
+*! {smcl}
 *! {marker mm_cond}{bf:mm_cond.mata}{asis}
 *! version 1.0.0  29feb2008  Ben Jann
 version 9.2
@@ -4696,6 +5649,55 @@ void _mm_repeat(transmorphic matrix X, real scalar wr,
 }
 
 end
+
+
+*! {smcl}
+*! {marker mm_sort}{bf:mm_sort.mata}{asis}
+*! version 1.0.0  09jul2020  Ben Jann
+version 9.2
+mata:
+
+transmorphic matrix mm_sort(transmorphic matrix X,
+    | real rowvector idx, real scalar stable)
+{
+    if (args()<2) return(X[mm_order(X), .])
+    if (args()<3) return(X[mm_order(X, idx), .])
+    return(X[mm_order(X, idx, stable), .])
+}
+
+real colvector mm_order(transmorphic matrix X,
+    | real rowvector idx, real scalar stable)
+{
+    real scalar r, c, l
+    
+    if (args()<3) stable = 0
+    // redirect to order()
+    c = cols(X)
+    if (!stable) {
+        if (args()>=2 & idx!=.) return(order(X, idx))
+        return(order(X, (c>0 ? 1..c : J(1,0,.))))
+    }
+    // check idx
+    l = (idx==. ? 0 : length(idx))
+    if (l>c) _error(3200)
+    // one row or less: nothing to do
+    r = rows(X)
+    if (r<=1) return(J(r,1,1))
+    // zero columns: return index
+    if (c==0) return(1::r)
+    // X is real: append index for stable order
+    if (isreal(X)) {
+        if (l==0) return(order((X,(1::r)), 1..c+1))
+        if (anyof(idx,0)) _error(3300)
+        return(order((X[,abs(idx)],(1::r)), ((1..l):*sign(idx), l+1)))
+    }
+    // X is not real; need to create a group id
+    if (l==0) return(order((mm_group(X), (1::r)), (1,2)))
+    return(order((mm_group(X, idx), (1::r)), (1,2)))
+}
+
+end
+
 
 
 *! {smcl}
