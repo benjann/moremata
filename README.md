@@ -81,6 +81,7 @@ Stata module providing various Mata functions
   * `mm_rowdiff()`: compute lagged differences within rows
   * `mm_coldiff()`: compute lagged differences within columns
   * `mm_isconstant()`: whether matrix is constant
+  * `mm_issorted()`: whether vector is sorted
   * `mm_nobs()`: number of observations
   * `mm_colrunsum()`: running sum of each column
   * `mm_linbin()`: linear binning
@@ -136,6 +137,11 @@ Installation from GitHub:
 
 Main changes:
 
+    17jul2020
+    - improved quantile functions; underscore functions no longer assume weights
+      to be nonzero and now allow multiple columns in P
+    - new mm_issorted() function
+    
     14jul2020
     - mm_quantile() has been rewritten; it now supports all 9 quantile definitions
       from from Hyndman and Fan (1996); weights are supported for all 

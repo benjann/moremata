@@ -1,5 +1,5 @@
 {smcl}
-{* 14jul2020}{...}
+{* 17jul2020}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -25,7 +25,7 @@
 
 {p 8 23 2}
 {it:real colvector}{bind: }
-{cmd:_mm_quantile(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:p}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:_mm_quantile(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
 
 {p 8 23 2}
 {it:real scalar}{bind:    }
@@ -49,8 +49,6 @@ where
 {p 13 18 2}{it:fw}:  {it:real scalar} causing weights to be interpreted as frequency weights
 
 {p 14 18 2}{it:x}:  {it:real colvector} containing data (single variable)
-
-{p 14 18 2}{it:p}:  {it:real colvector} containing evaluation probabilities; default is {it:p} = (0, .25, .5, .75, 1)'
 
 
 {title:Description}
@@ -178,12 +176,11 @@ and the inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
 {cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} are
 like {cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()}, but assume
 that the data is sorted (in ascending order) and non-missing and that the
-weights are strictly positive and non-missing. The functions are fast, especially
+weights are non-negative and non-missing. The functions are fast, especially
 in the unweighted case (once the data is sorted, unweighted quantiles can be taken in
-practically no time). However, the function will return invalid results if applied to
+practically no time). However, the functions will return invalid results if applied to
 unsorted data (or if any of the other assumptions is violated). Only a
-single column of data and a single column of evaluation
-probabilities is allowed by these functions.
+single column of data is allowed as input to these functions.
 
 
 {title:Example}
@@ -228,13 +225,13 @@ probabilities is allowed by these functions.
             {it:fw}:  1 {it:x} 1
         {it:result}:  1 {it:x c}
 
-    {cmd:_mm_quantile(}{it:x}{cmd:,} {it:w}{cmd:,} {it:p}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:_mm_quantile(}{it:x}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
              {it:x}:  {it:r1 x} 1
              {it:w}:  {it:r1 x} 1 or 1 {it:x} 1
-             {it:p}:  {it:r2 x} 1
+             {it:p}:  {it:r2 x c2}
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
-        {it:result}:  {it:r2 x} 1
+        {it:result}:  {it:r2 x c2}
 
     {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:)}:
              {it:X}:  {it:r x} 1
@@ -259,18 +256,14 @@ larger than 1 (including missing) are treated as 1.
 {pstd}
 {cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()} return error if
 {it:X} contains missing values or if {it:w} contains negative values or missing
-values (zero weights are allowed, but will be omitted from the computations; be
-aware that this is not true for {cmd:_mm_quantile()}, {cmd:_mm_median()}, and
-{cmd:_mm_iqrange()}; these functions assume the weights to be strictly positive
-and may return invalid results if {it:w} is zero for some observations).
-Missing is returned if {it:X} is void. Void is returned if {it:P} is void.
+values (zero weights are allowed, but will be omitted from the 
+computations). Missing is returned if {it:X} is void. Void is returned if {it:P} is void.
 
 {pstd}
 {cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} assume {it:x} to
 non-missing and sorted (in ascending order) and assume {it:w} to be non-missing
-and strictly positive. The functions return invalid results if these assumptions
-are violated. Missing is returned if
-{it:x} is void. Void is returned if {it:p} is void.
+and non-negative. The functions return invalid results if these assumptions
+are violated. Missing is returned if {it:x} is void. Void is returned if {it:p} is void.
 
 
 {title:Source code}

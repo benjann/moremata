@@ -1,5 +1,5 @@
 {smcl}
-{* 09jul2020}{...}
+{* 16jul2020}{...}
 {cmd:help moremata}
 {hline}
 
@@ -270,6 +270,8 @@
 {col 5}{bf:{help mf_mm_isconstant:mm_isconstant()}}{...}
 {col 22}{cmd:mm_isconstant()}{...}
 {col 41}whether matrix is constant
+{col 22}{cmd:mm_issorted()}{...}
+{col 41}whether vector is sorted
 
 {col 5}{bf:{help mf_mm_nobs:mm_nobs()}}{...}
 {col 22}{cmd:mm_nobs()}{...}

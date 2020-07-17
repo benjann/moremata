@@ -1,11 +1,11 @@
-*! version 2.0.0  13jul2020  Ben Jann
+*! version 2.0.1  17jul2020  Ben Jann
 version 9.2
 mata:
 
 real matrix mm_quantile(real matrix X, | real colvector w,
     real matrix P, real scalar d, real scalar fw)
 {
-    real colvector p
+    real colvector o
     pointer (real matrix) scalar XX, ww
     
     if (args()<2) w = 1
@@ -21,16 +21,23 @@ real matrix mm_quantile(real matrix X, | real colvector w,
         display("{err}{it:w} must not be negative")
         _error(3300)
     }
-    // drop zero frequency observations (i.e. observations for which w = 0)
+    // drop zero frequency observations (i.e. observations for which w = 0) and
+    // determine whether weights can be ignored
     XX = &X; ww = &w
     if (rows(w)!=1) {
         if (rows(w)!=rows(X)) _error(3200)
         if (anyof(w,0)) {
-            p = select(1::rows(w), w)
-            if (cols(p)==0) p = J(0,1,.) // select() may return 0x0
-            XX = &(X[p,])
-            ww = &(w[p])
+            o = select(1::rows(w), w)
+            if (cols(o)==0) o = J(0,1,.) // select() may return 0x0
+            XX = &(X[o,])
+            ww = &(w[o])
         }
+        // weights can be ignored if constant and d = 1 or 2
+        if ((d==1 | d==2) & rows(*ww)) { // (*ww may be void)
+            if (allof(*ww, (*ww)[1])) ww = &1
+        }
+        // weights can be ignored if w = 1 for all observations
+        else if (allof(*ww,1)) ww = &1
     }
     else if (w==0) {
         XX = &(J(0,cols(X),.))
@@ -47,70 +54,141 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
     real matrix P, real scalar d, real scalar fw)
 {
     real scalar    i, c, c1, c2
-    real colvector p, sX, sw
+    real colvector p, sX, sw, pP, sP
     real matrix    Q
 
     c1 = cols(X); c2 = cols(P)
     c = max((c1,c2))
     Q = J(rows(P), c, .)
     if (c1==c2) {
+        if (w==1) {
+            for (i=c; i; i--) {
+                Q[,i] = _mm_quantile_d(sort(X[,i],1), editmissing(P[,i],1), d)
+            }
+            return(Q)
+        }
+        if (rows(w)==1) {
+            for (i=c; i; i--) {
+                pP = order(P[,i],1); sP = P[pP,i]
+                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw)
+            }
+            return(Q)
+        }
         for (i=c; i; i--) {
-            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
-            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
-            Q[,i] = _mm_quantile(sX, sw, P[,i], d, fw)
+            p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]
+            pP = order(P[,i],1); sP = P[pP,i]
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
         }
         return(Q)
     }
     if (c1==1) {
-        if (rows(w)==1) {; p = order(X,1); sX = X[p]; sw = w; }
-        else {; p = order((X,w),(1,2)); sX = X[p]; sw = w[p]; }
-        for (i=c; i; i--) Q[,i] = _mm_quantile(sX, sw, P[,i], d, fw)
+        if (w==1) {
+            sX = sort(X,1)
+            for (i=c; i; i--) {
+                Q[,i] = _mm_quantile_d(sX, editmissing(P[,i],1), d)
+            }
+            return(Q)
+        }
+        if (rows(w)==1) {
+            sX = sort(X,1)
+            for (i=c; i; i--) {
+                pP = order(P[,i],1); sP = P[pP,i]
+                Q[pP,i] = _mm_quantile_w(sX, w, sP, d, fw)
+            }
+            return(Q)
+        }
+        p = order((X,w),(1,2)); sX = X[p]; sw = w[p]
+        for (i=c; i; i--) {
+            pP = order(P[,i],1); sP = P[pP,i]
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
+        }
         return(Q)
     }
     if (c2==1) {
+        if (w==1) {
+            sP = editmissing(P,1)
+            for (i=c; i; i--) {
+                Q[,i] = _mm_quantile_d(sort(X[,i],1), sP, d)
+            }
+            return(Q)
+        }
+        if (rows(w)==1) {
+            pP = order(P,1); sP = P[pP]
+            for (i=c; i; i--) {
+                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw)
+            }
+            return(Q)
+        }
+        pP = order(P,1); sP = P[pP]
         for (i=c; i; i--) {
-            if (rows(w)==1) {; p = order(X[,i],1); sX = X[p,i]; sw = w; }
-            else {; p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]; }
-            Q[,i] = _mm_quantile(sX, sw, P, d, fw)
+            p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
         }
         return(Q)
     }
     _error(3200)
 }
 
-real colvector _mm_quantile(real colvector X, | real colvector w, 
-    real colvector p, real scalar d, real scalar fw)
+real matrix _mm_quantile(real colvector X, | real colvector w, 
+    real matrix P, real scalar d, real scalar fw)
 {   // X assumed sorted and non-missing
-    // w assumed non-missing and strictly positive
-    real colvector q, o
+    // w assumed non-negative and non-missing
+    real scalar    i
+    real colvector o
+    real matrix    Q
+    pointer (real matrix) scalar XX, ww
     
     if (args()<2) w = 1
-    if (args()<3) p = (0, .25, .50, .75, 1)'
+    if (args()<3) P = (0, .25, .50, .75, 1)'
     if (args()<4) d = 2
     if (args()<5) fw = 0
+    // drop zero frequency observations (i.e. observations for which w = 0) and
+    // determine whether weights can be ignored
+    XX = &X; ww = &w
     if (rows(w)!=1) {
         if (rows(w)!=rows(X)) _error(3200)
-        if (rows(w)==0) return(J(rows(p), 1, .))
-    }
-    // case 1: w can be ignored if w = 1 for all obs (all definitions)
-    if (allof(w,1)) {
-        return(__mm_quantile(X, editmissing(p,1), d))
-    }
-    // case 2: w can be ignored if constant and d = 1 or 2
-    if (d==1 | d==2) {
-        if (allof(w, w[1])) {
-            return(__mm_quantile(X, editmissing(p,1), d))
+        if (anyof(w,0)) {
+            o = select(1::rows(w), w)
+            if (cols(o)==0) o = J(0,1,.) // select() may return 0x0
+            XX = &(X[o,])
+            ww = &(w[o])
         }
+        // weights can be ignored if constant and d = 1 or 2
+        if ((d==1 | d==2) & rows(*ww)) { // (*ww may be void)
+            if (allof(*ww, (*ww)[1])) ww = &1
+        }
+        // weights can be ignored if w = 1 for all observations
+        else if (allof(*ww,1)) ww = &1
     }
-    // case 3: weighted estimation
-    o = order(p,1) // __mm_quantile_w() requires sorted p
-    q = o          // just to dimension q
-    q[o] = __mm_quantile_w(X, w, p[o], d, fw)
-    return(q)
+    else if (w==0) {
+        XX = &(J(0,1,.))
+        ww = &(J(0,1,.))
+    }
+    // compute weighted quantiles: requires sorted p
+    if (*ww!=1) {  // not rows(*ww)!=1 !
+        if (rows(P)==1) {
+            o = order(P',1)
+            Q = o // just to dimension q
+            Q[o] = _mm_quantile_w(*XX, *ww, P[o]', d, fw)
+            return(Q')
+        }
+        Q = J(rows(P), cols(P), .)
+        for (i=cols(P); i; i--) {
+            o = order(P[,i],1)
+            Q[o,i] = _mm_quantile_w(*XX, *ww, P[o,i], d, fw)
+        }
+        return(Q)
+    }
+    // compute unweighted quantiles
+    if (rows(P)==1) return(_mm_quantile_d(*XX, editmissing(P',1), d)')
+    Q = J(rows(P), cols(P), .)
+    for (i=cols(P); i; i--) Q[,i] = _mm_quantile_d(*XX, editmissing(P[,i],1), d)
+    return(Q)
 }
 
-real colvector __mm_quantile(real colvector X, real colvector p, real scalar d)
-{
+real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
+{   // X assumed sorted and non-missing
+    // p assumed nonmissing
     real scalar     n, eps
     real colvector  pn, j, j1, h
 
@@ -148,25 +226,28 @@ real colvector __mm_quantile(real colvector X, real colvector p, real scalar d)
     return((1:-h) :* X[j] :+ h :* X[j1])
 }
 
-real colvector __mm_quantile_w(real colvector X, real colvector w, real colvector p, 
+real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector p, 
     real scalar d, real scalar fw)
-{
+{   // X assumed sorted and non-missing
+    // w assumed non-missing and *strictly* positive
+    // p assumed sorted
     real matrix W
     
     if (rows(X)==0) return(J(rows(p), 1, .))
     if (rows(X)==1) return(J(rows(p), 1, X))
+    if (rows(w)==0) return(J(rows(p), 1, .))
     // frequency weights or d=1,2 (for which type of weights is irrelevant)
     if (fw | d==1 | d==2) {
         W = _mm_ecdf2(X, w, 0, 1) // W = (uniq X, runningsum(w))
-        if (d==1) return(__mm_quantile_w_1(W[,1], W[,2], p))
-        if (d==2) return(__mm_quantile_w_2(W[,1], W[,2], p))
-        if (d==3) return(__mm_quantile_w_3(W[,1], W[,2], p))
-        if (d==4) return(__mm_quantile_w_d(W[,1], W[,2], p,   0,   0))
-        if (d==5) return(__mm_quantile_w_d(W[,1], W[,2], p,  .5,   0))
-        if (d==6) return(__mm_quantile_w_d(W[,1], W[,2], p,   0,   1))
-        if (d==7) return(__mm_quantile_w_d(W[,1], W[,2], p,   1,  -1))
-        if (d==8) return(__mm_quantile_w_d(W[,1], W[,2], p, 1/3, 1/3))
-        if (d==9) return(__mm_quantile_w_d(W[,1], W[,2], p, 3/8, 1/4))
+        if (d==1) return(_mm_quantile_w_1(W[,1], W[,2], p))
+        if (d==2) return(_mm_quantile_w_2(W[,1], W[,2], p))
+        if (d==3) return(_mm_quantile_w_3(W[,1], W[,2], p))
+        if (d==4) return(_mm_quantile_w_d(W[,1], W[,2], p,   0,   0))
+        if (d==5) return(_mm_quantile_w_d(W[,1], W[,2], p,  .5,   0))
+        if (d==6) return(_mm_quantile_w_d(W[,1], W[,2], p,   0,   1))
+        if (d==7) return(_mm_quantile_w_d(W[,1], W[,2], p,   1,  -1))
+        if (d==8) return(_mm_quantile_w_d(W[,1], W[,2], p, 1/3, 1/3))
+        if (d==9) return(_mm_quantile_w_d(W[,1], W[,2], p, 3/8, 1/4))
         display("{err}{it:def} must be an integer in [1,9]")
         _error(3300)
     }
@@ -176,7 +257,7 @@ real colvector __mm_quantile_w(real colvector X, real colvector w, real colvecto
         W = mm_colrunsum(w, 1, 1) // use quad precision
         if (W[rows(W)]>=.) W = J(rows(W),1,.)
     }
-    if (d==3) return(__mm_quantile_w_3b(X, W, p))
+    if (d==3) return(_mm_quantile_w_3b(X, W, p))
     else {
         if      (d==4) W =  W                   /  W[rows(W)]
         else if (d==5) W = (W - mm_diff(0\W)/2) /  W[rows(W)]
@@ -192,7 +273,7 @@ real colvector __mm_quantile_w(real colvector X, real colvector w, real colvecto
     }
 }
 
-real colvector __mm_quantile_w_1(real colvector x, real colvector W, real colvector p)
+real colvector _mm_quantile_w_1(real colvector x, real colvector W, real colvector p)
 {
     real scalar    i, j, pi
     real colvector P, q
@@ -211,7 +292,7 @@ real colvector __mm_quantile_w_1(real colvector x, real colvector W, real colvec
     return(q)
 }
 
-real colvector __mm_quantile_w_2(real colvector x, real colvector W, real colvector p)
+real colvector _mm_quantile_w_2(real colvector x, real colvector W, real colvector p)
 {
     real scalar    i, j, r, pi
     real colvector P, q
@@ -234,7 +315,7 @@ real colvector __mm_quantile_w_2(real colvector x, real colvector W, real colvec
     return(q)
 }
 
-real colvector __mm_quantile_w_3(real colvector x, real colvector W, real colvector p)
+real colvector _mm_quantile_w_3(real colvector x, real colvector W, real colvector p)
 {
     real scalar    i, j, pi, lo, up, d0, d1
     real colvector P, q
@@ -284,7 +365,7 @@ real colvector __mm_quantile_w_3(real colvector x, real colvector W, real colvec
     return(q)
 }
 
-real colvector __mm_quantile_w_3b(real colvector x, real colvector W, real colvector p)
+real colvector _mm_quantile_w_3b(real colvector x, real colvector W, real colvector p)
 {
     real scalar    i, j, pi, d0, d1
     real colvector P, q
@@ -322,7 +403,7 @@ real colvector __mm_quantile_w_3b(real colvector x, real colvector W, real colve
     return(q)
 }
 
-real colvector __mm_quantile_w_d(real colvector x, real colvector W, 
+real colvector _mm_quantile_w_d(real colvector x, real colvector W, 
     real colvector p, real scalar a, real scalar b)
 {
     real scalar    i, j, pi, lo, up, h, T
