@@ -1608,6 +1608,20 @@ end
 
 
 *! {smcl}
+*! {marker mm_nobs}{bf:mm_nobs.mata}{asis}
+*! version 1.0.0, Ben Jann, 07jun2006
+version 9.2
+mata:
+
+real scalar mm_nobs(transmorphic matrix x, real colvector w)
+{
+	return(rows(w)==1 ? rows(x)*w :
+	 (rows(x)==rows(w) ? colsum(w) : _error(3200)))
+}
+end
+
+
+*! {smcl}
 *! {marker mm_greedy}{bf:mm_greedy.mata}{asis}
 *! version 1.0.1  17may2019  Ben Jann
 version 9.2
@@ -5072,20 +5086,6 @@ end
 
 
 *! {smcl}
-*! {marker mm_nobs}{bf:mm_nobs.mata}{asis}
-*! version 1.0.0, Ben Jann, 07jun2006
-version 9.2
-mata:
-
-real scalar mm_nobs(transmorphic matrix x, real colvector w)
-{
-	return(rows(w)==1 ? rows(x)*w :
-	 (rows(x)==rows(w) ? colsum(w) : _error(3200)))
-}
-end
-
-
-*! {smcl}
 *! {marker mm_colrunsum}{bf:mm_colrunsum.mata}{asis}
 *! version 1.0.9  09jul2020  Ben Jann
 version 9.0
@@ -5294,6 +5294,23 @@ real colvector mm_makegrid(
 	a = (min<. ? min : min(x) - (e<. ? e : 0))
 	b = (max<. ? max : max(x) + (e<. ? e : 0))
 	return( rangen(a, b, (M<. ? M : 512)) )
+}
+
+end
+
+
+*! {smcl}
+*! {marker mm_seq}{bf:mm_seq.mata}{asis}
+*! version 1.0.0  Ben Jann  04aug2020
+
+version 9.2
+mata:
+
+real colvector mm_seq(real scalar a, real scalar b, real scalar d)
+{
+    if (missing((a,b,d))) return(J(0,1,.))
+    if (a<=b)             return( a :+ (0::(b-a)/abs(d)) * abs(d) )
+                          return( a :- (0::(a-b)/abs(d)) * abs(d) )
 }
 
 end

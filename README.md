@@ -18,6 +18,7 @@ Stata module providing various Mata functions
   * `mm_collapse()`: summary statistics by subgroups
   * `_mm_collapse()`: summary statistics by subgroups
   * `mm_gini()`: Gini coefficient
+  * `mm_nobs()`: number of observations
   * `mm_sample()`: draw random sample
   * `mm_srswr()`: SRS with replacement
   * `mm_srswor()`: SRS without replacement
@@ -82,12 +83,15 @@ Stata module providing various Mata functions
   * `mm_coldiff()`: compute lagged differences within columns
   * `mm_isconstant()`: whether matrix is constant
   * `mm_issorted()`: whether vector is sorted
-  * `mm_nobs()`: number of observations
   * `mm_colrunsum()`: running sum of each column
+  * `mm_prod()`: compute product of elements in matrix
+  * `mm_rowprod()`: compute product within rows
+  * `mm_colprod()`: compute product within columns
   * `mm_linbin()`: linear binning
   * `mm_fastlinbin()`: fast linear binning
   * `mm_exactbin()`: exact binning
   * `mm_makegrid()`: equally spaced grid points
+  * `mm_seq()`: generate regular sequence
   * `mm_cut()`: categorize data vector
   * `mm_posof()`: find element in vector
   * `mm_which()`: positions of nonzero elements
@@ -136,6 +140,11 @@ Installation from GitHub:
 ---
 
 Main changes:
+
+    04aug2020
+    - new mm_prod()/mm_rowprod()/mm_colprod() funtions to compute products of 
+      elements in a matrix
+    - new mm_seq() function to generate regular sequences
 
     17jul2020
     - improved quantile functions; underscore functions no longer assume weights

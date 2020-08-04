@@ -79,6 +79,10 @@
 {col 22}{cmd:mm_gini()}{...}
 {col 41}Gini coefficient
 
+{col 5}{bf:{help mf_mm_nobs:mm_nobs()}}{...}
+{col 22}{cmd:mm_nobs()}{...}
+{col 41}number of observations
+
 {col 5}{it:Sampling, resampling, & combinations}
 
 {col 5}{bf:{help mf_mm_sample:mm_sample()}}{...}
@@ -157,7 +161,7 @@
 {col 22}{cmd:mm_colsse()}{...}
 {col 41}sum of squared errors, by column
 
-{col 5}{it:Densities & distributions}
+{col 5}{it:Distributions}
 
 {col 5}{bf:{help mf_mm_benford:mm_benford()}}{...}
 {col 22}{cmd:mm_benford()}{...}
@@ -273,13 +277,17 @@
 {col 22}{cmd:mm_issorted()}{...}
 {col 41}whether vector is sorted
 
-{col 5}{bf:{help mf_mm_nobs:mm_nobs()}}{...}
-{col 22}{cmd:mm_nobs()}{...}
-{col 41}number of observations
-
 {col 5}{bf:{help mf_mm_colrunsum:mm_colrunsum()}}{...}
 {col 22}{cmd:mm_colrunsum()}{...}
 {col 41}running sum of each column
+
+{col 5}{bf:{help mf_mm_prod:mm_prod()}}{...}
+{col 22}{cmd:mm_prod()}{...}
+{col 41}compute product of elements in matrix
+{col 22}{cmd:mm_rowprod()}{...}
+{col 41}compute product within rows
+{col 22}{cmd:mm_colprod()}{...}
+{col 41}compute product within columns
 
 {col 5}{bf:{help mf_mm_linbin:mm_linbin()}}{...}
 {col 22}{cmd:mm_linbin()}{...}
@@ -290,6 +298,10 @@
 {col 41}exact binning
 {col 22}{cmd:mm_makegrid()}{...}
 {col 41}equally spaced grid points
+
+{col 5}{bf:{help mf_mm_seq:mm_seq()}}{...}
+{col 22}{cmd:mm_seq()}{...}
+{col 41}generate regular sequence
 
 {col 5}{bf:{help mf_mm_cut:mm_cut()}}{...}
 {col 22}{cmd:mm_cut()}{...}
