@@ -41,6 +41,7 @@ f mf_mm_realofstr.hlp
 f mf_mm_cut.hlp
 f mf_mm_plot.hlp
 f mf_mm_nobs.hlp
+f mf_mm_density.sthlp
 f mf_mm_posof.hlp
 f mf_mm_ipolate.hlp
 f mf_mm_seq.hlp
