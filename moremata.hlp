@@ -1,5 +1,5 @@
 {smcl}
-{* 16jul2020}{...}
+{* 05aug2020}{...}
 {cmd:help moremata}
 {hline}
 
@@ -56,6 +56,10 @@
 {col 5}{bf:{help mf_mm_relrank:mm_relrank()}}{...}
 {col 22}{cmd:mm_relrank()}{...}
 {col 41}compute relative ranks (grade transformation)
+
+{col 5}{bf:{help mf_mm_density:mm_density()}}{...}
+{col 22}{cmd:mm_density()}{...}
+{col 41}compute density (Stata 11 required)
 
 {col 5}{bf:{help mf_mm_freq:mm_freq()}}{...}
 {col 22}{cmd:mm_freq()}{...}
@@ -194,6 +198,10 @@
 {col 5}{bf:{help mf_mm_nrroot:mm_nrroot()}}{...}
 {col 22}{cmd:mm_nrroot()}{...}
 {col 41}Newton-Raphson zero finder
+
+{col 5}{bf:{help mf_mm_minim:mm_minim()}}{...}
+{col 22}{cmd:mm_minim()}{...}
+{col 41}Brent's univariate minimum finder
 
 {col 5}{bf:{help mf_mm_finvert:mm_finvert()}}{...}
 {col 22}{cmd:mm_finvert()}{...}

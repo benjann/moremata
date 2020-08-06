@@ -12,6 +12,7 @@ Stata module providing various Mata functions
   * `mm_ecdf2()`: cumulative distribution at unique values
   * `mm_ranks()`: compute ranks/cumulative frequencies
   * `mm_relrank()`: compute relative ranks (grade transformation)
+  * `mm_density()`: compute density (Stata 11 required)
   * `mm_freq()`: compute frequency counts
   * `mm_histogram()`: produce histogram data
   * `mm_mgof()`: multinomial goodness-of-fit tests
@@ -57,6 +58,7 @@ Stata module providing various Mata functions
   * `mm_cebinomial()`: cond. expect. of binomial r.v.
   * `mm_root()`: Brent's univariate zero finder
   * `mm_nrroot()`: Newton-Raphson zero finder
+  * `mm_minim()`: Brent's univariate minimum finder
   * `mm_finvert()`: univariate function inverter
   * `mm_integrate_sr()`: univariate function integration (Simpson's rule)
   * `mm_integrate_38()`: univariate function integration (Simpson's 3/8 rule)
@@ -140,6 +142,11 @@ Installation from GitHub:
 ---
 
 Main changes:
+
+
+    06aug2020
+    - new mm_density() funtion for (univariate) kernel density estimation
+    - new mm_minim() funtion for univariate minimization without derivatives
 
     04aug2020
     - new mm_prod()/mm_rowprod()/mm_colprod() funtions to compute products of 
