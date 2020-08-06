@@ -40,8 +40,8 @@ if you know that the mentioned conditions are true
 
 {p 12 14 2}{it:kernel} is a {it:string scalar} specifying the kernel name; available
 kernels are {cmd:"epanechnikov"},
-{cmd:"epan2"} (default), {cmd:"biweight"}, {cmd:"triweight"},
-{cmd:"cosine"}, {cmd:"gaussian"}, {cmd:"parzen"},
+{cmd:"epan2"}, {cmd:"biweight"}, {cmd:"triweight"},
+{cmd:"cosine"}, {cmd:"gaussian"} (default), {cmd:"parzen"},
 {cmd:"rectangle"}, and {cmd:"triangle"}
 (abbreviations allowed)
 

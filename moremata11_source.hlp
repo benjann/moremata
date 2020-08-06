@@ -207,14 +207,18 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
 
 // D.kernel() -----------------------------------------------------------------
 
-`T' `MAIN'::kernel(| `SS' kernel, `Int' adapt)
+`T' `MAIN'::kernel(| `SS' kernel0, `Int' adapt)
 {
+    `SS' kernel
+    
     // get
     if (args()==0) {
         return(setup.kernel)
     }
     // set
-    setup.kernel = _mm_unabkern(strlower(strtrim(kernel)))  // default is "epan2"
+    kernel = strlower(strtrim(kernel))
+    if (kernel=="") kernel = "gaussian"  // default is "gaussian"
+    setup.kernel = _mm_unabkern(strlower(strtrim(kernel)))
     setup.k      = _mm_findkern(setup.kernel)
     setup.K      = _mm_findkint(setup.kernel)
     setup.kh     = (*_mm_findkdel0(setup.kernel))()
@@ -862,7 +866,7 @@ void `MAIN'::dexact()
 `RC' `MAIN'::AT()
 {
     if (rows(AT)) return(AT)
-    AT = grid(n(), h())
+    AT = grid(n())
     return(AT)
 }
 
