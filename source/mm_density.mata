@@ -1,4 +1,4 @@
-*! version 1.0.1  07aug2020  Ben Jann
+*! version 1.0.2  07aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -351,10 +351,10 @@ void `MAIN'::support(| `RV' minmax, `SS' method, `Bool' rd)
         if (lb>=ub) _error(3300)
     }
     if (rd) {
-        if (lb <  0)  _error(3300)
         if (lb >= .)  lb = 0
-        if (ub >  1)  _error(3300)
+        if (lb <  0)  _error(3300)
         if (ub >= .)  ub = 1
+        if (ub >  1)  _error(3300)
         if (lb > ub)  _error(3300)
     }
     if (sorted()==`FALSE') checksuprt(X(), lb, ub)
