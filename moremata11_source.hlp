@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_density}{bf:mm_density.mata}{asis}
-*! version 1.0.2  07aug2020  Ben Jann
+*! version 1.0.3  07aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -57,6 +57,7 @@ struct `SETUP' {
     `SS'    bwmethod      // bandwidth estimation method
     `RS'    bwadjust      // bandwidth adjustment factor
     `Int'   dpi           // number of DPI stages; default is 2
+    `Bool'  qui           // quietly (omit SJPI/ISJ failure message)
 
     // support/boundary correction
     `RS'    lb            // lower boundary (missing if unbounded)
@@ -304,7 +305,7 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
 
 // D.bw() -------------------------------------------------------------------
 
-void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi)
+void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
 {
     // syntax 1: bw(#)
     if (args()==1) {
@@ -318,6 +319,7 @@ void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi)
     // syntax 2: bw(method, adjust, dpi)
     if (args()<2) adj = 1
     if (args()<3) dpi = 2
+    if (args()<4) qui = `FALSE'
     if (adj<=0) _error(3300)
     if (adj>=.) _error(3300)
     if (dpi<0)  _error(3300)
@@ -328,6 +330,7 @@ void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi)
     setup.h0       = .
     setup.bwadjust = adj
     setup.dpi      = trunc(dpi)
+    setup.qui      = qui
     clear()
 }
 
@@ -430,14 +433,16 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     if (bwmethod()=="sjpi") {
         h = h_sjpi()
         if (h>=.) {
-            display("{txt}(SJPI bandwidth estimation failed; using DPI method)")
+            if (setup.qui==`FALSE')
+                display("{txt}(SJPI bandwidth estimation failed; using DPI method)")
             h = h_dpi()
         }
     }
     else if (bwmethod()=="isj") {
         h = h_isj()
         if (h>=.) {
-            display("{txt}(ISJ bandwidth estimation failed; using DPI method)")
+            if (setup.qui==`FALSE')
+                display("{txt}(ISJ bandwidth estimation failed; using DPI method)")
             h = h_dpi()
         }
     }

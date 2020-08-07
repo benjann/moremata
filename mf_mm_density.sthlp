@@ -52,7 +52,7 @@ kernel density estimator; default is {it:adapt} = 0 (non-adaptive kernel)
 
         {it:D}{cmd:.bw(}{it:h}{cmd:)}
         or
-        {it:D}{cmd:.bw(}{it:bwmethod} [{cmd:,} {it:bwadjust}{cmd:,} {it:dpi}]{cmd:)}
+        {it:D}{cmd:.bw(}{it:bwmethod} [{cmd:,} {it:bwadjust}{cmd:,} {it:dpi}{cmd:,} {it:qui}]{cmd:)}
 
 {p 12 14 2}{it:h} is a {it:real scalar} specifying the value of the bandwidth to be used
 
@@ -68,6 +68,9 @@ for the bandwidth estimate; {it:bwadjust} must be strictly positive; default is 
 
 {p 12 14 2}{it:dpi} is a {it:real scalar} specifying the number of stages of functional
 estimation for the {cmd:"dpi"} method; default is {it:dpi} = 2
+
+{p 12 14 2}{it:qui}!=0 suppresses the warning message that is displayed if 
+SJPI or ISJ fails; default is {it:qui} = 0
 
 {pstd}Define support of data and choose boundary correction method
 
