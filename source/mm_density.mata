@@ -465,27 +465,26 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 
 `RS' `MAIN'::h_sjpi()
 {
-    `RS'  n, s, l, hmin, h_os, sda, tdb, tdc, alpha, beta
+    `RS'  n, s, hmin, h_os, sda, tdb, tdc, alpha, beta
     `RC'  AT, W
     
-    s = scale(1)                     // standard deviation
-    l = min((s, scale(2)))           // minimum of SD and normalized IQR
     AT = grid(n())                   // evaluation grid
     W  = mm_fastlinbin(X(), w(), AT) // grid counts
+    s = scale(0, AT, W, 1)           // min of sd and iqr
     if (pw()) {                      // pweights: normalize grid counts
         n = rows(X())
         W = W * (n / nobs())
     }
     else n = nobs()
-    sda = df(AT, W, n, 1.241 * l * n^(-1/7), 2)
-    tdb = df(AT, W, n, 1.230 * l * n^(-1/9), 3)
+    sda = df(AT, W, n, 1.241 * s * n^(-1/7), 2)
+    tdb = df(AT, W, n, 1.230 * s * n^(-1/9), 3)
     alpha = 1.357 * (sda/tdb)^(1/7)
     if (rd()) {
-        tdc = df(AT, W, n, 1.304 * l * n^(-1/5), 1)
+        tdc = df(AT, W, n, 1.304 * s * n^(-1/5), 1)
         beta = 1.414 * (sda/tdc)^(1/3)
     }
     hmin = .5 * (AT[n()]-AT[1])/(n()-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle()
-    h_os = s * (243/(35*n))^.2 * mm_kdel0_gaussian() * h_rd(s) // h oversmoothed
+    h_os = s * (243/(35*n))^.2 * mm_kdel0_gaussian() * h_rd(s) // oversmoothed (modified)
     return(h_root(0, hmin, h_os, AT, W, n, alpha, beta) * 
         (n/nobs())^.2 / mm_kdel0_gaussian())
 }
@@ -543,13 +542,13 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     `RS'  tol, tol_act
     `RS'  a, b, c, fa, fb, fc, prev_step, p, q, new_step, t1, cb, t2
 
-    tol   = ax * 0.1
+    tol   = 0
     maxit = 100
-    a = ax; b = bx
+    x = .; a = ax; b = bx
     fa = _h_root_fn(m, a, o1, o2, o3, o4, o5)
     fb = _h_root_fn(m, b, o1, o2, o3, o4, o5)
     c = a; fc = fa
-    if ( fa==. ) return(0)
+    if ( fa==. ) return(0) // abort if fa missing => x=.
     if ( (fa > 0 & fb > 0) | (fa < 0 & fb < 0) ) {
         if ( abs(fa) < abs(fb) ) {
             x = a; return(2)
@@ -667,13 +666,15 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 `RS' `MAIN'::h_isj()
 {
     `Int' n
-    `RS'  N, s, hmin, h_os, h
+    `RS'  N, s, hmin, h_os
     `RC'  AT, W, a
     
     // step 1: bin data on regular grid
     n = 2^ceil(ln(n())/ln(2))        // round up to next power of 2
     AT = grid(n)                     // generate grid
-    W  = mm_fastlinbin(X(), w(), AT) / nobs() // compute relative frequencies
+    W  = mm_fastlinbin(X(), w(), AT) // compute grid counts
+    s = scale(0, AT, W, 1)           // min of sd and iqr
+    W  = W / nobs()                  // relative frequencies
     if (pw()) N = rows(X())          // obtain sample size
     else      N = nobs()
     // step 2: obtain discrete cosine transform of binned data
@@ -681,12 +682,9 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
          :* fft(W[mm_seq(1,n-1,2)] \ W[mm_seq(n,2,2)]) )
     // step 3: compute bandwidth
     hmin = (.5/(n-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle())^2
-    s = sqrt(variance(AT, W*N))
     h_os = (s * (243/(35*N))^.2 * mm_kdel0_gaussian() * h_rd(s) / (AT[n]-AT[1]))^2
-    h = sqrt(h_root(1, hmin, h_os, N, (1::n-1):^2, (a[2::n]/2):^2)) * 
-        (AT[n]-AT[1]) * (n/nobs())^.2 / mm_kdel0_gaussian()
-    if (rd()) h = h * h_rd(s) // relative data correction
-    return(h)
+    return(sqrt(h_root(1, hmin, h_os, N, (1::n-1):^2, (a[2::n]/2):^2)) * 
+        (AT[n]-AT[1]) * (n/nobs())^.2 / mm_kdel0_gaussian() * h_rd(s))
 }
 
 `RS' `MAIN'::_h_isj(`RS' h, `RS' N, `RC' I, `RC' a2)
@@ -714,16 +712,12 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     `Int' i
     `RC'  AT, W
     
-    s = scale(0)
     i = dpi()
-    if (i==0) { // h normalscale
-        psi = 3 / (8 * sqrt(pi()) * s^5)
-        if (rd()) psi0 = 1 / (2 * sqrt(pi()) * s)
-        else      psi0 = 0
-    }
+    if (i==0) return(h_no()) // h normalscale
     else {
         AT = grid(n())                   // evaluation grid
         W  = mm_fastlinbin(X(), w(), AT) // grid counts
+        s = scale(0, AT, W, 1)           // min of sd and iqr
         if (pw()) {                      // pweights: normalize grid counts
             n = rows(X())
             W = W * (n / nobs())
@@ -755,7 +749,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 {
     `RS' s
     
-    s = scale(0) 
+    s = scale(0, X(), w(), sorted()) // min of sd and iqr
     return(0.9/mm_kdel0_gaussian() * s / nobs()^.2 * h_rd(s))
 }
 
@@ -765,7 +759,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 {
     `RS' s
     
-    s = scale(1) 
+    s = scale(1, X(), w(), sorted()) // sd
     return((243/35)^.2 * s / nobs()^.2 * h_rd(s))
 }
 
@@ -775,7 +769,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 {
     `RS' s
     
-    s = scale(0) 
+    s = scale(0, X(), w(), sorted()) // min of sd and iqr
     return((8*sqrt(pi())/3)^.2 * s / nobs()^.2 * h_rd(s))
 }
 
@@ -1059,17 +1053,17 @@ void `MAIN'::_dapprox_std(`RC' h)
     return(rangen(range[1], range[2], n))
 }
 
-`RS' `MAIN'::scale(`Int' type)
+`RS' `MAIN'::scale(`Int' type, `RC' X, `RC' w, `Bool' sorted)
 {   // type: 0 = min(sd,iqr), 1 = sd, 2 = iqr
     // iqr will be replaced by sd if 0
     `RS' iqr, sd
     
     if (type!=1) {
-        if (sorted()) iqr = _mm_iqrange(X(), w()) / 1.349
-        else          iqr =  mm_iqrange(X(), w()) / 1.349
+        if (sorted) iqr = _mm_iqrange(X, w) / 1.349
+        else        iqr =  mm_iqrange(X, w) / 1.349
     }
     if (type!=2 | iqr<=0) {
-        sd = sqrt(variance(X(), w()))
+        sd = sqrt(variance(X, w))
         if (pw()) sd = sd * sqrt( (nobs()-1) / (nobs() - nobs()/rows(X())) )
     }
     if (type==1) return(sd)

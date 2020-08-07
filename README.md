@@ -148,8 +148,13 @@ Main changes:
     - mm_density():
       o now using DPI if SJPI/ISJ fails
       o ISJ now uses same root-finding algorithm as SJPI
+      o SJPI and DPI now compute the scale from the binned data
+      o SJPI now uses min of sd and iqr as scale measure when computing the
+        oversmoothed bandwidth; this is at odds with h_os(), but may add some
+        robustness; furthermore, root finder now uses full precision
       o extension of automatic grid is now limited to 5% of range on either side
       o D.kernel() always selected gaussian; this is fixed
+      o D.support(.,"",1) returned error; this is fixed
 
     06aug2020
     - new mm_density() funtion for (univariate) kernel density estimation
