@@ -1,5 +1,5 @@
 {smcl}
-{* 06aug2020}{...}
+{* 07aug2020}{...}
 {cmd:help mata mm_density()}
 {hline}
 
@@ -41,9 +41,9 @@ if you know that the mentioned conditions are true
 {p 12 14 2}{it:kernel} is a {it:string scalar} specifying the kernel name; available
 kernels are {cmd:"epanechnikov"},
 {cmd:"epan2"}, {cmd:"biweight"}, {cmd:"triweight"},
-{cmd:"cosine"}, {cmd:"gaussian"} (default), {cmd:"parzen"},
+{cmd:"cosine"}, {cmd:"gaussian"}, {cmd:"parzen"},
 {cmd:"rectangle"}, and {cmd:"triangle"}
-(abbreviations allowed)
+(abbreviations allowed); default is {cmd:"gaussian"}
 
 {p 12 14 2}{it:adapt} is a {it:real scalar} specifying the number of stages of the adaptive
 kernel density estimator; default is {it:adapt} = 0 (non-adaptive kernel)
@@ -57,9 +57,11 @@ kernel density estimator; default is {it:adapt} = 0 (non-adaptive kernel)
 {p 12 14 2}{it:h} is a {it:real scalar} specifying the value of the bandwidth to be used
 
 {p 12 14 2}{it:bwmethod} is a {it:string scalar} specifying the bandwidth selection method to
-be used; available methods are {cmd:"silverman"} ,
-{cmd:"normalscale"}, {cmd:"oversmoothed"},
-{cmd:"sjpi"} (default), {cmd:"dpi"}, and {bf:"isj"} (abbreviations allowed)
+be used; available methods are {cmd:"silverman"} (optimal of Silverman),
+{cmd:"normalscale"} (normal scale rule), {cmd:"oversmoothed"} (oversmoothed rule),
+{cmd:"sjpi"} (Sheather-Jones solve-the-equation plug-in), {cmd:"dpi"}
+(Sheather-Jones direct plug-in), and {bf:"isj"} (bandwidth based on
+diffusion estimator); default is {cmd:"sjpi"}
 
 {p 12 14 2}{it:bwadjust} is a {it:real scalar} specifying a multiplication factor
 for the bandwidth estimate; {it:bwadjust} must be strictly positive; default is {it:bwadjust} = 1
@@ -77,8 +79,9 @@ two values (lower and upper boundary); {cmd:.} (missing) is interpreted as
 (minus) infinity; default is {it:minmax} = {cmd:(.,.)} (unbounded support)
 
 {p 12 14 2}{it:bcmethod} is a {it:string scalar} specifying the boundary-correction
-method to be used; available methods are {cmd:"renormalization"} (default),
-{cmd:"reflection"}, and {bind:{cmd:"linear correction"}} (abbreviations allowed)
+method to be used; available methods are {cmd:"renormalization"},
+{cmd:"reflection"}, and {bind:{cmd:"linear correction"}} (abbreviations allowed); default
+is {cmd:"renormalization"}
 
 {p 12 14 2}{it:rd}!=0 indicates that the data is to be interpreted as relative data (relative ranks); {it:minmax} defaults to
 {cmd:(0,1)} in this case and automatic bandwidth selection is modified; values outside [0,1] are not allowed
@@ -217,7 +220,7 @@ grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
     Full grid approximation estimator:
 
         . {stata "mata:"}
-        : {stata x = rnormal(100000, 1, 0, 1)}
+        : {stata x = rnormal(50000,1, 0, 1)  \ rnormal(50000,1, 4, 1.5)}
         : {stata S = mm_density()}
         : {stata S.data(x)}
         : {stata mm_plot((S.D(), S.AT()), "line")}
@@ -227,21 +230,15 @@ grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
     Compute bandwidth (without estimating the density):
 
         . {stata "mata:"}
-        : {stata x = rnormal(1000, 1, 0, 1)}
+        : {stata x = rnormal(1000,1, 0, 1)  \ rnormal(1000,1, 4, 1.5)}
         : {stata S = mm_density()}
         : {stata S.data(x)}
-        : {stata S.bw("sj")}     // Sheather-Jones solve-the-equation
-        : {stata S.h()}
-        : {stata S.bw("dpi")}    // Sheather-Jones direct plug-in
-        : {stata S.h()}
-        : {stata S.bw("isj")}    // "improved" SJ (diffusion)
-        : {stata S.h()}
-        : {stata S.bw("silver")} // optimal of Silverman
-        : {stata S.h()}
-        : {stata S.bw("over")}   // oversmooothed rule
-        : {stata S.h()}
-        : {stata S.bw("normal")} // normal scale rule
-        : {stata S.h()}
+        : {stata S.bw("sj");     S.h()}  // Sheather-Jones solve-the-equation
+        : {stata S.bw("dpi");    S.h()}  // Sheather-Jones direct plug-in
+        : {stata S.bw("isj");    S.h()}  // diffusion estimator bandwidth
+        : {stata S.bw("silver"); S.h()}  // optimal of Silverman
+        : {stata S.bw("over");   S.h()}  // oversmooothed rule
+        : {stata S.bw("normal"); S.h()}  // normal scale rule
         : {stata end}
 
 

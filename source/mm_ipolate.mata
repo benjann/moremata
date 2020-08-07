@@ -1,4 +1,4 @@
-*! version 2.0.0, Ben Jann, 10jul2006
+*! version 2.0.0  08jul2020  Ben Jann
 version 9.2
 mata:
 

@@ -144,6 +144,13 @@ Installation from GitHub:
 Main changes:
 
 
+    07aug2020
+    - mm_density():
+      o now using DPI if SJPI/ISJ fails
+      o ISJ now uses same root-finding algorithm as SJPI
+      o extension of automatic grid is now limited to 5% of range on either side
+      o D.kernel() always selected gaussian; this is fixed
+
     06aug2020
     - new mm_density() funtion for (univariate) kernel density estimation
     - new mm_minim() funtion for univariate minimization without derivatives

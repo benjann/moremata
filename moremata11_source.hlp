@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_density}{bf:mm_density.mata}{asis}
-*! version 1.0.0  06aug2020  Ben Jann
+*! version 1.0.1  07aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -123,8 +123,9 @@ class `MAIN' {
     // internal functions
     private:
         `RS'    h_sjpi(), h_isj(), h_dpi(), h_si(), h_ov(), h_no(), h_rd(), 
-                df(), __h_sjpi()
-        `Int'   _h_sjpi()
+                _h_sjpi(), _h_isj(), h_root(), _h_root_fn()
+        `Int'   _h_root()
+        `RS'    df()
         `RC'    dd()
         void    dexact()
         `RC'    _dexact()
@@ -216,7 +217,7 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
         return(setup.kernel)
     }
     // set
-    kernel = strlower(strtrim(kernel))
+    kernel = strlower(strtrim(kernel0))
     if (kernel=="") kernel = "gaussian"  // default is "gaussian"
     setup.kernel = _mm_unabkern(strlower(strtrim(kernel)))
     setup.k      = _mm_findkern(setup.kernel)
@@ -429,15 +430,15 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     if (bwmethod()=="sjpi") {
         h = h_sjpi()
         if (h>=.) {
-            display("{txt}(SJPI estimation failed; using oversmoothed bandwidth)")
-            h = h_ov()
+            display("{txt}(SJPI bandwidth estimation failed; using DPI method)")
+            h = h_dpi()
         }
     }
     else if (bwmethod()=="isj") {
         h = h_isj()
         if (h>=.) {
-            display("{txt}(ISJ estimation failed; using oversmoothed bandwidth)")
-            h = h_ov()
+            display("{txt}(ISJ bandwidth estimation failed; using DPI method)")
+            h = h_dpi()
         }
     }
     else if (bwmethod()=="dpi")          h = h_dpi()
@@ -464,10 +465,8 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 
 `RS' `MAIN'::h_sjpi()
 {
-    `RS'  n, s, l, hos, hmin, ax, bx, sda, tdb, tdc, alpha, beta, h
-    `Int' rc
+    `RS'  n, s, l, hmin, h_os, sda, tdb, tdc, alpha, beta
     `RC'  AT, W
-    pragma unset h
     
     s = scale(1)                     // standard deviation
     l = min((s, scale(2)))           // minimum of SD and normalized IQR
@@ -485,17 +484,27 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
         tdc = df(AT, W, n, 1.304 * l * n^(-1/5), 1)
         beta = 1.414 * (sda/tdc)^(1/3)
     }
-    hmin = (AT[n()]-AT[1])/(n()-1) / 2 * mm_kdel0_gaussian() / mm_kdel0_rectangle()
-    hos  = s * (243/(35*n))^.2 * mm_kdel0_gaussian() * h_rd(s) // h oversmoothed
-    bx = hos
+    hmin = .5 * (AT[n()]-AT[1])/(n()-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle()
+    h_os = s * (243/(35*n))^.2 * mm_kdel0_gaussian() * h_rd(s) // h oversmoothed
+    return(h_root(0, hmin, h_os, AT, W, n, alpha, beta) * 
+        (n/nobs())^.2 / mm_kdel0_gaussian())
+}
+
+`RS' `MAIN'::h_root(`Int' m, `RS' hmin, `RS' h_os,
+    | `T' o1, `T' o2, `T' o3, `T' o4, `T' o5)
+{
+    `RS'  ax, bx, h
+    `Int' rc
+    
+    bx = h_os
     ax = max((hmin, bx/2))
-    rc = _h_sjpi(h, ax, bx, AT, W, n, alpha, beta)
+    rc = _h_root(m, h=., ax, bx, o1, o2, o3, o4, o5)
     if (rc==2) { // move down
         bx = ax
         while (1) {
             if (bx<=hmin) break // cannot go below hmin
             ax = max((hmin, bx/2))
-            rc = _h_sjpi(h, ax, bx, AT, W, n, alpha, beta)
+            rc = _h_root(m, h, ax, bx, o1, o2, o3, o4, o5)
             if (rc==2) bx = ax // continue moving down
             else break // this also stops if there is a change in 
                       //  direction (rc==3) (in this case: h = current bx)
@@ -504,32 +513,32 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     else if (rc==3) { // move up
         ax = bx; bx = ax*1.5
         while (1) {
-            rc = _h_sjpi(h, ax, bx, AT, W, n, alpha, beta)
+            rc = _h_root(m, h, ax, bx, o1, o2, o3, o4, o5)
             if (rc==3) {; ax = bx; bx = ax*1.5; } // continue moving up
             else break // this also stops if there is a change in 
                        //  direction (rc==2) (in this case: h = current ax)
         }
     }
     if (h<=hmin) { // solution is smaller than hmin
-        ax = hos; bx = ax*1.5
-        rc = _h_sjpi(h, ax, bx, AT, W, n, alpha, beta)
+        ax = h_os; bx = ax*1.5
+        rc = _h_root(m, h, ax, bx, o1, o2, o3, o4, o5)
         if (rc==2) return(.) // moving up does not help
         if (rc==3) { // continue moving up
             ax = bx; bx = ax*1.5
             while (1) {
-                rc = _h_sjpi(h, ax, bx, AT, W, n, alpha, beta)
+                rc = _h_root(m, h, ax, bx, o1, o2, o3, o4, o5)
                 if (rc==3) {; ax = bx; bx = ax*1.5; } // continue moving up
                 else break // this also stops if there is a change in 
                            //  direction (rc==2) (in this case: h = current ax)
             }
         }
     }
-    return(h * (n/nobs())^.2 / mm_kdel0_gaussian())
+    return(h)
 }
 
-`Int' `MAIN'::_h_sjpi(`RS' x, `RS' ax, `RS' bx, 
-    `RC' AT, `RC' W, `RS' n, `RS' alpha, `RS' beta)
-{   // root finder for SJPI; adapted from mm_root()
+`Int' `MAIN'::_h_root(`Int' m, `RS' x, `RS' ax, `RS' bx, 
+    | `T' o1, `T' o2, `T' o3, `T' o4, `T' o5)
+{   // root finder for SJPI (m!=1) and ISJ (m=1); adapted from mm_root()
     `Int' maxit, itr
     `RS'  tol, tol_act
     `RS'  a, b, c, fa, fb, fc, prev_step, p, q, new_step, t1, cb, t2
@@ -537,8 +546,8 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     tol   = ax * 0.1
     maxit = 100
     a = ax; b = bx
-    fa = __h_sjpi(a, AT, W, n, alpha, beta)
-    fb = __h_sjpi(b, AT, W, n, alpha, beta)
+    fa = _h_root_fn(m, a, o1, o2, o3, o4, o5)
+    fb = _h_root_fn(m, b, o1, o2, o3, o4, o5)
     c = a; fc = fa
     if ( fa==. ) return(0)
     if ( (fa > 0 & fb > 0) | (fa < 0 & fb < 0) ) {
@@ -581,7 +590,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
             else                new_step = -tol_act
         }
         a = b;  fa = fb
-        b = b + new_step; fb = __h_sjpi(b, AT, W, n, alpha, beta)
+        b = b + new_step; fb = _h_root_fn(m, b, o1, o2, o3, o4, o5)
         if ( (fb > 0 & fc > 0) | (fb < 0 & fc < 0) ) {
             c = a;  fc = fa
         }
@@ -590,7 +599,13 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     return(1)
 }
 
-`RS' `MAIN'::__h_sjpi(`RS' h, `RC' AT, `RC' W, `RS' n, `RS' alpha, `RS' beta)
+`RS' `MAIN'::_h_root_fn(`Int' m, `RS' x, | `T' o1, `T' o2, `T' o3, `T' o4, `T' o5)
+{
+    if (m==1) return(_h_isj(x, o1, o2, o3))   // ISJ method
+    return(_h_sjpi(x, o1, o2, o3, o4, o5))    // SJPI method
+}
+
+`RS' `MAIN'::_h_sjpi(`RS' h, `RC' AT, `RC' W, `RS' n, `RS' alpha, `RS' beta)
 {
     `RS' d
     
@@ -652,7 +667,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 `RS' `MAIN'::h_isj()
 {
     `Int' n
-    `RS'  N, h, hmin
+    `RS'  N, s, hmin, h_os, h
     `RC'  AT, W, a
     
     // step 1: bin data on regular grid
@@ -665,17 +680,16 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     a = Re( (1 \ 2 * exp(1i * (1::n-1) * pi() / (2*n)))
          :* fft(W[mm_seq(1,n-1,2)] \ W[mm_seq(n,2,2)]) )
     // step 3: compute bandwidth
-    h = sqrt(mm_minim(&_mm_density_h_isj_fxpnt(), 0, .1, 10^-22, N, 
-        (1::n-1):^2, (a[2::n] / 2):^2)) * (AT[n]-AT[1])
-    // return result
-    hmin = (AT[n]-AT[1])/(n-1) / 2 * mm_kdel0_gaussian() / mm_kdel0_rectangle()
-    if (h<hmin) return(.)  // bandwidth too small (collapsed to zero)
-    h = h * (N/nobs())^.2 / mm_kdel0_gaussian() // rescale
-    if (rd()) h = h * h_rd(scale(0)) // relative data correction
+    hmin = (.5/(n-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle())^2
+    s = sqrt(variance(AT, W*N))
+    h_os = (s * (243/(35*N))^.2 * mm_kdel0_gaussian() * h_rd(s) / (AT[n]-AT[1]))^2
+    h = sqrt(h_root(1, hmin, h_os, N, (1::n-1):^2, (a[2::n]/2):^2)) * 
+        (AT[n]-AT[1]) * (n/nobs())^.2 / mm_kdel0_gaussian()
+    if (rd()) h = h * h_rd(s) // relative data correction
     return(h)
 }
 
-`RS' _mm_density_h_isj_fxpnt(`RS' h, `RS' N, `RC' I, `RC' a2)
+`RS' `MAIN'::_h_isj(`RS' h, `RS' N, `RC' I, `RC' a2)
 {
     `Int' l, s
     `RS'  K0, c
@@ -689,7 +703,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
         t  = (2 * c * K0/N/f):^(2/(3 + 2*s))
         f  = 2 * pi()^(2*s) * sum(I:^s :* a2 :* exp(-I * pi()^2 * t))
     }
-    return(abs(h - (2 * N * sqrt(pi()) * f)^(-2/5)))
+    return((2 * N * sqrt(pi()) * f)^(-2/5) - h)
 }
 
 // Sheather-Jones direct plug-in selection rule -------------------------------
@@ -1026,16 +1040,17 @@ void `MAIN'::_dapprox_std(`RC' h)
     if (to<.)         range[2] = to
     else if (ub()<.)  range[2] = ub()
     if (missing(range)) {
+        // if h is not provided:
+        // - extend grid below min(x) and above max(x) by 5% of data range
+        // if h is provided:
+        // - extend grid by the kernel halfwidth such that density can go to 
+        //   zero outside data range (only approximately for gaussian kernel or
+        //   in case of adaptive estimator), but limit by 5% of data range
         minmax = minmax(X())
+        tau = (minmax[2]-minmax[1]) / 20
         if (h<.) {
-            // if h is provided: extend grid such that density can go to
-            // zero outside data range
-            tau = h * (kernel()=="epanechnikov" ? sqrt(5) : 
-                (kernel()=="cosine" ? .5 : (kernel()=="gaussian" ? 3 : 1)))
-        }
-        else {
-            // if h is not provided: extend grid by 5% of data range
-            tau = (minmax[2]-minmax[1]) / 20
+            tau = min((tau, h * (kernel()=="epanechnikov" ? sqrt(5) : 
+                (kernel()=="cosine" ? .5 : (kernel()=="gaussian" ? 3 : 1)))))
         }
         if (range[1]>=.)  range[1] = minmax[1] - tau
         if (range[2]>=.)  range[2] = minmax[2] + tau
