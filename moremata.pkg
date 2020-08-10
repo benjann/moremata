@@ -3,7 +3,7 @@ d moremata: module providing various Mata functions
 d 
 d Author: Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 d
-d Distribution-Date: 20200807
+d Distribution-Date: 20200810
 f mf_mm_colrunsum.hlp
 f mf_mm_subset.hlp
 f mf_mm_regexr.hlp
@@ -68,5 +68,6 @@ f lmoremata.mlib
 f mf_mm_ecdf.hlp
 f lmoremata11.mlib
 f mf_mm_sort.hlp
+f mf_mm_ddens.hlp
 f mf_mm_root.hlp
 f moremata14_source.hlp

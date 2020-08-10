@@ -1,5 +1,5 @@
 {smcl}
-{* 07aug2020}{...}
+{* 10aug2020}{...}
 {cmd:help mata mm_density()}
 {hline}
 
@@ -69,7 +69,7 @@ for the bandwidth estimate; {it:bwadjust} must be strictly positive; default is 
 {p 12 14 2}{it:dpi} is a {it:real scalar} specifying the number of stages of functional
 estimation for the {cmd:"dpi"} method; default is {it:dpi} = 2
 
-{p 12 14 2}{it:qui}!=0 suppresses the warning message that is displayed if 
+{p 12 14 2}{it:qui}!=0 suppresses the warning message that is displayed if
 SJPI or ISJ fails; default is {it:qui} = 0
 
 {pstd}Define support of data and choose boundary correction method
@@ -92,10 +92,16 @@ in {it:minmax} if {it:rd}!=0; default is {it:rd} = 0
 
 {pstd}Set grid size of approximation estimator
 
-        {it:D}{cmd:.n(}{it:n}{cmd:)}
+        {it:D}{cmd:.n(}{it:n} [{cmd:,} {it:pad}]{cmd:)}
 
 {p 12 14 2}{it:n} is a {it:real scalar} specifying the grid size used by the fast approximation
 estimator (and the {cmd:"sjpi"}, {cmd:"dpi"}, and {bf:"isj"} bandwidth selectors); default is {it:n} = 2^10 = 1024
+
+{p 12 14 2}{it:pad} is a {it:real scalar} specifying the padding proportion of the approximation
+grid; the default is {it:pad} = 0.1, which means that the grid will be padded
+by 10 percent of the observed data range on each side of the data (unless the support of the
+data has been restricted by {it:D}{cmd:.support()}, in which case the approximation grid
+will span the defined support); {it:pad} may not be negative
 
 {pstd}Retrieve settings
 
@@ -131,6 +137,8 @@ estimator (and the {cmd:"sjpi"}, {cmd:"dpi"}, and {bf:"isj"} bandwidth selectors
 {p2col:{it:rd}{space 6} =  {it:D}{cmd:.rd()}}{it:real scalar} containing {it:rd} flag
     {p_end}
 {p2col:{it:n}{space 7} =  {it:D}{cmd:.n()}}{it:real scalar} containing grid size of approximation estimator
+    {p_end}
+{p2col:{it:pad}{space 5} =  {it:D}{cmd:.pad()}}{it:real scalar} containing padding proportion of approximation grid
     {p_end}
 
 {pstd}
@@ -220,7 +228,7 @@ grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
         : {stata end}
 
 {pstd}
-    Full grid approximation estimator:
+    Display full grid approximation estimator:
 
         . {stata "mata:"}
         : {stata x = rnormal(50000,1, 0, 1)  \ rnormal(50000,1, 4, 1.5)}
@@ -286,11 +294,11 @@ methods; see {browse "http://doi.org/10.1214/10-AOS799":Botev et al. (2010)}.
 
 {psee}
 Online:  help for
-{helpb kdensity},
-{helpb histogram},
-{helpb kdens} (if installed),
+{helpb mf_mm_ddens:mm_ddens()},
 {helpb mf_mm_ecdf:mm_ecdf()},
 {helpb mf_mm_histogram:mm_histogram()},
+{helpb kdensity},
+{helpb histogram},
 {helpb moremata}
 {p_end}
 

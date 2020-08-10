@@ -1,5 +1,5 @@
 {smcl}
-{* 05aug2020}{...}
+{* 10aug2020}{...}
 {cmd:help moremata}
 {hline}
 
@@ -60,6 +60,10 @@
 {col 5}{bf:{help mf_mm_density:mm_density()}}{...}
 {col 22}{cmd:mm_density()}{...}
 {col 41}compute density (Stata 11 required)
+
+{col 5}{bf:{help mf_mm_ddens:mm_ddens()}}{...}
+{col 22}{cmd:mm_ddens()}{...}
+{col 41}compute density by diffusion
 
 {col 5}{bf:{help mf_mm_freq:mm_freq()}}{...}
 {col 22}{cmd:mm_freq()}{...}

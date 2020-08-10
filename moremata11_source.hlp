@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_density}{bf:mm_density.mata}{asis}
-*! version 1.0.3  07aug2020  Ben Jann
+*! version 1.0.4  10aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -68,6 +68,7 @@ struct `SETUP' {
 
     // other settings
     `Int'   n             // size of approximation grid
+    `RS'    pad           // padding proportion of approximation grid
 }
 
 class `MAIN' {
@@ -90,17 +91,18 @@ class `MAIN' {
     public:
         `RC'    X(), w()      // retrieve X and w
         `RS'    nobs()        // retrieve N (sum of weights)
+        `Bool'  pw()          // retrieve pweighte flag
         `Bool'  sorted()      // retrieve sorted flag
         `Int'   adapt()       // retrieve stages of adaptive estimator
         `RS'    kh()          // retrieve canonical bandwidth of kernel
         `SS'    bwmethod()    // retrieve bw seletion method
         `RS'    bwadjust()    // retrieve bw adjustment factor
         `Int'   dpi()         // retrieve dpi level
-        `Bool'  pw()          // retrieve pweighte flag
         `RS'    lb(), ub()    // retrieve lower and upper bounds of support
         `SS'    bcmethod()    // retrieve boundary-correction method
         `Bool'  rd()          // retrieve relative data flag
-
+        `RS'    pad()         // retrieve padding proportion
+    
     // results
     public:
         `RC'    d()          // estimate/retrieve d
@@ -147,7 +149,7 @@ void `MAIN'::new()
     kernel("")
     bw("")
     support()
-    n(1024)
+    n(.)
 }
 
 void `MAIN'::clear()
@@ -407,16 +409,19 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 
 // D.n() ----------------------------------------------------------------------
 
-`T' `MAIN'::n(| `Int' arg)
+`T' `MAIN'::n(| `Int' n, `RS' pad)
 {
     // get
     if (args()==0) return(setup.n)
     // set
-    if (arg<1) _error(3300)
-    if (arg>.) _error(3300)
-    setup.n = trunc(arg)
+    if (n<1)   _error(3300)
+    if (pad<0) _error(3300)
+    setup.n   = (n<. ? trunc(n) : 1024)  // default is 1024
+    setup.pad = (pad<. ? pad : 0.1)      // default is 0.1
     clear()
 }
+
+`RS' `MAIN'::pad() return(setup.pad)
 
 // ---------------------------------------------------------------------------
 // bandwidth selection
@@ -490,6 +495,13 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     }
     hmin = .5 * (AT[n()]-AT[1])/(n()-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle()
     h_os = s * (243/(35*n))^.2 * mm_kdel0_gaussian() * h_rd(s) // oversmoothed (modified)
+        // // plot objective function:
+        // `Int' i
+        // `RC'  at, hh
+        // at = rangen(hmin, 3*h_os, 100)
+        // hh = J(rows(at),1,.)
+        // for (i=rows(at);i;i--) hh[i] = _h_sjpi(at[i], AT, W, n, alpha, beta)
+        // mm_plot((hh,at),"line",sprintf("xline(%g)",h_os))
     return(h_root(0, hmin, h_os, AT, W, n, alpha, beta) * 
         (n/nobs())^.2 / mm_kdel0_gaussian())
 }
@@ -688,8 +700,15 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     // step 3: compute bandwidth
     hmin = (.5/(n-1) * mm_kdel0_gaussian()/mm_kdel0_rectangle())^2
     h_os = (s * (243/(35*N))^.2 * mm_kdel0_gaussian() * h_rd(s) / (AT[n]-AT[1]))^2
+        // // plot objective function:
+        // `Int' i
+        // `RC'  at, hh
+        // at = rangen(hmin, 3*h_os, 100)
+        // hh = J(rows(at),1,.)
+        // for (i=rows(at);i;i--) hh[i] = _h_isj(at[i], N, (1::n-1):^2, (a[2::n]/2):^2)
+        // mm_plot((hh,at),"line",sprintf("xline(%g)",h_os))
     return(sqrt(h_root(1, hmin, h_os, N, (1::n-1):^2, (a[2::n]/2):^2)) * 
-        (AT[n]-AT[1]) * (n/nobs())^.2 / mm_kdel0_gaussian() * h_rd(s))
+        (AT[n]-AT[1]) * (N/nobs())^.2 / mm_kdel0_gaussian() * h_rd(s))
 }
 
 `RS' `MAIN'::_h_isj(`RS' h, `RS' N, `RC' I, `RC' a2)
@@ -1040,13 +1059,13 @@ void `MAIN'::_dapprox_std(`RC' h)
     else if (ub()<.)  range[2] = ub()
     if (missing(range)) {
         // if h is not provided:
-        // - extend grid below min(x) and above max(x) by 5% of data range
+        // - extend grid below min(x) and above max(x) by pad()% of data range
         // if h is provided:
         // - extend grid by the kernel halfwidth such that density can go to 
         //   zero outside data range (only approximately for gaussian kernel or
-        //   in case of adaptive estimator), but limit by 5% of data range
+        //   in case of adaptive estimator), but limit by pad()% of data range
         minmax = minmax(X())
-        tau = (minmax[2]-minmax[1]) / 20
+        tau = (minmax[2]-minmax[1]) * pad()
         if (h<.) {
             tau = min((tau, h * (kernel()=="epanechnikov" ? sqrt(5) : 
                 (kernel()=="cosine" ? .5 : (kernel()=="gaussian" ? 3 : 1)))))

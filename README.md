@@ -13,6 +13,7 @@ Stata module providing various Mata functions
   * `mm_ranks()`: compute ranks/cumulative frequencies
   * `mm_relrank()`: compute relative ranks (grade transformation)
   * `mm_density()`: compute density (Stata 11 required)
+  * `mm_ddens()`: compute density by diffusion
   * `mm_freq()`: compute frequency counts
   * `mm_histogram()`: produce histogram data
   * `mm_mgof()`: multinomial goodness-of-fit tests
@@ -143,6 +144,15 @@ Installation from GitHub:
 
 Main changes:
 
+
+    10aug2020
+    - new mm_ddens() function for diffusion density estimation
+    - mm_density():
+      o ISJ bandwidth selector wrongly used grid size instead of number of obs when
+        rescaling the bandwidth; this is fixed
+      o increased padding of approximation grid to +/- 10% of data range (instead of
+        +/- 5% percent)
+      o D.n() now has an additional argument to set the padding proportion
 
     07aug2020
     - mm_density():
