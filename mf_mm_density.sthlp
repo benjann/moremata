@@ -52,19 +52,19 @@ kernel density estimator; default is {it:adapt} = 0 (non-adaptive kernel)
 
         {it:D}{cmd:.bw(}{it:h}{cmd:)}
         or
-        {it:D}{cmd:.bw(}{it:bwmethod} [{cmd:,} {it:bwadjust}{cmd:,} {it:dpi}{cmd:,} {it:qui}]{cmd:)}
+        {it:D}{cmd:.bw(}{it:method} [{cmd:,} {it:adjust}{cmd:,} {it:dpi}{cmd:,} {it:qui}]{cmd:)}
 
 {p 12 14 2}{it:h} is a {it:real scalar} specifying the value of the bandwidth to be used
 
-{p 12 14 2}{it:bwmethod} is a {it:string scalar} specifying the bandwidth selection method to
+{p 12 14 2}{it:method} is a {it:string scalar} specifying the bandwidth selection method to
 be used; available methods are {cmd:"silverman"} (optimal of Silverman),
 {cmd:"normalscale"} (normal scale rule), {cmd:"oversmoothed"} (oversmoothed rule),
 {cmd:"sjpi"} (Sheather-Jones solve-the-equation plug-in), {cmd:"dpi"}
 (Sheather-Jones direct plug-in), and {bf:"isj"} (bandwidth based on
 diffusion estimator); default is {cmd:"sjpi"}
 
-{p 12 14 2}{it:bwadjust} is a {it:real scalar} specifying a multiplication factor
-for the bandwidth estimate; {it:bwadjust} must be strictly positive; default is {it:bwadjust} = 1
+{p 12 14 2}{it:adjust} is a {it:real scalar} specifying a multiplication factor
+for the bandwidth estimate; {it:adjust} must be strictly positive; default is {it:adjust} = 1
 
 {p 12 14 2}{it:dpi} is a {it:real scalar} specifying the number of stages of functional
 estimation for the {cmd:"dpi"} method; default is {it:dpi} = 2
@@ -74,14 +74,14 @@ SJPI or ISJ fails; default is {it:qui} = 0
 
 {pstd}Define support of data and choose boundary correction method
 
-        {it:D}{cmd:.support(}{it:minmax} [{cmd:,} {it:bcmethod}{cmd:,} {it:rd}]{cmd:)}
+        {it:D}{cmd:.support(}{it:minmax} [{cmd:,} {it:method}{cmd:,} {it:rd}]{cmd:)}
 
 {p 12 14 2}{it:minmax} is a {it:real vector} specifying the lower and upper bounds
 of the support of {it:X}; specify one value (lower boundary only) or
 two values (lower and upper boundary); {cmd:.} (missing) is interpreted as
 (minus) infinity; default is {it:minmax} = {cmd:(.,.)} (unbounded support)
 
-{p 12 14 2}{it:bcmethod} is a {it:string scalar} specifying the boundary-correction
+{p 12 14 2}{it:method} is a {it:string scalar} specifying the boundary-correction
 method to be used; available methods are {cmd:"renormalization"},
 {cmd:"reflection"}, and {bind:{cmd:"linear correction"}} (abbreviations allowed); default
 is {cmd:"renormalization"}
@@ -105,40 +105,42 @@ will span the defined support); {it:pad} may not be negative
 
 {pstd}Retrieve settings
 
-{p2colset 9 34 36 2}{...}
-{p2col:{it:X}{space 7} = {it:D}{cmd:.X()}}{it:real colvector} containing data
+{p2colset 9 30 32 2}{...}
+{p2col:{it:X}{space 5} = {it:D}{cmd:.X()}}{it:real colvector} containing data
     {p_end}
-{p2col:{it:w}{space 7} =  {it:D}{cmd:.w()}}{it:real colvector} containing weights
+{p2col:{it:w}{space 5} =  {it:D}{cmd:.w()}}{it:real colvector} containing weights
     {p_end}
-{p2col:{it:nobs}{space 4} =  {it:D}{cmd:.nobs()}}{it:real scalar} containing number of observations (sum of weights)
+{p2col:{it:nobs}{space 2} =  {it:D}{cmd:.nobs()}}{it:real scalar} containing number of observations (sum of weights)
     {p_end}
-{p2col:{it:pw}{space 6} =  {it:D}{cmd:.pw()}}{it:real scalar} containing {it:pw} flag
+{p2col:{it:pw}{space 4} =  {it:D}{cmd:.pw()}}{it:real scalar} containing {it:pw} flag
     {p_end}
-{p2col:{it:sorted}{space 2} =  {it:D}{cmd:.sorted()}}{it:real scalar} containing {it:sorted} flag
+{p2col:{it:sorted} =  {it:D}{cmd:.sorted()}}{it:real scalar} containing {it:sorted} flag
     {p_end}
-{p2col:{it:kernel}{space 2} =  {it:D}{cmd:.kernel()}}{it:string scalar} containing kernel name
+{p2col:{it:kernel} =  {it:D}{cmd:.kernel()}}{it:string scalar} containing kernel name
     {p_end}
-{p2col:{it:adapt}{space 3} =  {it:D}{cmd:.adapt()}}{it:real scalar} containing number of stages of adaptive estimator
+{p2col:{it:adapt}{space 1} =  {it:D}{cmd:.adapt()}}{it:real scalar} containing number of stages of adaptive estimator
     {p_end}
-{p2col:{it:kh}{space 6} =  {it:D}{cmd:.kh()}}{it:real scalar} containing canonical bandwidth of kernel
+{p2col:{it:kh}{space 4} =  {it:D}{cmd:.kh()}}{it:real scalar} containing canonical bandwidth of kernel
     {p_end}
-{p2col:{it:bwmethod} =  {it:D}{cmd:.bwmethod()}}{it:string scalar} containing name of bandwidth selection method
+{p2col:{it:scalar} =  {it:D}{cmd:.bw()}}{it:string scalar} containing name of bandwidth selection method or {it:real scalar} containing user-provided bandwidth
     {p_end}
-{p2col:{it:bwadjust} =  {it:D}{cmd:.bwadjust()}}{it:real scalar} containing bandwidth adjustment factor
+{p2col:{it:adjust} =  {it:D}{cmd:.adjust()}}{it:real scalar} containing bandwidth adjustment factor
     {p_end}
-{p2col:{it:dpi}{space 5} =  {it:D}{cmd:.dpi()}}{it:real scalar} containing number of DPI levels
+{p2col:{it:dpi}{space 3} =  {it:D}{cmd:.dpi()}}{it:real scalar} containing number of DPI levels
     {p_end}
-{p2col:{it:lb}{space 6} =  {it:D}{cmd:.lb()}}{it:real scalar} containing lower bound of support
+{p2col:{it:minmax} =  {it:D}{cmd:.support()}}{it:real rowvector} containing lower and upper bound of support
     {p_end}
-{p2col:{it:ub}{space 6} =  {it:D}{cmd:.ub()}}{it:real scalar} containing upper bound of support
+{p2col:{it:lb}{space 4} =  {it:D}{cmd:.lb()}}{it:real scalar} containing lower bound of support
     {p_end}
-{p2col:{it:bcmethod} =  {it:D}{cmd:.bcmethod()}}{it:string scalar} containing name of boundary-correction method
+{p2col:{it:ub}{space 4} =  {it:D}{cmd:.ub()}}{it:real scalar} containing upper bound of support
     {p_end}
-{p2col:{it:rd}{space 6} =  {it:D}{cmd:.rd()}}{it:real scalar} containing {it:rd} flag
+{p2col:{it:bc}{space 4} =  {it:D}{cmd:.bc()}}{it:string scalar} containing name of boundary-correction method
     {p_end}
-{p2col:{it:n}{space 7} =  {it:D}{cmd:.n()}}{it:real scalar} containing grid size of approximation estimator
+{p2col:{it:rd}{space 4} =  {it:D}{cmd:.rd()}}{it:real scalar} containing {it:rd} flag
     {p_end}
-{p2col:{it:pad}{space 5} =  {it:D}{cmd:.pad()}}{it:real scalar} containing padding proportion of approximation grid
+{p2col:{it:n}{space 5} =  {it:D}{cmd:.n()}}{it:real scalar} containing grid size of approximation estimator
+    {p_end}
+{p2col:{it:pad}{space 3} =  {it:D}{cmd:.pad()}}{it:real scalar} containing padding proportion of approximation grid
     {p_end}
 
 {pstd}

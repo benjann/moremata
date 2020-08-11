@@ -1,5 +1,5 @@
 {smcl}
-{* 08aug2020}{...}
+{* 11aug2020}{...}
 {cmd:help mata mm_ddens()}
 {hline}
 
@@ -30,7 +30,7 @@ range by 10 percent on each side)
 
 {p 14 18 2}{it:n}:  {it:real scalar} specifying the grid size (number of
 evaluation points); will be rounded up to the next power of 2; default is
-{it:n} = 2^10 = 1024; specify {cmd:.} (missing) to select the default; reducing the
+{it:n} = 2^14 = 16384; specify {cmd:.} (missing) to select the default; reducing the
 grid size will reduce the accuracy of the results
 
 {p 14 18 2}{it:h}:  {it:real scalar} specifying the bandwidth (kernel halfwidth); the
@@ -59,7 +59,7 @@ the bandwidth
 
 {pstd}
     {cmd:mm_ddens()} is based on {browse "https://www.r-project.org/":R}
-    code provided by Z. I. Botev in file {browse "http://web1.maths.unsw.edu.au/~zdravkobotev/kde.R":kde.R}
+    code provided by Z.I. Botev in file {browse "http://web1.maths.unsw.edu.au/~zdravkobotev/kde.R":kde.R}
     at {browse "https://web.maths.unsw.edu.au/~zdravkobotev/"}.
 
 
@@ -77,7 +77,7 @@ the bandwidth
 {pstd}
     {cmd:mm_ddens()} evaluates the density function across a regular grid of
     evaluation points. The grid must be of sufficient size for the results to be
-    accurate (say, at least 2^9 = 512). Use linear interpolation if you want to
+    accurate. Use linear interpolation if you want to
     obtain a density estimate at less points or at irregularly-spaced points. In
     the following example, we obtain the density
     at different quantiles of X:

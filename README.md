@@ -145,6 +145,20 @@ Installation from GitHub:
 Main changes:
 
 
+    11aug2020
+    - mm_density()
+      o applied some renaming: D.bwmethod() is now D.bw() (furthermore, D.bw()
+        now returns the user bandwith, if set, instead of the bandwidth method)
+        D.bcmethod() is now D.bc(); D.bwadjust() is now D.adjust()
+      o D.support() without argument now returns (lb(), ub())
+    - mm_ddens() as well as ISJ bandwidth selector in mm_density(): now using exact
+      binning as in code by Botev; exact binning leads to inaccurate results if the
+      grid size is small, but the error vanishes with increasing grid size; linear
+      binning is more precise for small grid sizes, but it leads to non-vanishing
+      error at the boundaries (doubling the first and last grid count does not
+      seem to help); mm_ddens() now uses default grid size of 2^14 (as in code by
+      Botev); ISJ in mm_density() enforces a grid of at least 2^10
+
     10aug2020
     - new mm_ddens() function for diffusion density estimation
     - mm_density():

@@ -1,4 +1,4 @@
-*! version 1.0.4  10aug2020  Ben Jann
+*! version 1.0.5  10aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -50,7 +50,7 @@ struct `SETUP' {
     // bandwidth selection
     `RS'    h0            // user provided bandwidth
     `SS'    bwmethod      // bandwidth estimation method
-    `RS'    bwadjust      // bandwidth adjustment factor
+    `RS'    adjust        // bandwidth adjustment factor
     `Int'   dpi           // number of DPI stages; default is 2
     `Bool'  qui           // quietly (omit SJPI/ISJ failure message)
 
@@ -71,8 +71,8 @@ class `MAIN' {
     public:
         void    data()        // set data
         `T'     kernel()      // kernel settings/retrieve kernel name
-        void    bw()          // bandwidth settings
-        void    support()     // support/boundary correction
+        `T'     bw()          // bandwidth settings
+        `T'     support()     // support/boundary correction
         `T'     n()           // set/retrieve size of approximation grid
     private:
         void    new()         // initialize class with default settings
@@ -81,7 +81,6 @@ class `MAIN' {
         `RC'    k(), K()      // kernel functions
         `RC'    kbc(), krn(), // boundary-correction kernels
                 krf(), klc()
-        `RS'    h0()          // retrieve user bandwidth
         void    checksuprt()  // check whether data is within support
     public:
         `RC'    X(), w()      // retrieve X and w
@@ -90,11 +89,10 @@ class `MAIN' {
         `Bool'  sorted()      // retrieve sorted flag
         `Int'   adapt()       // retrieve stages of adaptive estimator
         `RS'    kh()          // retrieve canonical bandwidth of kernel
-        `SS'    bwmethod()    // retrieve bw seletion method
-        `RS'    bwadjust()    // retrieve bw adjustment factor
+        `RS'    adjust()      // retrieve bw adjustment factor
         `Int'   dpi()         // retrieve dpi level
         `RS'    lb(), ub()    // retrieve lower and upper bounds of support
-        `SS'    bcmethod()    // retrieve boundary-correction method
+        `SS'    bc()          // retrieve boundary-correction method
         `Bool'  rd()          // retrieve relative data flag
         `RS'    pad()         // retrieve padding proportion
     
@@ -143,7 +141,7 @@ void `MAIN'::new()
 {
     kernel("")
     bw("")
-    support()
+    support(.)
     n(.)
 }
 
@@ -302,9 +300,15 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
 
 // D.bw() -------------------------------------------------------------------
 
-void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
+`T' `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
 {
-    // syntax 1: bw(#)
+    // get
+    if (args()==0) {
+        if (setup.h0<.) return(setup.h0)
+        return(setup.bwmethod)
+    }
+    // set
+    // - syntax 1: bw(#)
     if (args()==1) {
         if (!isstring(arg)) {
             if (arg<=0) _error(3300)
@@ -313,7 +317,7 @@ void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
             return
         }
     }
-    // syntax 2: bw(method, adjust, dpi)
+    // - syntax 2: bw(method, adjust, dpi)
     if (args()<2) adj = 1
     if (args()<3) dpi = 2
     if (args()<4) qui = `FALSE'
@@ -324,27 +328,28 @@ void `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
     setup.bwmethod = mm_strexpand(strlower(strtrim(arg)),
         ("silverman", "normalscale", "oversmoothed", "sjpi", "dpi", "isj"),
         "sjpi") // default is "sjpi"
-    setup.h0       = .
-    setup.bwadjust = adj
-    setup.dpi      = trunc(dpi)
-    setup.qui      = qui
+    setup.h0     = .
+    setup.adjust = adj
+    setup.dpi    = trunc(dpi)
+    setup.qui    = qui
     clear()
 }
 
-`RS' `MAIN'::h0() return(setup.h0)
-
-`SS' `MAIN'::bwmethod() return(setup.bwmethod)
-
-`RS' `MAIN'::bwadjust() return(setup.bwadjust)
+`RS' `MAIN'::adjust() return(setup.adjust)
 
 `Int' `MAIN'::dpi() return(setup.dpi)
 
 // D.support() ----------------------------------------------------------------
 
-void `MAIN'::support(| `RV' minmax, `SS' method, `Bool' rd)
+`T' `MAIN'::support(| `RV' minmax, `SS' method, `Bool' rd)
 {
     `RS' lb, ub
     
+    // get
+    if (args()==0) {
+        return((setup.lb, setup.ub))
+    }
+    // set
     if (args()<3) rd     = `FALSE'
     if (length(minmax)>2) _error(3200)
     if (rd!=`FALSE' & rd!=`TRUE') _error(3300)
@@ -381,7 +386,7 @@ void `MAIN'::support(| `RV' minmax, `SS' method, `Bool' rd)
 
 `RS' `MAIN'::ub() return(setup.ub)
 
-`SS' `MAIN'::bcmethod() return(setup.bcmethod)
+`SS' `MAIN'::bc() return(setup.bcmethod)
 
 `Bool' `MAIN'::rd() return(setup.rd)
 
@@ -425,12 +430,12 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 `RS' `MAIN'::h() {
     if (h<.) return(h)
     // user bandwidth
-    if (h0()<.) { 
-        h = h0()
+    if (setup.h0<.) { 
+        h = setup.h0
         return(h)
     }
     // data-driven bandwidth selection
-    if (bwmethod()=="sjpi") {
+    if (bw()=="sjpi") {
         h = h_sjpi()
         if (h>=.) {
             if (setup.qui==`FALSE')
@@ -438,7 +443,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
             h = h_dpi()
         }
     }
-    else if (bwmethod()=="isj") {
+    else if (bw()=="isj") {
         h = h_isj()
         if (h>=.) {
             if (setup.qui==`FALSE')
@@ -446,17 +451,17 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
             h = h_dpi()
         }
     }
-    else if (bwmethod()=="dpi")          h = h_dpi()
-    else if (bwmethod()=="silverman")    h = h_si()
-    else if (bwmethod()=="oversmoothed") h = h_ov()
-    else if (bwmethod()=="normalscale")  h = h_no()
+    else if (bw()=="dpi")          h = h_dpi()
+    else if (bw()=="silverman")    h = h_si()
+    else if (bw()=="oversmoothed") h = h_ov()
+    else if (bw()=="normalscale")  h = h_no()
     else _error(3498) // cannot be reached
     // correction for pweights
     if (pw() & rows(w())!=1) {
         h = h * (sum(w():^2)/(nobs()))^.2
     }
     // final adjustments
-    h = h * kh() * bwadjust()
+    h = h * kh() * adjust()
     return(h)
 }
 
@@ -473,8 +478,8 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     `RS'  n, s, hmin, h_os, sda, tdb, tdc, alpha, beta
     `RC'  AT, W
     
-    AT = grid(n())                   // evaluation grid
-    W  = mm_fastlinbin(X(), w(), AT) // grid counts
+    AT = AT()
+    W = W()
     s = scale(0, AT, W, 1)           // min of sd and iqr
     if (pw()) {                      // pweights: normalize grid counts
         n = rows(X())
@@ -683,10 +688,12 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     
     // step 1: bin data on regular grid
     n = 2^ceil(ln(n())/ln(2))        // round up to next power of 2
+    n = max((n, 1024))               // enforce min grid size of at least 1024
     AT = grid(n)                     // generate grid
-    W  = mm_fastlinbin(X(), w(), AT) // compute grid counts
+    //W  = mm_fastlinbin(X(), w(), AT) // compute grid counts
+    W = mm_exactbin(X(), w(), grid(n+1))
     s = scale(0, AT, W, 1)           // min of sd and iqr
-    W  = W / nobs()                  // relative frequencies
+    W = W / nobs()                   // relative frequencies
     if (pw()) N = rows(X())          // obtain sample size
     else      N = nobs()
     // step 2: obtain discrete cosine transform of binned data
@@ -734,8 +741,8 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     i = dpi()
     if (i==0) return(h_no()) // h normalscale
     else {
-        AT = grid(n())                   // evaluation grid
-        W  = mm_fastlinbin(X(), w(), AT) // grid counts
+        AT = AT()
+        W  = W()
         s = scale(0, AT, W, 1)           // min of sd and iqr
         if (pw()) {                      // pweights: normalize grid counts
             n = rows(X())
