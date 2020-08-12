@@ -1,6 +1,7 @@
 {smcl}
-{* 10aug2020}{...}
-{cmd:help moremata}
+{* 12aug2020}{...}
+{cmd:help moremata}{...}
+{right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
 
 {title:Title}
