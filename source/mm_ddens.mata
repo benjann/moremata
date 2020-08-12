@@ -1,4 +1,4 @@
-*! version 1.0.0  10aug2020  Ben Jann
+*! version 1.0.1  12aug2020  Ben Jann
 version 9.2
 mata:
 
@@ -41,7 +41,8 @@ real matrix mm_ddens(real colvector X, | real colvector w, real vector minmax0,
     // bin data
     N  = mm_nobs(X, w)
     AT = rangen(lo, up, n)
-    W  = mm_exactbin(X, w, rangen(lo, up, n+1)) / N
+    if (mm_issorted(X)) W = _mm_exactbin(X, w, rangen(lo, up, n+1)) / N
+    else                W = mm_fastexactbin(X, w, rangen(lo, up, n+1)) / N
         // need to use exact binning because linear binning would introduce
         // some (non-vanishing) bias at the boundaries (doubling the first and
         // last grid count does not seem to help); a consequence of exact 

@@ -93,6 +93,7 @@ Stata module providing various Mata functions
   * `mm_linbin()`: linear binning
   * `mm_fastlinbin()`: fast linear binning
   * `mm_exactbin()`: exact binning
+  * `mm_fastexactbin()`: fast exact binning
   * `mm_makegrid()`: equally spaced grid points
   * `mm_seq()`: generate regular sequence
   * `mm_cut()`: categorize data vector
@@ -144,6 +145,15 @@ Installation from GitHub:
 
 Main changes:
 
+    12aug2020
+    - mm_linbin() and mm_exactbin() are now implemented in terms of loops over
+      grid points (instead of loops over observations) and are faster (and more 
+      accurate) in large datasets
+    - new _mm_linbin() and _mm_exactbin() functions for use with sorted data
+    - new _mm_fastexactbin() for use with regular grid
+    - _mm_fastlinbin() is now slightly faster
+    - mm_ddens() and ISJ bandwidth selector in mm_density() now make use of 
+      _mm_exactbin() and _mm_fastexactbin()
 
     11aug2020
     - mm_density()

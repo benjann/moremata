@@ -308,6 +308,8 @@
 {col 41}fast linear binning
 {col 22}{cmd:mm_exactbin()}{...}
 {col 41}exact binning
+{col 22}{cmd:mm_fastexactbin()}{...}
+{col 41}fast exact binning
 {col 22}{cmd:mm_makegrid()}{...}
 {col 41}equally spaced grid points
 

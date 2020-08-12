@@ -1,18 +1,18 @@
 {smcl}
-{* 03aug2007}{...}
+{* 12aug2020}{...}
 {cmd:help mata mm_linbin()}
 {hline}
 
 {title:Title}
 
 {p 4 4 2}
-{bf:mm_linbin() -- Linear binning}
+{bf:mm_linbin() -- Linear and exact binning}
 
 {title:Syntax}
 
 {p 8 23 2}
 {it:real colvector}
-{cmd:mm_linbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:)}
+[{cmd:_}]{cmd:mm_linbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:)}
 
 {p 8 23 2}
 {it:real colvector}
@@ -20,7 +20,12 @@
 
 {p 8 23 2}
 {it:real colvector}
-{cmd:mm_exactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}
+[{cmd:_}]{cmd:mm_exactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}
+[{cmd:,} {it:dir}{cmd:,} {it:include}]{cmd:)}
+
+{p 8 23 2}
+{it:real colvector}
+{cmd:mm_fastexactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}
 [{cmd:,} {it:dir}{cmd:,} {it:include}]{cmd:)}
 
 {p 8 23 2}
@@ -39,14 +44,14 @@ where
 {it:w}:  {it:real colvector} containing weights
 
 {p 12 16 2}
-{it:g}:  {it:real colvector} containing grid points
+{it:g}:  {it:real colvector} containing (sorted) grid points
 
 {p 10 16 2}
 {it:dir}:  {it:real scalar} idicating the direction of the
 intervals (default: right open)
 
 {p 6 16 2}
-{it:include}:  {it:real scalar} idicating that data outside the grid be 
+{it:include}:  {it:real scalar} idicating that data outside the grid be
 included in the first and last bins
 
 {p 12 16 2}
@@ -69,26 +74,41 @@ points (default is 512)
 
 {p 4 4 2}
 {cmd:mm_linbin()} returns linearly binned counts of
-{it:x} at the grid points {it:g} ({it:g} must be sorted).
+{it:x} at the grid points {it:g} ({it:g} must be sorted). {cmd:_mm_linbin()} does
+the same but assumes {it:x} to be sorted.
 
 {p 4 4 2}
-{cmd:mm_fastlinbin()} also performs linear binning but assumes
-{it:g} to be a (sorted) regular grid containing equidistant grid
-points.
+{cmd:mm_fastlinbin()} returns linearly binned counts of
+{it:x} at the grid points {it:g}, where {it:g} is assumed to be a (sorted) regular grid
+of equidistant points. {cmd:mm_fastlinbin()} does not need to sort the data and is thus
+faster than {cmd:mm_linbin()}, at least in large datasets. If the data has already been
+sorted, however, {cmd:_mm_linbin()} can be used, which will be faster than
+{cmd:mm_fastlinbin()}.
 
 {p 4 4 2} {cmd:mm_exactbin()} returns counts of {it:x} within
 the intervals defined by the grid points {it:g} ({it:g}
-must be sorted). The default is to use right open intervals
-(with the last interval closed). However, {it:dir}!=0
-specifies that left open intervals be used (with the first interval
-closed). {cmd:mm_exactbin()} does not allow {it:x} to contain data
+must be sorted). {cmd:_mm_exactbin()} does
+the same but assumes {it:x} to be sorted.
+
+{p 4 4 2}
+{cmd:mm_fastexactbin()} returns counts of {it:x} within
+the intervals defined by the grid points {it:g}, where {it:g} is assumed to be a (sorted) regular grid
+of equidistant points. {cmd:mm_fastexactbin()} does not need to sort the data and is thus
+faster than {cmd:mm_exactbin()}, at least in large datasets. If the data has already been
+sorted, however, {cmd:_mm_exactbin()} can be used, which will be faster than
+{cmd:mm_fastexactbin()}.
+
+{p 4 4 2}
+The default for {cmd:mm_exactbin()} and {cmd:mm_fastexactbin()} is to use right open intervals
+(with the last interval closed). Specify {it:dir}!=0
+to use left open intervals (with the first interval
+closed). {cmd:mm_exactbin()} and {cmd:mm_fastexactbin()} do not allow {it:x} to contain data
 outside the grid range, unless {it:include}!=0 is specified, in which case
 such data is included in the first and last bin, respectively.
 
-{p 4 4 2}{it:w} in {cmd:mm_linbin()}, {cmd:mm_fastlinbin()}, and
-{cmd:mm_exactbin()} specifies weights associated with the observations in
-{it:x}. Specify {it:w} as 1 to obtain unweighted results.
-The sum of returned counts is equal to the sum of weights. 
+{p 4 4 2}Argument {it:w} in the above functions specifies weights associated
+with the observations in {it:x}. Specify {it:w} as 1 to obtain unweighted
+results. The sum of returned counts is equal to the sum of weights.
 
 {p 4 4 2}
 {cmd:mm_makegrid()} returns a grid of {it:m}
@@ -97,7 +117,7 @@ equally spaced points over {it:x}. The default range of the grid is
 If {it:e} is specified, the range is set to
 [{cmd:min(}{it:x}{cmd:)}-{it:e},{cmd:max(}{it:x}{cmd:)}+{it:e}].
 Alternatively, specify {it:min} and/or {it:max} to
-determine the limits of the grid range.
+determine the limits of the grid range ({it:e} will be ignored in this case).
 
 
 {title:Remarks}
@@ -107,19 +127,20 @@ below and above observation x.
 Then w*(g(j+1)-x)/(g(j+1)-g(j)) is added to the count at
 g(j) and w*(x-g(j))/(g(j+1)-g(j)) is added to the count at
 g(j+1), where w is the weight associated with x. Data below (above) the grid range
-is added to the count of the first (last) grid point. 
+is added to the count of the first (last) grid point.
 
 
 {title:Conformability}
 
-    {cmd:mm_linbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:)}
+    [{cmd:_}]{cmd:mm_linbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:)}
     {cmd:mm_fastlinbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:)}
              {it:x}:  {it:n x} 1
              {it:w}:  {it:n x} 1 or 1 {it:x} 1
              {it:g}:  {it:m x} 1, {it:m}>=1
         {it:result}:  {it:m x} 1.
 
-    {cmd:mm_exactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:,} {it:dir}{cmd:,} {it:include}{cmd:)}
+    [{cmd:_}]{cmd:mm_exactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:,} {it:dir}{cmd:,} {it:include}{cmd:)}
+    {cmd:mm_fastexactbin(}{it:x}{cmd:,} {it:w}{cmd:,} {it:g}{cmd:,} {it:dir}{cmd:,} {it:include}{cmd:)}
              {it:x}:  {it:n x} 1
              {it:w}:  {it:n x} 1 or 1 {it:x} 1
              {it:g}:  {it:m x} 1, {it:m}>=2
@@ -138,31 +159,33 @@ is added to the count of the first (last) grid point.
 
 {title:Diagnostics}
 
-{p 4 4 2}{cmd:mm_exactbin()} aborts with error if
+{p 4 4 2}[{cmd:_}]{cmd:mm_exactbin()} and {cmd:mm_fastexactbin()} abort with error if
 {cmd:min(}{it:x}{cmd:)} < {it:g}{cmd:[1]} or
-{cmd:max(}{it:x}{cmd:)} > {it:g}{cmd:[rows(}{it:g}{cmd:)]} 
-(unless {it:include}!=0 is specified). 
+{cmd:max(}{it:x}{cmd:)} > {it:g}{cmd:[rows(}{it:g}{cmd:)]}
+(unless {it:include}!=0 is specified).
 
-{p 4 4 2}{cmd:mm_linbin()}, {cmd:mm_fastlinbin()}, and {cmd:mm_exactbin()} produce erroneous results if
-{it:g} is not sorted or if {it:x},
-{it:w}, or {it:g} contain missing.
+{p 4 4 2}[{cmd:_}]{cmd:mm_linbin()}, {cmd:mm_fastlinbin()}, [{cmd:_}]{cmd:mm_exactbin()}, and {cmd:mm_fastexactbin()}
+produce erroneous results if {it:g} is not sorted or if {it:x},
+{it:w}, or {it:g} contain missing values.
 
-{p 4 4 2}{cmd:mm_fastlinbin()} produces erroneous results if
+{p 4 4 2}{cmd:mm_fastlinbin()} and {cmd:mm_fastexactbin()} produce erroneous results if
 the values in {it:g} are not equidistant.
+
+{p 4 4 2}{cmd:_mm_linbin()} and {cmd:_mm_exactbin()}
+produce erroneous results if {it:x} is not sorted.
 
 
 {title:Source code}
 
 {p 4 4 2}
 {help moremata_source##mm_linbin:mm_linbin.mata},
-{help moremata_source##mm_fastlinbin:mm_fastlinbin.mata},
 {help moremata_source##mm_exactbin:mm_exactbin.mata},
 {help moremata_source##mm_makegrid:mm_makegrid.mata}
 
 
 {title:Author}
 
-{p 4 4 2} Ben Jann, University of Bern, jann@soz.unibe.ch
+{p 4 4 2} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 
 
 {title:Also see}
