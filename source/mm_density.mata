@@ -1,4 +1,4 @@
-*! version 1.0.6  12aug2020  Ben Jann
+*! version 1.0.7  12aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -913,7 +913,8 @@ void `MAIN'::dexact()
 `RC' `MAIN'::W()
 {
     if (rows(W)) return(W)
-    W = mm_fastlinbin(X(), w(), AT())
+    if (sorted()) W = _mm_linbin(X(), w(), AT())
+    else          W = mm_fastlinbin(X(), w(), AT())
     return(W)
 }
 

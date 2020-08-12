@@ -153,7 +153,8 @@ Main changes:
     - new _mm_fastexactbin() for use with regular grid
     - _mm_fastlinbin() is now slightly faster
     - mm_ddens() and ISJ bandwidth selector in mm_density() now make use of 
-      _mm_exactbin() and _mm_fastexactbin()
+      _mm_exactbin() and mm_fastexactbin()
+    - mm_density() now makes use _mm_linbin()
 
     11aug2020
     - mm_density()
