@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_density}{bf:mm_density.mata}{asis}
-*! version 1.0.7  12aug2020  Ben Jann
+*! version 1.0.8  12aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -305,38 +305,37 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
 
 // D.bw() -------------------------------------------------------------------
 
-`T' `MAIN'::bw(| `TS' arg, `RS' adj, `Int' dpi, `Bool' qui)
+`T' `MAIN'::bw(| `TS' bw, `RS' adj, `Int' dpi, `Bool' qui)
 {
+    `RS' h
+    `SS' method
+    
     // get
     if (args()==0) {
         if (setup.h0<.) return(setup.h0)
         return(setup.bwmethod)
     }
     // set
-    // - syntax 1: bw(#)
-    if (args()==1) {
-        if (!isstring(arg)) {
-            if (arg<=0) _error(3300)
-            if (arg>=.) _error(3300)
-            setup.h0 = arg
-            return
-        }
-    }
-    // - syntax 2: bw(method, adjust, dpi)
     if (args()<2) adj = 1
     if (args()<3) dpi = 2
     if (args()<4) qui = `FALSE'
+    if (!isstring(bw)) {
+        if (bw<=0) _error(3300)
+        if (bw<.) h = bw
+    }
+    else method = bw
+    method = mm_strexpand(strlower(strtrim(method)),
+        ("silverman", "normalscale", "oversmoothed", "sjpi", "dpi", "isj"),
+        "sjpi") // default is "sjpi"
     if (adj<=0) _error(3300)
     if (adj>=.) _error(3300)
     if (dpi<0)  _error(3300)
     if (dpi>=.) _error(3300)
-    setup.bwmethod = mm_strexpand(strlower(strtrim(arg)),
-        ("silverman", "normalscale", "oversmoothed", "sjpi", "dpi", "isj"),
-        "sjpi") // default is "sjpi"
-    setup.h0     = .
-    setup.adjust = adj
-    setup.dpi    = trunc(dpi)
-    setup.qui    = qui
+    setup.h0       = h
+    setup.bwmethod = method
+    setup.adjust   = adj
+    setup.dpi      = trunc(dpi)
+    setup.qui      = qui
     clear()
 }
 
@@ -436,7 +435,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     if (h<.) return(h)
     // user bandwidth
     if (setup.h0<.) { 
-        h = setup.h0
+        h = setup.h0 * adjust()
         return(h)
     }
     // data-driven bandwidth selection

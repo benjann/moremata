@@ -155,6 +155,8 @@ Main changes:
     - mm_ddens() and ISJ bandwidth selector in mm_density() now make use of 
       _mm_exactbin() and mm_fastexactbin()
     - mm_density() now makes use _mm_linbin()
+    - D.bw() in mm_density() now allows argument adjust also in case of 
+      user-provided bandwidth
 
     11aug2020
     - mm_density()

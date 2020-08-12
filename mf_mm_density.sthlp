@@ -43,31 +43,30 @@ kernels are {cmd:"epanechnikov"},
 {cmd:"epan2"}, {cmd:"biweight"}, {cmd:"triweight"},
 {cmd:"cosine"}, {cmd:"gaussian"}, {cmd:"parzen"},
 {cmd:"rectangle"}, and {cmd:"triangle"}
-(abbreviations allowed); default is {cmd:"gaussian"}
+(abbreviations allowed); default is {cmd:"gaussian"}; specifying {cmd:""} 
+(empty string) selects the default
 
 {p 12 14 2}{it:adapt} is a {it:real scalar} specifying the number of stages of the adaptive
-kernel density estimator; default is {it:adapt} = 0 (non-adaptive kernel)
+kernel density estimator; {it:adapt} may not be negative; default is {it:adapt} = 0 (non-adaptive kernel)
 
 {pstd}Set bandwidth or choose bandwidth selection method
 
-        {it:D}{cmd:.bw(}{it:h}{cmd:)}
-        or
-        {it:D}{cmd:.bw(}{it:method} [{cmd:,} {it:adjust}{cmd:,} {it:dpi}{cmd:,} {it:qui}]{cmd:)}
+        {it:D}{cmd:.bw(}{it:bw} [{cmd:,} {it:adjust}{cmd:,} {it:dpi}{cmd:,} {it:qui}]{cmd:)}
 
-{p 12 14 2}{it:h} is a {it:real scalar} specifying the value of the bandwidth to be used
-
-{p 12 14 2}{it:method} is a {it:string scalar} specifying the bandwidth selection method to
-be used; available methods are {cmd:"silverman"} (optimal of Silverman),
+{p 12 14 2}{it:bw} is a (strictly positive) {it:real scalar} specifying the value 
+of the bandwidth or a {it:string scalar} specifying the bandwidth selection 
+rule; available rules are {cmd:"silverman"} (optimal of Silverman),
 {cmd:"normalscale"} (normal scale rule), {cmd:"oversmoothed"} (oversmoothed rule),
 {cmd:"sjpi"} (Sheather-Jones solve-the-equation plug-in), {cmd:"dpi"}
 (Sheather-Jones direct plug-in), and {bf:"isj"} (bandwidth based on
-diffusion estimator); default is {cmd:"sjpi"}
+diffusion estimator); default is {cmd:"sjpi"}; specifying {cmd:""} (empty string)
+or {cmd:.} (missing) selects the default
 
 {p 12 14 2}{it:adjust} is a {it:real scalar} specifying a multiplication factor
-for the bandwidth estimate; {it:adjust} must be strictly positive; default is {it:adjust} = 1
+for the bandwidth; {it:adjust} must be strictly positive; default is {it:adjust} = 1
 
 {p 12 14 2}{it:dpi} is a {it:real scalar} specifying the number of stages of functional
-estimation for the {cmd:"dpi"} method; default is {it:dpi} = 2
+estimation for the {cmd:"dpi"} rule; {it:dpi} may not be negative; default is {it:dpi} = 2
 
 {p 12 14 2}{it:qui}!=0 suppresses the warning message that is displayed if
 SJPI or ISJ fails; default is {it:qui} = 0
@@ -78,13 +77,15 @@ SJPI or ISJ fails; default is {it:qui} = 0
 
 {p 12 14 2}{it:minmax} is a {it:real vector} specifying the lower and upper bounds
 of the support of {it:X}; specify one value (lower boundary only) or
-two values (lower and upper boundary); {cmd:.} (missing) is interpreted as
-(minus) infinity; default is {it:minmax} = {cmd:(.,.)} (unbounded support)
+two values (lower and upper boundary); value {cmd:.} (missing) is interpreted as
+(minus) infinity (i.e. unbounded); default is {it:minmax} = {cmd:(.,.)} 
+(unbounded support)
 
 {p 12 14 2}{it:method} is a {it:string scalar} specifying the boundary-correction
 method to be used; available methods are {cmd:"renormalization"},
 {cmd:"reflection"}, and {bind:{cmd:"linear correction"}} (abbreviations allowed); default
-is {cmd:"renormalization"}
+is {cmd:"renormalization"}; specifying {cmd:""} 
+(empty string) selects the default
 
 {p 12 14 2}{it:rd}!=0 indicates that the data is to be interpreted as relative data (relative ranks); {it:minmax} defaults to
 {cmd:(0,1)} in this case and automatic bandwidth selection is modified; values outside [0,1] are not allowed
@@ -95,13 +96,14 @@ in {it:minmax} if {it:rd}!=0; default is {it:rd} = 0
         {it:D}{cmd:.n(}{it:n} [{cmd:,} {it:pad}]{cmd:)}
 
 {p 12 14 2}{it:n} is a {it:real scalar} specifying the grid size used by the fast approximation
-estimator (and the {cmd:"sjpi"}, {cmd:"dpi"}, and {bf:"isj"} bandwidth selectors); default is {it:n} = 2^10 = 1024
+estimator (and the bandwidth selectors); default 
+is {it:n} = 2^10 = 1024; specifying {cmd:.} (missing) selects the default
 
 {p 12 14 2}{it:pad} is a {it:real scalar} specifying the padding proportion of the approximation
-grid; the default is {it:pad} = 0.1, which means that the grid will be padded
+grid; {it:pad} may not be negative; the default is {it:pad} = 0.1, which means that the grid will be padded
 by 10 percent of the observed data range on each side of the data (unless the support of the
 data has been restricted by {it:D}{cmd:.support()}, in which case the approximation grid
-will span the defined support); {it:pad} may not be negative
+will span the defined support); specifying {cmd:.} (missing) selects the default
 
 {pstd}Retrieve settings
 
@@ -122,7 +124,7 @@ will span the defined support); {it:pad} may not be negative
     {p_end}
 {p2col:{it:kh}{space 4} =  {it:D}{cmd:.kh()}}{it:real scalar} containing canonical bandwidth of kernel
     {p_end}
-{p2col:{it:scalar} =  {it:D}{cmd:.bw()}}{it:string scalar} containing name of bandwidth selection method or {it:real scalar} containing user-provided bandwidth
+{p2col:{it:bw}{space 4} =  {it:D}{cmd:.bw()}}{it:string scalar} containing name of bandwidth selection rule or {it:real scalar} containing user-provided bandwidth
     {p_end}
 {p2col:{it:adjust} =  {it:D}{cmd:.adjust()}}{it:real scalar} containing bandwidth adjustment factor
     {p_end}
