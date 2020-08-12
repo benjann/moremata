@@ -47,7 +47,8 @@ kernels are {cmd:"epanechnikov"},
 (empty string) selects the default
 
 {p 12 14 2}{it:adapt} is a {it:real scalar} specifying the number of stages of the adaptive
-kernel density estimator; {it:adapt} may not be negative; default is {it:adapt} = 0 (non-adaptive kernel)
+kernel density estimator; {it:adapt} may not be negative; default is {it:adapt} = 0 
+(non-adaptive kernel); specifying {cmd:.} (missing) selects the default
 
 {pstd}Set bandwidth or choose bandwidth selection method
 
@@ -63,10 +64,12 @@ diffusion estimator); default is {cmd:"sjpi"}; specifying {cmd:""} (empty string
 or {cmd:.} (missing) selects the default
 
 {p 12 14 2}{it:adjust} is a {it:real scalar} specifying a multiplication factor
-for the bandwidth; {it:adjust} must be strictly positive; default is {it:adjust} = 1
+for the bandwidth; {it:adjust} must be strictly positive; default is 
+{it:adjust} = 1; specifying {cmd:.} (missing) selects the default
 
 {p 12 14 2}{it:dpi} is a {it:real scalar} specifying the number of stages of functional
-estimation for the {cmd:"dpi"} rule; {it:dpi} may not be negative; default is {it:dpi} = 2
+estimation for the {cmd:"dpi"} rule; {it:dpi} may not be negative; default is 
+{it:dpi} = 2; specifying {cmd:.} (missing) selects the default
 
 {p 12 14 2}{it:qui}!=0 suppresses the warning message that is displayed if
 SJPI or ISJ fails; default is {it:qui} = 0

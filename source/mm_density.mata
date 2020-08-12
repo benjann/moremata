@@ -164,11 +164,9 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     //     X is sorted and non-missing
     //     w is non-missing and non-negative
     if (args()<2) w = 1
-    if (args()<3) pw  = `FALSE'
+    if (args()<3) pw = `FALSE'
     if (args()<4) sorted = `FALSE'
-    if (pw!=`FALSE' & pw!=`TRUE') _error(3300)
-    if (sorted!=`FALSE' & sorted!=`TRUE') _error(3300)
-    if (!sorted) {
+    if (sorted==`FALSE') {
         if (missing(X) | missing(w)) _error(3351)
         if (any(w:<0)) {
             display("{err}{it:w} must not be negative")
@@ -179,8 +177,8 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     setup.nobs   = mm_nobs(X, w)
     setup.X      = &X
     setup.w      = &w
-    setup.pw     = pw
-    setup.sorted = sorted
+    setup.pw     = (pw!=`FALSE')
+    setup.sorted = (sorted!=`FALSE')
     clear()
 }
 
@@ -213,16 +211,14 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
         return(setup.kernel)
     }
     // set
+    if (adapt<0) _error(3300)
     kernel = strlower(strtrim(kernel0))
     if (kernel=="") kernel = "gaussian"  // default is "gaussian"
     setup.kernel = _mm_unabkern(strlower(strtrim(kernel)))
     setup.k      = _mm_findkern(setup.kernel)
     setup.K      = _mm_findkint(setup.kernel)
     setup.kh     = (*_mm_findkdel0(setup.kernel))()
-    if (args()<2) adapt = 0
-    if (adapt<0)  _error(3300)
-    if (adapt>=.) _error(3300)
-    setup.adapt = trunc(adapt)
+    setup.adapt = (adapt<. ? trunc(adapt) : 0) // default is 0
     clear()
 }
 
@@ -311,8 +307,8 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
         return(setup.bwmethod)
     }
     // set
-    if (args()<2) adj = 1
-    if (args()<3) dpi = 2
+    if (adj<=0) _error(3300)
+    if (dpi<0)  _error(3300)
     if (args()<4) qui = `FALSE'
     if (!isstring(bw)) {
         if (bw<=0) _error(3300)
@@ -322,15 +318,11 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     method = mm_strexpand(strlower(strtrim(method)),
         ("silverman", "normalscale", "oversmoothed", "sjpi", "dpi", "isj"),
         "sjpi") // default is "sjpi"
-    if (adj<=0) _error(3300)
-    if (adj>=.) _error(3300)
-    if (dpi<0)  _error(3300)
-    if (dpi>=.) _error(3300)
     setup.h0       = h
     setup.bwmethod = method
-    setup.adjust   = adj
-    setup.dpi      = trunc(dpi)
-    setup.qui      = qui
+    setup.adjust   = (adj<. ? adj : 1)          // default is 1
+    setup.dpi      = (dpi<. ? trunc(dpi) : 2)   // default is 2
+    setup.qui      = (qui!=`FALSE')
     clear()
 }
 
@@ -349,9 +341,8 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
         return((setup.lb, setup.ub))
     }
     // set
-    if (args()<3) rd     = `FALSE'
+    if (args()<3) rd = `FALSE'
     if (length(minmax)>2) _error(3200)
-    if (rd!=`FALSE' & rd!=`TRUE') _error(3300)
     if (length(minmax))   lb = minmax[1]
     else                  lb = .
     if (length(minmax)>1) ub = minmax[2]
@@ -372,7 +363,7 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
         "renormalization") // default is "renormalization"
     setup.lb = lb
     setup.ub = ub
-    setup.rd = rd
+    setup.rd = (rd!=`FALSE')
     if (setup.lb>=. & setup.ub>=.)                  setup.bc = 0
     else if (setup.bcmethod=="renormalization")     setup.bc = 1
     else if (setup.bcmethod=="reflection")          setup.bc = 2
