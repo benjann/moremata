@@ -145,6 +145,14 @@ Installation from GitHub:
 
 Main changes:
 
+    17aug2020
+    - mm_density():
+      o new public functions D.K() and D.Kd() for observation-level evaluation of
+        kernel function or derivative of kernel function using current settings 
+        (including boundary correction)
+      o some internal changes in organization of approximation estimator to avoid
+        redundant computations in some situations
+
     12aug2020
     - mm_linbin() and mm_exactbin() are now implemented in terms of loops over
       grid points (instead of loops over observations) and are faster (and more 

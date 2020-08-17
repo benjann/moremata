@@ -1,4 +1,4 @@
-*! version 1.0.8  12aug2020  Ben Jann
+*! version 1.0.9  17aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -44,7 +44,8 @@ struct `SETUP' {
     `SS'    kernel        // name of kernel
     `Int'   adapt         // stages of adaptive estimator
     `Pf'    k             // kernel function
-    `Pf'    K             // kernel integral function
+    `Pf'    kd            // kernel derivative
+    `Pf'    kint          // kernel integral function
     `RS'    kh            // canonical bandwidth of kernel
 
     // bandwidth selection
@@ -78,9 +79,9 @@ class `MAIN' {
         void    new()         // initialize class with default settings
         void    clear()       // clear all results
         `Setup' setup         // settings
-        `RC'    k(), K()      // kernel functions
-        `RC'    kbc(), krn(), // boundary-correction kernels
-                krf(), klc()
+        `RC'    k(), kd(), kint() // raw kernel functions
+        void    klc()         // compute terms for linear correction kernel
+        `RC'    _K()          // kernel function including boundary correction
         void    checksuprt()  // check whether data is within support
     public:
         `RC'    X(), w()      // retrieve X and w
@@ -89,6 +90,8 @@ class `MAIN' {
         `Bool'  sorted()      // retrieve sorted flag
         `Int'   adapt()       // retrieve stages of adaptive estimator
         `RS'    kh()          // retrieve canonical bandwidth of kernel
+        `RC'    K()           // kernel function for external use
+        `RC'    Kd()          // kernel derivative for external use
         `RS'    adjust()      // retrieve bw adjustment factor
         `Int'   dpi()         // retrieve dpi level
         `RS'    lb(), ub()    // retrieve lower and upper bounds of support
@@ -112,6 +115,8 @@ class `MAIN' {
         `RC'    at           // evaluation grid
         `RC'    l            // local bandwidth factors (at observation level)
         `RC'    D            // full grid approximation estimate
+        `RC'    D0           // adapt-1 approximation estimate
+        `RC'    D0()         // adapt-1 approximation estimate
         `RC'    AT           // approximation grid
         `RC'    W            // grid counts
         `RC'    L            // local bandwidth factors
@@ -125,8 +130,7 @@ class `MAIN' {
         `RC'    dd()
         void    dexact()
         `RC'    _dexact()
-        void    dapprox(), _dapprox(), _dapprox_fft(), _dapprox_fft_rf(),
-                _dapprox_std()
+        `RC'    dapprox(), dapprox_fft(), dapprox_fft_rf(), dapprox_std()
         `RC'    lbwf()
         `RC'    ipolate()
         `RC'    grid()
@@ -147,14 +151,8 @@ void `MAIN'::new()
 
 void `MAIN'::clear()
 {
-    d  = J(0,1,.)
     h  = .
-    at = J(0,1,.)
-    l  = J(0,1,.)
-    D  = J(0,1,.)
-    AT = J(0,1,.)
-    W  = J(0,1,.)
-    L  = J(0,1,.)
+    d = at = l = D = D0 = AT = W = L = J(0,1,.)
 }
 
 // D.data() -------------------------------------------------------------------
@@ -216,7 +214,8 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     if (kernel=="") kernel = "gaussian"  // default is "gaussian"
     setup.kernel = _mm_unabkern(strlower(strtrim(kernel)))
     setup.k      = _mm_findkern(setup.kernel)
-    setup.K      = _mm_findkint(setup.kernel)
+    setup.kint   = _mm_findkint(setup.kernel)
+    setup.kd     = _mm_findkderiv(setup.kernel)
     setup.kh     = (*_mm_findkdel0(setup.kernel))()
     setup.adapt = (adapt<. ? trunc(adapt) : 0) // default is 0
     clear()
@@ -230,68 +229,113 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     return((*setup.k)(X))
 }
 
-`RC' `MAIN'::K(`RS' l, | `RC' X)
-{
-    if (args()==1) return((*setup.K)(l))
-    return((*setup.K)(l, X))
+`RC' `MAIN'::kd(`RC' X) {
+    return((*setup.kd)(X))
 }
 
-`RC' `MAIN'::kbc(`RC' X, `RC' x, `RC' h)
+`RC' `MAIN'::kint(`RS' l, | `RC' X)
 {
+    if (args()==1) return((*setup.kint)(l))
+    return((*setup.kint)(l, X))
+}
+
+`RC' `MAIN'::K(`RC' X, `RC' x, `RC' h, | `Bool' fast)
+{   // fast!=0: do not reset results to 0 outside support
+    `RC' k
+    
+    k = _K(X, x, h):/h
+    if (setup.bc==0)      return(k)
+    if (fast & args()==4) return(k)
+    if (lb()<.) k = k :* (X:>=lb() :& x:>=lb())
+    if (ub()<.) k = k :* (X:<=ub() :& x:<=ub())
+    return(k)
+}
+
+`RC' `MAIN'::_K(`RC' X, `RC' x, `RC' h)
+{
+    `RC' k, a0, a1, a2
+    
+    // unbounded support
     if (setup.bc==0) return(k((x:-X):/h))
-    if (setup.bc==1) return(krn(X, x, h))
-    if (setup.bc==2) return(krf(X, x, h))
-    if (setup.bc==3) return(klc(X, x, h))
-    // not reached
-}
-
-`RC' `MAIN'::krn(`RC' X, `RC' x, `RC' h)
-{   // renormalization kernel
-    `RC' k
-    
-    k = k((x:-X):/h)
-    if (lb()<. & ub()<.) k = k :/ (K(1, (ub():-x):/h) - K(1, (lb():-x):/h))
-    else if (lb()<.)     k = k :/  K(1, (x:-lb()):/h)
-    else if (ub()<.)     k = k :/  K(1, (ub():-x):/h)
-    return(k)
-}
-
-`RC' `MAIN'::krf(`RC' X, `RC' x, `RC' h)
-{   // reflection kernel
-    `RC' k
-    
-    k = k((x:-X):/h)
-    if (lb()<.) k = k + k((x:-2*lb():+X):/h)
-    if (ub()<.) k = k + k((x:-2*ub():+X):/h)
-    return(k)
-}
-
-`RC' `MAIN'::klc(`RC' X, `RC' x, `RC' h)
-{   // linear correction kernel
-    `RC' k, z, a0, a1, a2, l
-    
-    z = (x:-X):/h
-    k = k(z)
-    if (ub()<.) {
-        l = (ub():-x):/h
-        a0 =  K(1, l)
-        a1 = -K(3, l)
-        a2 =  K(4, l)
-        if (lb()<.) {
-            l  = (lb():-x):/h
-            a0 = a0 :- K(1, l)
-            a1 = a1 :+ K(3, l)
-            a2 = a2 :- K(4, l)
-        }
+    // renormalization
+    if (setup.bc==1) {
+        k = k((x:-X):/h)
+        if      (ub()>=.) k = k :/  kint(1, (x:-lb()):/h) // lower bound only
+        else if (lb()>=.) k = k :/  kint(1, (ub():-x):/h) // upper bound only
+        else k = k :/ (kint(1, (ub():-x):/h) - kint(1, (lb():-x):/h))
+        return(k)
     }
-    else if (lb()<.) {
+    // reflection
+    if (setup.bc==2) {
+        k = k((x:-X):/h)
+        if (lb()<.) k = k + k((x:-2*lb():+X):/h)
+        if (ub()<.) k = k + k((x:-2*ub():+X):/h)
+        return(k)
+    }
+    // linear correction
+    if (setup.bc==3) {
+        klc(x, h, a0=., a1=., a2=.)
+        k = (x:-X):/h
+        return((a2 :- a1:*k):/(a0:*a2-a1:^2) :* k(k))
+    }
+    _error(3498) // not reached
+}
+
+void `MAIN'::klc(`RC' x, `RC' h, `RC' a0, `RC' a1, `RC' a2)
+{
+    `RC' l
+    
+    if (ub()>=.) { // lower bound only
         l  = (x:-lb()):/h
-        a0 = K(1, l)
-        a1 = K(3, l)
-        a2 = K(4, l)
+        a0 = kint(1, l)
+        a1 = kint(3, l)
+        a2 = kint(4, l)
+        return
     }
-    else return(k)
-    return((a2 :- a1:*z):/(a0:*a2-a1:^2) :* k)
+    l = (ub():-x):/h
+    a0 =  kint(1, l)
+    a1 = -kint(3, l)
+    a2 =  kint(4, l)
+    if (lb()>=.) return // upper bound only
+    l  = (lb():-x):/h
+    a0 = a0 :- kint(1, l)
+    a1 = a1 :+ kint(3, l)
+    a2 = a2 :- kint(4, l)
+}
+
+`RC' `MAIN'::Kd(`RC' X, `RC' x, `RC' h, | `Bool' fast)
+{   // fast!=0: do not reset results to 0 outside support
+    `RC' k, a0, a1, a2
+    
+    // unbounded support
+    if (setup.bc==0) return(-kd((x:-X):/h) :/ h:^2)
+    // renormalization
+    if (setup.bc==1) {
+        k = kd((x:-X):/h)
+        if      (ub()>=.) k = k :/  kint(1, (x:-lb()):/h) // lower bound only
+        else if (lb()>=.) k = k :/  kint(1, (ub():-x):/h) // upper bound only
+        else k = k :/ (kint(1, (ub():-x):/h) - kint(1, (lb():-x):/h))
+        k = -k :/ h:^2
+    }
+    // reflection
+    else if (setup.bc==2) {
+        k = kd((x:-X):/h)
+        if (lb()<.) k = k - kd((x:-2*lb():+X):/h)
+        if (ub()<.) k = k - kd((x:-2*ub():+X):/h)
+        k = -k :/ h:^2
+    }
+    // linear correction
+    else if (setup.bc==3) {
+        klc(x, h, a0=., a1=., a2=.)
+        k = (x:-X):/h
+        k = (a1:*k(k) - (a2 :- a1:*k)*kd(k)) :/ ((a0:*a2-a1:^2):*h:^2)
+    }
+    else _error(3498) // not reached
+    // reset to zero outside of support
+    if (fast & args()==4) return(k)
+    if (lb()<.) k = k :* (X:>=lb() :& x:>=lb())
+    if (ub()<.) k = k :* (X:<=ub() :& x:<=ub())
+    return(k)
 }
 
 // D.bw() -------------------------------------------------------------------
@@ -857,16 +901,16 @@ void `MAIN'::dexact()
     // using slightly different method depending on whether h and w are
     // scalar or not to save a bit of computer time, if possible
     if (rows(h)==1 & rows(w)==1) {
-        for (;i;i--) d[i] = w/h * sum(kbc(x, at[i], h))
+        for (;i;i--) d[i] = w/h * sum(_K(x, at[i], h))
     }
     else if (rows(h)==1) {
-        for (;i;i--) d[i] = sum(w :* kbc(x, at[i], h)) / h
+        for (;i;i--) d[i] = sum(w :* _K(x, at[i], h)) / h
     }
     else if (rows(w)==1) {
-        for (;i;i--) d[i] = w * sum(kbc(x, at[i], h) :/ h)
+        for (;i;i--) d[i] = w * sum(_K(x, at[i], h) :/ h)
     }
     else {
-        for (;i;i--) d[i] = sum(w:/h :* kbc(x, at[i], h))
+        for (;i;i--) d[i] = sum(w:/h :* _K(x, at[i], h))
     }
     return(d / nobs())
 }
@@ -875,13 +919,7 @@ void `MAIN'::dexact()
 {
     if (rows(l)) return(l)
     if (!adapt()) return(1)
-    D = L = J(0,1,.)   // clear approximation estimator
-    dapprox(adapt()-1) // compute preliminary approximation estimator
-    l = lbwf(ipolate(AT, D, X(), sorted()), w())
-    _dapprox()         // complete last step of approximate estimator (this is 
-                       // not needed for the exact estimator, but it ensures
-                       // that D() and L() will return correct results)
-    return(l)
+    return(lbwf(ipolate(AT(), D0(), X(), sorted()), w()))
 }
 
 // binned approximation estimator ---------------------------------------------
@@ -889,8 +927,18 @@ void `MAIN'::dexact()
 `RC' `MAIN'::D()
 {
     if (rows(D)) return(D)
-    dapprox(adapt())
+    if (adapt()) (void) D0()
+    D = dapprox()
     return(D)
+}
+
+`RC' `MAIN'::D0()
+{
+    `Int' i
+    
+    if (rows(D0)) return(D0)
+    for (i=adapt();i;i--) D0 = dapprox()
+    return(D0)
 }
 
 `RC' `MAIN'::AT()
@@ -912,45 +960,34 @@ void `MAIN'::dexact()
 {
     if (rows(L)) return(L)
     if (!adapt()) return(1)
-    dapprox(adapt())
+    L = lbwf(D0(), W())
     return(L)
 }
 
-void `MAIN'::dapprox(`Int' adapt)
-{
-    // create grid and compute grid counts if necessary
-    if (rows(W)==0) (void) W()
-    // obtain estimate
-    _dapprox()
-    // go to next stage of adaptive estimator
-    if (adapt) dapprox(adapt-1)
-}
-
-void `MAIN'::_dapprox()
+`RC' `MAIN'::dapprox()
 {
     `RC' h
     
+    // create grid and compute grid counts if necessary
+    if (rows(W)==0) (void) W()
     // obtain h
     h = h()
-    if (rows(D)) {
-        L = lbwf(D, W)
-        h = h :* L
-    }
+    if (rows(D0)) h = h :* lbwf(D0, W) // adaptive estimator
     // FFT estimation if h is constant
     if (rows(h)==1) {
-        if (setup.bc<=1)      _dapprox_fft(h)    // no bc or renormalization
-        else if (setup.bc==2) _dapprox_fft_rf(h) // reflection
-        else                  _dapprox_std(h)    // linear correction (no FFT)
+        if (setup.bc==3) return(dapprox_std(h))    // linear correction (no FFT)
+        if (setup.bc==2) return(dapprox_fft_rf(h)) // reflection
+                         return(dapprox_fft(h))    // no bc or renormalization
     }
     // else use standard estimator
-    else _dapprox_std(h)
+    return(dapprox_std(h))
 }
 
-void `MAIN'::_dapprox_fft(`RS' h)
+`RC' `MAIN'::dapprox_fft(`RS' h)
 {
     `Int' M, L
     `RS'  a, b, tau
-    `RC'  kappa
+    `RC'  kappa, D
     
     M = rows(AT)
     a = AT[1]; b = AT[M]
@@ -965,14 +1002,14 @@ void `MAIN'::_dapprox_fft(`RS' h)
     // compute kappa and obtain FFT
     kappa = k( (0::L) * (b-a) / (h*(M-1)) )
     D = convolve((kappa[L+1::1]\kappa[|2 \ L+1|]), W)[|L+1 \ L+M|] / (nobs()*h)
-    if (setup.bc==0) return
+    if (setup.bc==0) return(D)
     // renormalization boundary correction
-    if (lb()<. & ub()<.) D = D :/ (K(1, (ub():-AT):/h) - K(1, (lb():-AT):/h))
-    else if (lb()<.)     D = D :/  K(1, (AT:-lb()):/h)
-    else if (ub()<.)     D = D :/  K(1, (ub():-AT):/h)
+    if (ub()>=.) return(D :/  kint(1, (AT:-lb()):/h)) // lower bound only
+    if (lb()>=.) return(D :/  kint(1, (ub():-AT):/h)) // upper bound only
+    return(D :/ (kint(1, (ub():-AT):/h) - kint(1, (lb():-AT):/h)))
 }
 
-void `MAIN'::_dapprox_fft_rf(`RS' h)
+`RC' `MAIN'::dapprox_fft_rf(`RS' h)
 {
     `Int' M, L, first, last
     `RS'  a, b, tau
@@ -1001,23 +1038,19 @@ void `MAIN'::_dapprox_fft_rf(`RS' h)
         w = w \ W[M-1::1]
         w[last] = 2 * w[last]
     }
-    // ompute kappa and obtain FFT
+    // compute kappa and obtain FFT
     kappa = k( (0::L) * (b-a) / (h*(M-1)) )
-    D = convolve((kappa[L+1::1]\kappa[|2 \ L+1|]), w)[|L+first \ L+last|] / 
-        (nobs()*h)
-    if (setup.bc==0) return
+    return(convolve((kappa[L+1::1]\kappa[|2 \ L+1|]), w)[|L+first \ L+last|] / 
+        (nobs()*h))
 }
 
-void `MAIN'::_dapprox_std(`RC' h)
+`RC' `MAIN'::dapprox_std(`RC' h)
 {
     `Int' n, i, a, b
-    `RC'  r
+    `RC'  r, D
     
     // no computational shortcut in case of gaussian kernel
-    if (kernel()=="gaussian") {
-        D = _dexact(AT, W, h, AT)
-        return
-    }
+    if (kernel()=="gaussian") return(_dexact(AT, W, h, AT))
     // other kernels: restrict computation to relevant range of evaluation points
     n = n()
     r = h
@@ -1029,17 +1062,16 @@ void `MAIN'::_dapprox_std(`RC' h)
         for (i=n;i;i--) {
             a = max((1, i-r))
             b = min((n, i+r))
-            D[|a \ b|] = D[|a \ b|] + W[i] / h * kbc(AT[i], AT[|a \ b|], h)
+            D[|a \ b|] = D[|a \ b|] + W[i] / h * _K(AT[i], AT[|a \ b|], h)
         }
-        D = D :/ nobs()
-        return
+        return(D :/ nobs())
     }
     for (i=n;i;i--) {
         a = max((1, i-r[i]))
         b = min((n, i+r[i]))
-        D[|a \ b|] = D[|a \ b|] + W[i] / h[i] * kbc(AT[i], AT[|a \ b|], h[i])
+        D[|a \ b|] = D[|a \ b|] + W[i] / h[i] * _K(AT[i], AT[|a \ b|], h[i])
     }
-    D = D :/ nobs()
+    return(D :/ nobs())
 }
 
 // ---------------------------------------------------------------------------

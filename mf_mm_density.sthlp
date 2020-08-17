@@ -1,5 +1,5 @@
 {smcl}
-{* 10aug2020}{...}
+{* 17aug2020}{...}
 {cmd:help mata mm_density()}
 {hline}
 
@@ -29,10 +29,10 @@
 
 {p 12 14 2}{it:pw}!=0 indicates that weights are sampling weights; default is {it:pw} = 0
 
-{p 12 14 2}{it:sorted}!=0 indicates that {it:X} is sorted and non-missing (and that {it:w} is non-missing and
+{p 12 14 2}{it:sorted}!=0 indicates that {it:X} is sorted and non-missing, that {it:w} is non-missing and
 non-negative, and that {it:X} does not contain values that are outside of the support defined by
-{it:D}{cmd:.support()}); default is {it:sorted} = 0; specify {it:sorted}!=0 to save some computer time
-if you know that the mentioned conditions are true
+{it:D}{cmd:.support()}; default is {it:sorted} = 0; specify {it:sorted}!=0 to save some computer time
+if you know that these conditions are true
 
 {pstd}Choose kernel
 
@@ -213,6 +213,23 @@ grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
 {pmore}
     The self-threading functions can be used irrespective of whether {it:D}{cmd:.d()} has been applied or
     not; results will be the same.
+
+{dlgtab:Other functions}
+
+{pstd}Obtain levels or first derivatives of kernel function using current settings
+(including boundary correction)
+
+        {it:levels}      {cmd:=} {it:D}{cmd:.K(}{it:X}{cmd:,} {it:at}{cmd:,} {it:h}{cmd:)}
+        {it:derivatives} {cmd:=} {it:D}{cmd:.Kd(}{it:X}{cmd:,} {it:at}{cmd:,} {it:h}{cmd:)}
+
+{p 12 14 2}{it:X} is a {it:real colvector} containing the points at which the levels or derivatives will be evaluated
+
+{p 12 14 2}{it:at} is a {it:real colvector} containing kernel locations (midpoints)
+
+{p 12 14 2}{it:h} is a {it:real colvector} containing kernel bandwidths
+
+{p 12 14 2}{it:X}, {it:at}, and {it:h} are required to be r-conformable 
+(see {helpb m6_glossary##r-conformability:{bind:[M-6] glossary}}).
 
 
 {title:Description}
