@@ -333,7 +333,7 @@ void `MAIN'::klc(`RC' x, `RC' h, `RC' a0, `RC' a1, `RC' a2)
     else if (setup.bc==3) {
         klc(x, h, a0=., a1=., a2=.)
         k = (x:-X):/h
-        k = (a1:*k(k) - (a2 :- a1:*k)*kd(k)) :/ ((a0:*a2-a1:^2):*h:^2)
+        k = (a1:*k(k) - (a2 :- a1:*k):*kd(k)) :/ ((a0:*a2-a1:^2):*h:^2)
     }
     else _error(3498) // not reached
     // reset to zero outside of support
