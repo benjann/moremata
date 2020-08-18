@@ -145,6 +145,9 @@ Installation from GitHub:
 
 Main changes:
 
+    18aug2020
+    - function mm_kderiv_triweight() returned incorrect results; this is fixed
+
     17aug2020
     - mm_density():
       o new public functions D.K() and D.Kd() for observation-level evaluation of

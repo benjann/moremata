@@ -3,7 +3,7 @@
 
 *! {smcl}
 *! {marker mm_kern}{bf:mm_kern.mata}{asis}
-*! version 1.0.2, Ben Jann, 06jul2020
+*! version 1.0.3  18aug2020  Ben Jann
 version 9.2
 
 local kernels ///
@@ -202,7 +202,7 @@ real matrix mm_kint_triweight(| real scalar r, real matrix x)
 //real scalar mm_kvar_triweight() return(1/9)
 real matrix mm_kderiv_triweight(real matrix x)
 {
-	return(6.5625*(x:^3:-x):*(abs(x):<1))
+	return(-6.5625*x:*(1:-x:^2):^2:*(abs(x):<1))   // 210/32 = 6.5625
 }
 real scalar mm_kdel0_triweight() return((9450/143)^.2)
 
