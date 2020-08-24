@@ -1,4 +1,4 @@
-*! version 1.0.9  17aug2020  Ben Jann
+*! version 1.1.0  24aug2020  Ben Jann
 version 11.2
 
 // class & struct
@@ -110,6 +110,7 @@ class `MAIN' {
         `RC'    W()          // set/retrieve W
         `RC'    L()          // retrieve L
     private:
+        `RS'    _h()         // estimate/retrieve h; return error if missing
         `RC'    d            // density estimate
         `RS'    h            // bandwidth
         `RC'    at           // evaluation grid
@@ -496,6 +497,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     }
     // final adjustments
     h = h * kh() * adjust()
+    if (h<=0) h = . // h must be strictly positive
     return(h)
 }
 
@@ -503,6 +505,15 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 {
     if (rd()) return((1 + 1/(2 * sqrt(pi()) * s))^.2)
     return(1)
+}
+
+`RS' `MAIN'::_h()
+{
+    if (h()>=.) {
+        display("{err}bandwidth could not be determined")
+        _error(3498)
+    }
+    return(h)
 }
 
 // Sheather-Jones solve-the-equation plug-in selection rule -------------------
@@ -858,7 +869,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
         return(d)
     }
     // case 2: o1=n, o2=from, o3=to
-    at = grid(o1, h(), o2, o3)
+    at = grid(o1, _h(), o2, o3)
     // case 2a: exact estimator
     if (args()==4 & o4) dexact()
     // case 2b: approximation estimator
@@ -884,11 +895,11 @@ void `MAIN'::dexact()
         else if (ub()<.)     p = select(1::n, at:<=ub())
         if (length(p)!=n) {
             d = J(n,1,0)
-            if (length(p)) d[p] = _dexact(X(), w(), h() :* l(), at[p])
+            if (length(p)) d[p] = _dexact(X(), w(), _h() :* l(), at[p])
             return
         }
     }
-    d = _dexact(X(), w(), h() :* l(), at)
+    d = _dexact(X(), w(), _h() :* l(), at)
 }
 
 `RC' `MAIN'::_dexact(`RC' x, `RC' w, `RC' h, `RC' at)
@@ -971,7 +982,7 @@ void `MAIN'::dexact()
     // create grid and compute grid counts if necessary
     if (rows(W)==0) (void) W()
     // obtain h
-    h = h()
+    h = _h()
     if (rows(D0)) h = h :* lbwf(D0, W) // adaptive estimator
     // FFT estimation if h is constant
     if (rows(h)==1) {
