@@ -145,6 +145,10 @@ Installation from GitHub:
 
 Main changes:
 
+    03sep2020
+    - mm_median() had argument fw that did not do anything; the argument has now been
+      removed
+
     24aug2020
     - mm_density() now returns error if bandwith cannot be determined 
       (e.g. if data is constant); function D.h() returns missing in this case

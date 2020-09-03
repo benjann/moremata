@@ -1,5 +1,5 @@
 {smcl}
-{* 17jul2020}{...}
+{* 03sep2020}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -17,7 +17,7 @@
 
 {p 8 23 2}
 {it:real rowvector}{bind: }
-{cmd:mm_median(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:fw}]{cmd:)}
+{cmd:mm_median(}{it:X} [{cmd:,} {it:w}]{cmd:)}
 
 {p 8 23 2}
 {it:real rowvector}{bind: }
@@ -29,7 +29,7 @@
 
 {p 8 23 2}
 {it:real scalar}{bind:    }
-{cmd:_mm_median(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:fw}]{cmd:)}
+{cmd:_mm_median(}{it:x} [{cmd:,} {it:w}]{cmd:)}
 
 {p 8 23 2}
 {it:real scalar}{bind:    }
@@ -40,6 +40,8 @@ where
 
 {p 14 18 2}{it:X}:  {it:real matrix} containing data (rows are observations, columns variables)
 
+{p 14 18 2}{it:x}:  {it:real colvector} containing data (single variable)
+
 {p 14 18 2}{it:w}:  {it:real colvector} containing weights
 
 {p 14 18 2}{it:P}:  {it:real matrix} containing evaluation probabilities; default is {it:P} = (0, .25, .5, .75, 1)'
@@ -47,8 +49,6 @@ where
 {p 12 18 2}{it:def}:  {it:real scalar} selecting quantile definition; default is {it:def} = 2
 
 {p 13 18 2}{it:fw}:  {it:real scalar} causing weights to be interpreted as frequency weights
-
-{p 14 18 2}{it:x}:  {it:real colvector} containing data (single variable)
 
 
 {title:Description}
@@ -169,7 +169,7 @@ to an even integer, else use the upper value).
 
 {pstd}
 {cmd:mm_median()} and {cmd:mm_iqrange()} are wrappers
-for {cmd:mm_quantile()} that return the median (the 0.5-quantile)
+for {cmd:mm_quantile()} that return the median (the 0.5-quantile, using quantile definition 2)
 and the inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
 
 {pstd}
@@ -212,10 +212,9 @@ single column of data is allowed as input to these functions.
             {it:fw}:  1 {it:x} 1
         {it:result}:  {it:r2 x c2} or {it:r2 x c1}
 
-    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:)}:
              {it:X}:  {it:r x c}
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
-            {it:fw}:  1 {it:x} 1
         {it:result}:  1 {it:x c}
 
     {cmd:mm_iqrange(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
@@ -233,10 +232,9 @@ single column of data is allowed as input to these functions.
             {it:fw}:  1 {it:x} 1
         {it:result}:  {it:r2 x c2}
 
-    {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:)}:
              {it:X}:  {it:r x} 1
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
-            {it:fw}:  1 {it:x} 1
         {it:result}:  1 {it:x} 1
 
     {cmd:mm_iqrange(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
