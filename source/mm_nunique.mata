@@ -1,4 +1,4 @@
-*! version 1.1.0  09jul2020  Ben Jann
+*! version 1.1.1  09oct2020  Ben Jann
 version 9.2
 mata:
 
@@ -150,7 +150,7 @@ real scalar _mm_nuniqrows(transmorphic matrix X)
     return(sum(_mm_uniqrows_tag(X)))
 }
 
-transmorphic vector _mm_uniqrows(transmorphic matrix X)
+transmorphic matrix _mm_uniqrows(transmorphic matrix X)
 {
     if (rows(X)==0) return(X)
     return(select(X, _mm_uniqrows_tag(X)))

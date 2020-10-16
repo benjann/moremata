@@ -1528,7 +1528,7 @@ end
 
 *! {smcl}
 *! {marker mm_freq}{bf:mm_freq.mata}{asis}
-*! version 1.0.3, Ben Jann, 09jul2020
+*! version 1.0.4, Ben Jann, 09oct2020
 version 9.1
 mata:
 
@@ -1561,9 +1561,10 @@ real colvector _mm_freq(transmorphic matrix x,
 	j = 1
 	for (i=1; i<=rows(x); i++) {
 		for (;j<=l;j++) {
-			if (x[i,]==levels[j,]) break
+			if (x[i,]<=levels[j,]) break
 		}
 		if (j>l) break
+		if (x[i,]!=levels[j,]) continue
 		result[j] = result[j] + (rows(w)!=1 ? w[i] : w)
 	}
 	return(result)
@@ -5094,7 +5095,7 @@ end
 
 *! {smcl}
 *! {marker mm_nunique}{bf:mm_nunique.mata}{asis}
-*! version 1.1.0  09jul2020  Ben Jann
+*! version 1.1.1  09oct2020  Ben Jann
 version 9.2
 mata:
 
@@ -5246,7 +5247,7 @@ real scalar _mm_nuniqrows(transmorphic matrix X)
     return(sum(_mm_uniqrows_tag(X)))
 }
 
-transmorphic vector _mm_uniqrows(transmorphic matrix X)
+transmorphic matrix _mm_uniqrows(transmorphic matrix X)
 {
     if (rows(X)==0) return(X)
     return(select(X, _mm_uniqrows_tag(X)))

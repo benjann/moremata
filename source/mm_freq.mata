@@ -1,4 +1,4 @@
-*! version 1.0.3, Ben Jann, 09jul2020
+*! version 1.0.4, Ben Jann, 09oct2020
 version 9.1
 mata:
 
@@ -31,9 +31,10 @@ real colvector _mm_freq(transmorphic matrix x,
 	j = 1
 	for (i=1; i<=rows(x); i++) {
 		for (;j<=l;j++) {
-			if (x[i,]==levels[j,]) break
+			if (x[i,]<=levels[j,]) break
 		}
 		if (j>l) break
+		if (x[i,]!=levels[j,]) continue
 		result[j] = result[j] + (rows(w)!=1 ? w[i] : w)
 	}
 	return(result)
