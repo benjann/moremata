@@ -1,5 +1,22 @@
 # moremata
-Stata module providing various Mata functions
+Stata module providing various Mata functions.
+
+To install `moremata` from the SSC Archive, type
+
+    . ssc install moremata, replace
+
+in Stata. Stata version 9.2 or newer is required. Some functions may require
+newer Stata versions.
+
+---
+
+Installation from GitHub:
+
+    . net install moremata, replace from(https://raw.githubusercontent.com/benjann/moremata/master/)
+
+---
+
+Functions:
 
   * `mm_kern()`: various kernel functions
   * `mm_kint()`: kernel integral functions
@@ -128,22 +145,13 @@ Stata module providing various Mata functions
   * `mm_callf()`: pass optional args to function
   * `mm_callf_setup()`: setup for `mm_callf()`
 
-To install `moremata` from the SSC Archive, type
-
-    . ssc install moremata, replace
-
-in Stata. Stata version 9.2 or newer is required. Some functions may require
-newer Stata versions.
-
----
-
-Installation from GitHub:
-
-    . net install moremata, replace from(https://raw.githubusercontent.com/benjann/moremata/master/)
-
 ---
 
 Main changes:
+
+    19oct2020
+    - mm_ranks() implicilty assumed weights to be nonnegative and produced meaningless
+      results if mid!=0 was specified in presence of negative weights; this is fixed
 
     03sep2020
     - mm_median() had argument fw that did not do anything; the argument has now been
