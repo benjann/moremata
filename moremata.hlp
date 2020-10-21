@@ -1,5 +1,5 @@
 {smcl}
-{* 12aug2020}{...}
+{* 21oct2020}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -169,6 +169,14 @@
 {col 41}sum of squared errors
 {col 22}{cmd:mm_colsse()}{...}
 {col 41}sum of squared errors, by column
+
+{col 5}{bf:{help mf_mm_hl:mm_hl()}}{...}
+{col 22}{cmd:mm_hl()}{...}
+{col 41}Hodges-Lehmann location estimator
+{col 22}{cmd:mm_qn()}{...}
+{col 41}Qn scale coefficient
+{col 22}{cmd:mm_mc()}{...}
+{col 41}Medcouple skewness measure
 
 {col 5}{it:Distributions}
 

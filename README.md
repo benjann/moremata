@@ -67,6 +67,9 @@ Functions:
   * `mm_colmse()`: mean squared error, by column
   * `mm_sse()`: sum of squared errors
   * `mm_colsse()`: sum of squared errors, by column
+  * `mm_hl()`: Hodges-Lehmann location estimator
+  * `mm_qn()`: Qn scale coefficient
+  * `mm_mc()`: Medcouple skewness measure
   * `mm_benford()`: Benford distribution
   * `mm_cauchy()`: cumulative Cauchy-Lorentz dist.
   * `mm_cauchyden()`: Cauchy-Lorentz density
@@ -148,6 +151,10 @@ Functions:
 ---
 
 Main changes:
+
+    21oct2020
+    - mm_hl(), mm_qn(), and mm_mc() added (robust pairwise-based measures of
+      location, scale, and skewness)
 
     19oct2020
     - mm_ranks() implicilty assumed weights to be nonnegative and produced meaningless
