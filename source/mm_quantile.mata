@@ -1,4 +1,4 @@
-*! version 2.0.1  17jul2020  Ben Jann
+*! version 2.0.2  23oct2020  Ben Jann
 version 9.2
 mata:
 
@@ -12,8 +12,8 @@ real matrix mm_quantile(real matrix X, | real colvector w,
     if (args()<3) P = (0, .25, .50, .75, 1)'
     if (args()<4) d = 2
     if (args()<5) fw = 0
-    if (!anyof(1::9, d)) {
-        display("{err}{it:def} must be an integer in [1,9]")
+    if (!anyof(0::9, d)) {
+        display("{err}{it:def} must be an integer in [0,9]")
         _error(3300)
     }
     if (missing(X) | missing(w)) _error(3351)
@@ -153,8 +153,8 @@ real matrix _mm_quantile(real colvector X, | real colvector w,
             XX = &(X[o,])
             ww = &(w[o])
         }
-        // weights can be ignored if constant and d = 1 or 2
-        if ((d==1 | d==2) & rows(*ww)) { // (*ww may be void)
+        // weights can be ignored if constant and d < 3
+        if (d<3 & rows(*ww)) { // (*ww may be void)
             if (allof(*ww, (*ww)[1])) ww = &1
         }
         // weights can be ignored if w = 1 for all observations
@@ -195,7 +195,8 @@ real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
     n = rows(X)
     if ((rows(p)*n)==0) return(J(rows(p), 1, .)) // no obs or rows(p)==0
     if (n==1)           return(J(rows(p), 1, X)) // only one obs
-    if      (d==1) pn = p :* n
+    if      (d==0) pn = p :* n
+    else if (d==1) pn = p :* n
     else if (d==2) pn = p :* n
     else if (d==3) pn = p :* n :- .5
                                                 // pn = a + p*(n + 1 - a - b)
@@ -206,14 +207,15 @@ real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
     else if (d==8) pn = 1/3 :+ p :* (n + 1/3)   //      a = b = 1/3
     else if (d==9) pn = 3/8 :+ p :* (n + 1/4)   //      a = b = 3/8
     else {
-        display("{err}{it:def} must be an integer in [1,9]")
+        display("{err}{it:def} must be an integer in [0,9]")
         _error(3300)
     }
+    if (d==0) return(X[mm_clip(floor(pn):+1, 1, n)])
+    if (d==1) return(X[mm_clip(ceil(pn), 1, n)])
     if (d<=3) {
         j = floor(pn)
-        if      (d==1) h = (pn:>j)
-        else if (d==2) h = ((pn:>j) :+ 1) / 2
-        else           h = (pn:>j) :| mod(j,2)
+        if (d==2) h = ((pn:>j) :+ 1) / 2
+        else      h = (pn:>j) :| mod(j,2)
     }
     else {
         eps = 4 * epsilon(1) // handle rounding error as in R's quantile()
@@ -236,9 +238,10 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
     if (rows(X)==0) return(J(rows(p), 1, .))
     if (rows(X)==1) return(J(rows(p), 1, X))
     if (rows(w)==0) return(J(rows(p), 1, .))
-    // frequency weights or d=1,2 (for which type of weights is irrelevant)
-    if (fw | d==1 | d==2) {
+    // frequency weights or d<3 (for which type of weights is irrelevant)
+    if (fw | d<3) {
         W = _mm_ecdf2(X, w, 0, 1) // W = (uniq X, runningsum(w))
+        if (d==0) return(_mm_quantile_w_0(W[,1], W[,2], p))
         if (d==1) return(_mm_quantile_w_1(W[,1], W[,2], p))
         if (d==2) return(_mm_quantile_w_2(W[,1], W[,2], p))
         if (d==3) return(_mm_quantile_w_3(W[,1], W[,2], p))
@@ -248,7 +251,7 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
         if (d==7) return(_mm_quantile_w_d(W[,1], W[,2], p,   1,  -1))
         if (d==8) return(_mm_quantile_w_d(W[,1], W[,2], p, 1/3, 1/3))
         if (d==9) return(_mm_quantile_w_d(W[,1], W[,2], p, 3/8, 1/4))
-        display("{err}{it:def} must be an integer in [1,9]")
+        display("{err}{it:def} must be an integer in [0,9]")
         _error(3300)
     }
     // other cases
@@ -266,11 +269,30 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
         else if (d==8) W = (W :- 1/3)           / (W[rows(W)] + 1/3)
         else if (d==9) W = (W :- 3/8)           / (W[rows(W)] + 1/4)
         else {
-            display("{err}{it:def} must be an integer in [1,9]")
+            display("{err}{it:def} must be an integer in [0,9]")
             _error(3300)
         }
         return(mm_fastipolate(W, X, p, 1))
     }
+}
+
+real colvector _mm_quantile_w_0(real colvector x, real colvector W, real colvector p)
+{
+    real scalar    i, j, pi
+    real colvector P, q
+    
+    j = rows(W) 
+    P = p * W[j]
+    i = rows(p)
+    q = J(i,1,.)
+    for (; i; i--) {
+        pi = P[i]
+        for (; j>1; j--) {
+            if (W[j-1]<=pi) break
+        }
+        q[i] = x[j]
+    }
+    return(q)
 }
 
 real colvector _mm_quantile_w_1(real colvector x, real colvector W, real colvector p)

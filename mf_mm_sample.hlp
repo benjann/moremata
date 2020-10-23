@@ -1,5 +1,5 @@
 {smcl}
-{* 12jun2997}{...}
+{* 23oct2020}{...}
 {cmd:help mata mm_sample()}
 {hline}
 
@@ -13,7 +13,7 @@
 
 {p 8 23 2}
 {it:real colvector}
-{cmd:mm_sample(}{it:n}{cmd:,} {it:strata} [{cmd:,} {it:cluster}{cmd:,} {it:w}{cmd:,} {it:wor}{cmd:,} {it:count}{cmd:,} {it:fast}]{cmd:)}
+{cmd:mm_sample(}{it:n}{cmd:,} {it:strata} [{cmd:,} {it:cluster}{cmd:,} {it:w}{cmd:,} {it:wor}{cmd:,} {it:count}{cmd:,} {it:fast}{cmd:,} {it:alt}{cmd:,} {it:nowarn}]{cmd:)}
 
 {pstd}
 where
@@ -46,6 +46,13 @@ returned; default is to return a permutation vector
 {it:fast}:  {it:real scalar} indicating that some internal
 checks be skipped; do not use this option
 
+{p 12 18 2}
+{it:alt}:  {it:real scalar} indicating that an alternative, typically much faster
+algorithm be used for SRSWOR
+
+{p 9 18 2}
+{it:nowarn}:  {it:real scalar} indicating that repetitions are allowed in UPSWOR
+
 
 {p 8 23 2}
 {it:real colvector}
@@ -53,7 +60,7 @@ checks be skipped; do not use this option
 
 {p 8 23 2}
 {it:real colvector}
-{cmd:mm_srswor(}{it:n}{cmd:,} {it:N} [{cmd:,} {it:count}]{cmd:)}
+{cmd:mm_srswor(}{it:n}{cmd:,} {it:N} [{cmd:,} {it:count}{cmd:,} {it:alt}]{cmd:)}
 
 {p 8 23 2}
 {it:real colvector}
@@ -78,6 +85,10 @@ where
 {p 10 18 2}
 {it:count}:  {it:real scalar} indicating that a count vector be
 returned; default is to return a permutation vector
+
+{p 12 18 2}
+{it:alt}:  {it:real scalar} indicating that an alternative, typically much faster
+algorithm be used for SRSWOR
 
 {p 9 18 2}
 {it:nowarn}:  {it:real scalar} indicating that repetitions are allowed in UPSWOR
@@ -570,7 +581,9 @@ is not possible in this situation.
 {it:N} is the population size.
 
 {pstd}Simple random sampling without replacement (SRSWOR) is implemented as
-{bind:unorder({it:N})[|1 \ {it:n}|]}.
+{bind:unorder({it:N})[|1 \ {it:n}|]}. Update 23oct2020: argument {it:alt} now
+provides an alternative algorithm (based on Fisher–Yates shuffle)
+that is typically much faster than the default algorithm.
 
 {pstd}Unequal probability sampling
 with replacement (UPSWR) is implemented using the standard "cumulative"
@@ -601,6 +614,8 @@ clusters; alternatively, {it:cluster}==.{p_end}
          {it:wor}:  1 {it:x} 1
        {it:count}:  1 {it:x} 1
         {it:fast}:  1 {it:x} 1
+         {it:alt}:  1 {it:x} 1
+      {it:nowarn}:  1 {it:x} 1
 {p 6 15 2}{it:result}:  {it:ntot} {it:x} 1, where {it:ntot} is the
 final sample size, or, if {it:count}!=0, {it:N x} 1, where {it:N} is the population size
 
@@ -614,6 +629,7 @@ final sample size, or, if {it:count}!=0, {it:N x} 1, where {it:N} is the populat
            {it:n}:  1 {it:x} 1
            {it:N}:  1 {it:x} 1
        {it:count}:  1 {it:x} 1
+         {it:alt}:  1 {it:x} 1
       {it:result}:  {it:n x} 1 or, if {it:count}!=0, {it:N x} 1
 
     {cmd:mm_upswr(}{it:n}{cmd:,} {it:w}{cmd:,} {it:count}{cmd:)}
@@ -626,6 +642,7 @@ final sample size, or, if {it:count}!=0, {it:N x} 1, where {it:N} is the populat
            {it:n}:  1 {it:x} 1
            {it:w}:  {it:N x} 1, where {it:N} is the population size
        {it:count}:  1 {it:x} 1
+      {it:nowarn}:  1 {it:x} 1
       {it:result}:  {it:n x} 1 or, if {it:count}!=0, {it:N x} 1
 
 

@@ -1,5 +1,5 @@
 {smcl}
-{* 10jul2020}{...}
+{* 23oct2020}{...}
 {cmd:help mata mm_relrank()}
 {hline}
 
@@ -7,6 +7,7 @@
 
 {p 4 17 2}
 {bf:mm_relrank() -- Relative ranks (grade transformation)}
+
 
 {title:Syntax}
 

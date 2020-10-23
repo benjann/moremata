@@ -1,5 +1,5 @@
 {smcl}
-{* 21oct2020}{...}
+{* 23oct2020}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -169,6 +169,12 @@
 {col 41}sum of squared errors
 {col 22}{cmd:mm_colsse()}{...}
 {col 41}sum of squared errors, by column
+
+{col 5}{bf:{help mf_mm_mloc:mm_mloc()}}{...}
+{col 22}{cmd:mm_mloc()}{...}
+{col 41}robust M estimate of location
+{col 22}{cmd:mm_mscale()}{...}
+{col 41}robust M estimate of scale
 
 {col 5}{bf:{help mf_mm_hl:mm_hl()}}{...}
 {col 22}{cmd:mm_hl()}{...}

@@ -13,21 +13,21 @@
 {pstd}
 Hodges-Lehmann location estimator
 
-{p 8 243 2}
+{p 8 24 2}
 {it:real scalar}{bind: }
 {cmd:mm_hl(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:,} {it:naive}]{cmd:)}
 
 {pstd}
 Qn scale coefficient
 
-{p 8 243 2}
+{p 8 24 2}
 {it:real scalar}{bind: }
 {cmd:mm_qn(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:,} {it:naive}]{cmd:)}
 
 {pstd}
 Medcouple skewness measure
 
-{p 8 243 2}
+{p 8 24 2}
 {it:real scalar}{bind: }
 {cmd:mm_mc(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:fw}{cmd:,} {it:naive}]{cmd:)}
 

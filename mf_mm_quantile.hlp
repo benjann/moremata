@@ -1,5 +1,5 @@
 {smcl}
-{* 03sep2020}{...}
+{* 23oct2020}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -85,13 +85,18 @@ obtain unweighted results. Note that missing values or negative values in
 for weighted quantiles.
 
 {pstd}
-Argument {it:def} selects the quantile definition to be used. The definitions are
-based on Hyndman and Fan (1996). Let Q(p) denote the p-quantile of X, let N be the sample size,
+Argument {it:def} selects the quantile definition to be used. Definitions 1-9 are
+as described by Hyndman and Fan (1996). Let Q(p) denote the p-quantile of X, let N be the sample size,
 and let X_(j) be the j-th observation from sorted X. The definitions then are as follows:
 
 {phang2}
-    {it:def}=1: Inverse of the empirical cumulative distribution function (ECDF). That is,
-    Q(p) = X_(j), where j is selected such that (j-1) < pN <= j.
+    {it:def}=0: The "high" quantile defined as Q(p) = X_(j) with j selected
+    such that (j-1) <= pN < j.
+
+{phang2}
+    {it:def}=1: Inverse of the empirical cumulative distribution function (ECDF), or
+    "low" quantile, defined as Q(p) = X_(j) with j selected such that 
+    (j-1) < pN <= j.
 
 {phang2}
     {it:def}=2: Like definition 1 but using averages where the ECDF is flat. Again,
@@ -127,7 +132,7 @@ and let X_(j) be the j-th observation from sorted X. The definitions then are as
     {it:def}=9: Linear interpolation using p_j = (j - 3/8) / (N + 1/4).
 
 {pmore}
-Quantile functions based on definitions 1 to 3 are discontinuous; quantile
+Quantile functions based on definitions 0 to 3 are discontinuous; quantile
 functions based on definitions 4 to 9 are continuous. Based on an analysis of
 various properties of the different
 definitions, Hyndman and Fan (1996) suggest definition 8 as the optimal choice.
@@ -142,7 +147,7 @@ definition 6.
 
 {pstd}
 Argument {it:fw}!=0 requests that the weights are to be treated as frequency
-weights (this is only relevant for definitions 3 to 9; for definitions 1 and 2,
+weights (this is only relevant for definitions 3 to 9; for definitions 0, 1, and 2,
 the distinction between frequency weights and other types of weights is
 irrelevant). If {it:fw}!=0 is specified, the quantiles are computed in a way
 such that results from the weighted data are identical to the results you would
@@ -160,7 +165,7 @@ in the CDF proportional to the size of {it:w}. The quantile definitions differ i
 how exactly they obtain the CDF (i.e., the p_j values) and in how they
 interpolate between the points. The scaling of the weights generally matters, as
 {cmd:mm_quantile()} does not normalize the weights (that is, N is defined by the sum
-of the weights). Exceptions are definitions 1, 2, and 4 for which the scaling of the
+of the weights). Exceptions are definitions 0, 1, 2, and 4 for which the scaling of the
 weights is irrelevant (furthermore, for definition 3, the scaling of the weights is only
 relevant for evaluation points that exactly hit the middle of a step in the
 CDF; {cmd:mm_quantile()} will apply the following rule in such a situation: use

@@ -1,5 +1,5 @@
 {smcl}
-{* 10jul2020}{...}
+{* 23oct2020}{...}
 {cmd:help mata mm_ecdf()}
 {hline}
 
@@ -8,9 +8,10 @@
 {p 4 17 2}
 {bf:mm_ecdf() -- Cumulative distribution function}
 
+
 {title:Syntax}
 
-{p 8 243 2}
+{p 8 24 2}
 {it:real matrix}{bind:    }
 {cmd:mm_ecdf(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:mid}{cmd:,} {it:nonorm}{cmd:,} {it:break}]{cmd:)}
 

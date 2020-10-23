@@ -67,6 +67,8 @@ Functions:
   * `mm_colmse()`: mean squared error, by column
   * `mm_sse()`: sum of squared errors
   * `mm_colsse()`: sum of squared errors, by column
+  * `mm_mloc()`: robust M estimate of location
+  * `mm_mscale()`: robust M estimate of scale
   * `mm_hl()`: Hodges-Lehmann location estimator
   * `mm_qn()`: Qn scale coefficient
   * `mm_mc()`: Medcouple skewness measure
@@ -151,6 +153,19 @@ Functions:
 ---
 
 Main changes:
+
+    23oct2020
+    - mm_mloc() and mm_mscale() added (robust M estimation of location and scale)
+    - mm_quantile() now also supports the computation of "high" quantile (def=0)
+    - mm_srswor() now has argument -alt- to select an alternative algorithm that
+      is typically much faster than the default algorithm.
+    - mm_sample() now has an additional -alt- argument that is passed through to 
+      mm_srswor()
+    - mm_sample() now has an additional -nowarn- argument that is passed through to 
+      mm_upswor()
+
+    23oct2020
+    - mm_mloc() and mm_mscale() added (robust M estimation of location and scale)
 
     21oct2020
     - mm_hl(), mm_qn(), and mm_mc() added (robust pairwise-based measures of

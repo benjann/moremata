@@ -1,4 +1,4 @@
-*! version 1.0.1, Ben Jann, 14apr2006
+*! version 1.0.2, Ben Jann, 23oct2020
 version 9.1
 mata:
 
@@ -9,40 +9,40 @@ real colvector mm_sample(
    real colvector w,
    real scalar wor,
    real scalar count,
-   real scalar fast)
+   real scalar fast,
+   real scalar alt,
+   real scalar nowarn)
 {
-	real scalar i, b, e, n0, n1, N, cb, ce
+	real scalar i, b, e, n0, n1, N, cb, ce, ups
 	real colvector s, si, ci, wi, nn, R
-	pointer scalar f
 
 	if (args()<3) cluster=.
 	if (args()<4) w=1
 	if (args()<5) wor=0
 	if (args()<6) count=0
 	if (args()<7) fast=0
+	if (args()<8) alt=0
+	if (args()<9) nowarn=0
 	if (cols(strata)<1) _error(3200)
+	ups = (rows(w)!=1)
 	if (fast==0) {
-		if (rows(strata)>1 | (cluster==. & rows(w)==1)) {
+		if (rows(strata)>1 | (cluster==. & ups==0)) {
 			if (missing(strata)) _error(3351, "'strata' has missing values")
 		}
 	}
 	if (rows(n)<1) _error(3200)
 
-//choose sampling function and check w
-	if (rows(w)==1) {
-		if (wor) f = &mm_srswor()
-		else     f = &mm_srswr()
-	}
-	else {
-		if (cluster!=. & rows(w)!=rows(cluster))
-		  _error(3200, "rows('w') unequal number of clusters")
+//check w
+	if (ups) {
+		if (cluster!=.) {
+			if (rows(w)!=rows(cluster))
+				_error(3200, "rows('w') unequal number of clusters")
+		}
 		if (fast==0) {
 			if (missing(w)) _error(3351, "'w' has missing values")
 			if (colsum(w:<0)) _error(3498, "'w' has negative values")
 			if (colsum(w)<=0) _error(3498, "sum('w') is zero")
 		}
-		if (wor) f = &mm_upswor()
-		else     f = &mm_upswr()
 	}
 
 //simple sample, unstratified
@@ -50,9 +50,11 @@ real colvector mm_sample(
 		N = strata[1,1]
 		if (cluster==.) {
 			if (N>=.) N = rows(w)
-			else if (rows(w)!=1 & N!=rows(w))
-			  _error(3200, "rows('w') unequal population size")
-			return((*f)(n, (rows(w)==1 ? N : w), count))
+			else if (ups) {
+				if (N!=rows(w))
+					_error(3200, "rows('w') unequal population size")
+			}
+			return(_mm_sample(n, (ups ? w : N), ups, wor, count, alt, nowarn))
 		}
 
 //cluster sample, unstratified
@@ -62,7 +64,7 @@ real colvector mm_sample(
 			if (N!=colsum(cluster))
 			  _error(3200, "sum of cluster sizes unequal population size")
 		}
-		s = (*f)(n, (rows(w)==1 ? rows(cluster) : w), count)
+		s = _mm_sample(n, (ups ? w : rows(cluster)), ups, wor, count, alt, nowarn)
 		return(_mm_expandclusters(s, cluster, count, N))
 	}
 
@@ -99,19 +101,20 @@ real colvector mm_sample(
 		e = e + strata[i,1]
 //--simple sample
 		if (cluster==.) {
-			si = (*f)(nn[i], (rows(w)==1 ? strata[i,1] : w[|b \ e|]), count)
+			si = _mm_sample(nn[i], (ups ? w[|b \ e|] : strata[i,1]), ups, wor,
+				count, alt, nowarn)
 		}
 //--cluster sample
 		else {
 			cb = ce + 1
 			ce = ce + strata[i,2]
 			ci = cluster[|cb \ ce|]
-			wi = (rows(w)==1 ? rows(ci) : w[|cb \ ce|])
+			wi = (ups ? w[|cb \ ce|] : rows(ci))
 			if (fast==0) {
 				if (strata[i,1]!=colsum(ci))
 				  _error(3200, "sum of cluster sizes unequal size of stratum")
 			}
-			si = (*f)(nn[i], wi, count)
+			si = _mm_sample(nn[i], wi, ups, wor, count, alt, nowarn)
 			if (count) si = _mm_expandclusters(si, ci, 1, strata[i,1])
 		}
 //--add subsample to sample vector
@@ -128,6 +131,18 @@ real colvector mm_sample(
 	if (count==0&cluster!=.) s = _mm_expandclusters(s, cluster)
 	return(s)
 }
+
+real colvector _mm_sample(real scalar n, real colvector NorW, 
+    real scalar ups, real scalar wor, real scalar count, real scalar alt, 
+    real scalar nowarn)
+{
+    if (ups) {
+        if (wor) return(mm_upswor(n, NorW, count, nowarn))
+        return(mm_upswr(n, NorW, count))
+    }
+    if (wor) return(mm_srswor(n, NorW, count, alt))
+    return(mm_srswr(n, NorW, count))
+} 
 
 real colvector _mm_expandclusters(real colvector s0,
  real colvector cluster, | real scalar count, real scalar N)

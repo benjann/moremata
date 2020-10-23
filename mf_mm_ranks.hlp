@@ -1,5 +1,5 @@
 {smcl}
-{* 10jul2020}{...}
+{* 23oct2020}{...}
 {cmd:help mata mm_ranks()}
 {hline}
 
@@ -8,8 +8,8 @@
 {p 4 17 2}
 {bf:mm_ranks() -- Compute ranks or cumulative frequencies}
 
-{title:Syntax}
 
+{title:Syntax}
 
 {p 8 24 2}
 {it:real matrix}{bind:    }
