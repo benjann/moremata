@@ -154,6 +154,17 @@ Functions:
 
 Main changes:
 
+    01dec2020
+    - mm_quantile():
+      o definitions 6-9 with weighted data and fw=0: the adjustments in the 
+        denominator are now in terms of the sample size, not the sum of weights;
+        the adjustments in the numerator are now relative to the weights, not
+        absolute; the changes imply that results no longer depend on
+        the scaling of the weights
+      o definitions 3 with weighted data and fw=0: the rule for picking the lower
+        or upper value in case of equal distance is now defined in terms of the
+        indices of the observations, not the running sum of weights
+
     23oct2020
     - mm_mloc() and mm_mscale() added (robust M estimation of location and scale)
     - mm_quantile() now also supports the computation of "high" quantile (def=0)
