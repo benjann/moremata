@@ -164,9 +164,6 @@ Main changes:
     - mm_sample() now has an additional -nowarn- argument that is passed through to 
       mm_upswor()
 
-    23oct2020
-    - mm_mloc() and mm_mscale() added (robust M estimation of location and scale)
-
     21oct2020
     - mm_hl(), mm_qn(), and mm_mc() added (robust pairwise-based measures of
       location, scale, and skewness)
