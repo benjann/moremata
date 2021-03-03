@@ -154,6 +154,11 @@ Functions:
 
 Main changes:
 
+    03mar2021
+    - mm_mloc():
+      o function mm_huber_rho() added
+      o small change to mm_huber_w() to make it a bit faster
+
     01dec2020
     - mm_quantile():
       o definitions 6-9 with weighted data and fw=0: the adjustments in the 

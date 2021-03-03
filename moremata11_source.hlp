@@ -1171,7 +1171,7 @@ end
 
 *! {smcl}
 *! {marker mm_mloc}{bf:mm_mloc.mata}{asis}
-*! version 1.0.0  23oct2020  Ben Jann
+*! version 1.0.2  03mar2021  Ben Jann
 version 11
 mata:
 
@@ -1328,6 +1328,14 @@ real scalar mm_huber_eff(real scalar k)
 }
 
 // Huber objective functions and weights
+real colvector mm_huber_rho(real colvector x, real scalar k)
+{
+    real colvector d
+    
+    d = abs(x):<=k
+    return((0.5 * x:^2):*d :+ (k*abs(x) :- 0.5*k^2):*(1 :- d))
+}
+
 real colvector mm_huber_psi(real colvector x, real scalar k)
 {
     real colvector d
@@ -1343,7 +1351,7 @@ real colvector mm_huber_phi(real colvector x, real scalar k)
 
 real colvector mm_huber_w(real colvector x, real scalar k)
 {
-    return((k :/ abs(x)):^(1 :- (abs(x):<=k)))
+    return((k :/ abs(x)):^(abs(x):>k))
 }
 
 // biweight tuning constant for given efficiency

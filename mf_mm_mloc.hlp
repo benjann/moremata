@@ -1,5 +1,5 @@
 {smcl}
-{* 23oct2020}{...}
+{* 03mar2021}{...}
 {cmd:help mata mm_mloc()}
 {hline}
 
@@ -59,7 +59,7 @@ Optimize
 {p 8 24 2}
 {it:S} =
 {cmd:mm_mscale(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:bp}{cmd:,}
-    {it:b0}{cmd:,} {it:loc}{cmd:,} {it:log}{cmd:,}
+    {it:b0}{cmd:,} {it:l}{cmd:,} {it:log}{cmd:,}
     {it:tol}{cmd:,} {it:maxiter}]{cmd:)}
 
 {p 8 12 2}where{p_end}
@@ -108,6 +108,7 @@ from tuning constant. {it:eff} must be in
 {pstd}
 Apply objective functions to (typically standardized) data given tuning constant {it:k}.
 
+        {it:real colvector} {cmd:mm_huber_rho(}{it:real colvector X}{cmd:,} {it:real scalar k}{cmd:)}
         {it:real colvector} {cmd:mm_huber_psi(}{it:real colvector X}{cmd:,} {it:real scalar k}{cmd:)}
         {it:real colvector} {cmd:mm_huber_phi(}{it:real colvector X}{cmd:,} {it:real scalar k}{cmd:)}
         {it:real colvector} {cmd:mm_huber_w(}{it:real colvector X}{cmd:,} {it:real scalar k}{cmd:)}
