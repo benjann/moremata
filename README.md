@@ -154,6 +154,9 @@ Functions:
 
 Main changes:
 
+    04mar2021
+    - mm_huber_w() returned missing (instead of 1) if X was 0; this is fixed
+
     03mar2021
     - mm_mloc():
       o function mm_huber_rho() added
