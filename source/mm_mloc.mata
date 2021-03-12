@@ -1,4 +1,4 @@
-*! version 1.0.2  03mar2021  Ben Jann
+*! version 1.0.3  12mar2021  Ben Jann
 version 11
 mata:
 
@@ -150,6 +150,12 @@ real scalar mm_huber_k(real scalar eff)
 // Huber efficiency for given tuning constant
 real scalar mm_huber_eff(real scalar k)
 {
+    if (k<=0) return(2/pi())
+    if (k<1e-4) {
+        // use linear interpolation at bottom
+        return(max((2/pi(), mm_huber_eff(1e-4) - (1e-4 - k)/1e-4 *
+            (mm_huber_eff(2e-4)-mm_huber_eff(1e-4)))))
+    }
     return((normal(k)-normal(-k))^2 / 
         (2 * (k^2 * (1 - normal(k)) + normal(k) - 0.5 - k * normalden(k))))
 }
@@ -174,7 +180,7 @@ real colvector mm_huber_psi(real colvector x, real scalar k)
 
 real colvector mm_huber_phi(real colvector x, real scalar k)
 {
-    return(abs(x):<= k)
+    return(abs(x):<=k)
 }
 
 real colvector mm_huber_w(real colvector x, real scalar k)
@@ -208,6 +214,8 @@ real scalar mm_biweight_eff(real scalar k)
     real scalar    l, u, n, d, phi, psi2
     real colvector x, w
     
+    if (k<=0)  return(0)
+    if (k>100) return(1)
     l = 0; u = k; n = 1000; d = (u-l)/n 
     x = rangen(l, u, n+1)
     w = 1 \ colshape((J(n/2,1,4), J(n/2,1,2)), 1)
@@ -248,6 +256,7 @@ real scalar mm_biweight_bp(real scalar k)
     real scalar    l, u, n, d
     real colvector x, w
 
+    if (k<=0) return(1)
     l = 0; u = k; n = 1000; d = (u-l)/n
     x = rangen(l, u, n+1)
     w = 1 \ colshape((J(n/2,1,4), J(n/2,1,2)), 1)

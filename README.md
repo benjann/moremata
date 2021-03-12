@@ -154,6 +154,12 @@ Functions:
 
 Main changes:
 
+    12mar2021
+    - mm_biweight_eff(k) now returns 1 if k>100 and 0 if k<=0
+    - mm_biweight_bp(k) now returns 1 if k<=0
+    - mm_huber_eff(k) now returns more precise results as k approaches zero and 
+      returns 2/pi() if k<=0
+
     04mar2021
     - mm_huber_w() returned missing (instead of 1) if X was 0; this is fixed
 
