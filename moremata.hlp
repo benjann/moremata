@@ -1,5 +1,5 @@
 {smcl}
-{* 23oct2020}{...}
+{* 16mar2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -183,6 +183,12 @@
 {col 41}Qn scale coefficient
 {col 22}{cmd:mm_mc()}{...}
 {col 41}Medcouple skewness measure
+
+{col 5}{it:Regression}
+
+{col 5}{bf:{help mf_mm_ls:mm_ls()}}{...}
+{col 22}{cmd:mm_ls()}{...}
+{col 41}linear (least-squares) regression
 
 {col 5}{it:Distributions}
 

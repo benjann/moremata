@@ -72,6 +72,7 @@ Functions:
   * `mm_hl()`: Hodges-Lehmann location estimator
   * `mm_qn()`: Qn scale coefficient
   * `mm_mc()`: Medcouple skewness measure
+  * `mm_ls()`: linear (least-squares) regression
   * `mm_benford()`: Benford distribution
   * `mm_cauchy()`: cumulative Cauchy-Lorentz dist.
   * `mm_cauchyden()`: Cauchy-Lorentz density
@@ -153,6 +154,9 @@ Functions:
 ---
 
 Main changes:
+
+    16mar2021
+    - mm_ls() added (linear regression)
 
     12mar2021
     - mm_biweight_eff(k) now returns 1 if k>100 and 0 if k<=0
