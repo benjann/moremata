@@ -1,26 +1,28 @@
-*! version 1.0.0  16mar2021  Ben Jann
+*! version 1.0.1  22mar2021  Ben Jann
 version 9.2
 mata:
 
 real colvector mm_lsfit(real colvector y, | real matrix X, real colvector w,
-    real scalar cons, real scalar qd, real scalar dev)
+    real scalar cons, real scalar qd, real scalar demean)
 {
     if (args()<3) w = 1
-    return(mm_ls_b(mm_ls(y, X, w, cons, qd, dev)))
+    return(mm_ls_b(mm_ls(y, X, w, cons, qd, demean)))
 }
 
 struct mm_ls_struct {
     pointer(real colvector) scalar y, w
     pointer(real matrix) scalar    X
     real scalar    cons
-    real scalar    k   // number of predictors
-    real scalar    N   // sum of weights
+    real scalar    k    // number of predictors
+    real scalar    kadj // number of non-collinear predictors
+    real scalar    N    // sum of weights
     real scalar    ymean
     real rowvector means
     real scalar    rss // residual sum of squares
     real scalar    s   // scale (RMSE)
     real scalar    r2  // R-squared
     real matrix    SSinv, XXinv, V
+    real colvector omit
     real colvector b
 }
 
@@ -28,11 +30,11 @@ struct mm_ls_struct scalar mm_ls(
     real colvector   y,
     | real matrix    X,
       real colvector w,
-      real scalar    cons,  // cons=0 excludes the constant
-      real scalar    qd,    // qd=0 uses single precision for cross products
-      real scalar    dev)   // dev=0 does not use mean deviation
+      real scalar    cons,   // cons=0 excludes the constant
+      real scalar    qd,     // qd=0 uses single precision for cross products
+      real scalar    demean) // demean=0 does not use demeaning
 {
-    real scalar     ymean, k, l, cns
+    real scalar     ymean
     real rowvector  means
     real colvector  ybar, p, Xy, beta
     real matrix     Xbar, XX
@@ -44,17 +46,18 @@ struct mm_ls_struct scalar mm_ls(
     t.X = &X
     t.w = &w
     t.cons = (cons!=0)
-    t.k = k = cols(X)
+    t.k = cols(X)
     t.N = t.ymean = t.means = t.rss = t.s = t.r2 = t.XXinv = t.V = .z
-    if (!cons & !k) { // model has no parameters
-        t.b = J(0,1,.)
+    if (!cons & !t.k) { // model has no parameters
+        t.b = t.omit = J(0,1,.)
+        t.kadj = 0
         t.XXinv = J(0,0,.)
         t.rss = .
         return(t)
     }
     if (rows(y)==0) {
-        t.b = J(k+t.cons,1,.)
-        t.XXinv = J(k+t.cons,k+t.cons,.)
+        t.b = t.omit = J(t.k+t.cons,1,.)
+        t.XXinv = J(t.k+t.cons,t.k+t.cons,.)
         t.rss = .
         return(t)
     }
@@ -63,53 +66,52 @@ struct mm_ls_struct scalar mm_ls(
     if (cons==0) {
         XX = qd ? quadcross(X, w, X) : cross(X, w, X)
         t.XXinv = invsym(XX)
-        p = select(1::k, diagonal(t.XXinv):!=0)
-        l = length(p)
-        if (l==0) {
-            t.b = J(k,1,0)
+        t.omit = diagonal(t.XXinv):==0
+        p = select(1::t.k, !t.omit)
+        t.kadj = length(p)
+        if (t.kadj==0) {
+            t.b = J(t.k,1,0)
             return(t)
         }
-        if (l<k) {
+        if (t.kadj<t.k) {
             XX = XX[p,p]
             Xy = qd ? quadcross(X[,p], w, y) : cross(X[,p], w, y)
         }
         else Xy = qd ? quadcross(X, w, y) : cross(X, w, y)
         beta = lusolve(XX, Xy)
-        t.b = J(k, 1, 0)
+        t.b = J(t.k, 1, 0)
         t.b[p] = beta
         return(t)
     }
     
     // constant only
-    if (k==0) {
+    if (t.k==0) {
+        t.kadj = t.omit = 0
         t.b = mm_ls_ymean(t)
         return(t)
     }
     
-    // without mean deviation
-    if (!dev) {
+    // without demeaning
+    if (!demean) {
         XX = qd ? quadcross(X,1, w, X,1) : cross(X,1, w, X,1)
-        t.XXinv = invsym(XX, k+1)
-        p = select(1::k, diagonal(t.XXinv)[|1\k|]:!=0)
-        cns = (t.XXinv[k+1,k+1]!=0)
-        l = length(p)
-        if (l==0) { // all collinear
-            t.b = J(k,1,0) \ (cns ? mm_ls_ymean(t) : 0)
+        t.XXinv = invsym(XX, t.k+1) // do not omit constant
+        t.omit = diagonal(t.XXinv)[|1\t.k|]:==0
+        p = select(1::t.k, !t.omit)
+        t.kadj = length(p)
+        if (t.kadj==0) { // all collinear
+            t.b = J(t.k,1,0) \ mm_ls_ymean(t) // add constant
+            t.omit = t.omit \ 0
             return(t)
         }
-        if (cns==0) XX = XX[|1,1 \ k,k|]
-        if (l<k) {
-            XX = XX[p\(cns ? k+1 : J(0,1,.)), p\(cns ? k+1 : J(0,1,.))]
-            Xy = qd ? quadcross(X[,p],cns, w, y,0) : cross(X[,p],cns, w, y,0)
+        if (t.kadj<t.k) {
+            XX = XX[p \ t.k+1, p \ t.k+1]
+            Xy = qd ? quadcross(X[,p],1, w, y,0) : cross(X[,p],1, w, y,0)
         }
-        else Xy = qd ? quadcross(X,cns, w, y,0) : cross(X,cns, w, y,0)
+        else Xy = qd ? quadcross(X,1, w, y,0) : cross(X,1, w, y,0)
         beta = lusolve(XX, Xy)
-        t.b = J(k+1, 1, 0)
-        if (cns) {
-            t.b[p]   = beta[|1\l|]
-            t.b[k+1] = beta[l+1]
-        }
-        else t.b[p] = beta
+        t.b = J(t.k+1, 1, 0)
+        t.b[p \ t.k+1] = beta
+        t.omit = t.omit \ 0 // add constant
         return(t)
     }
     
@@ -119,13 +121,15 @@ struct mm_ls_struct scalar mm_ls(
     Xbar = X :- means
     XX = qd ? quadcross(Xbar, w, Xbar) : cross(Xbar, w, Xbar)
     t.SSinv = invsym(XX)
-    p = select(1::k, diagonal(t.SSinv):!=0)
-    l = length(p)
-    if (l==0) { // all collinear
-        t.b = J(k,1,0) \ ymean
+    t.omit = diagonal(t.SSinv):==0
+    p = select(1::t.k, !t.omit)
+    t.kadj = length(p)
+    if (t.kadj==0) { // all collinear
+        t.b = J(t.k,1,0) \ ymean // add constant
+        t.omit = t.omit \ 0
         return(t)
     }
-    if (l<k) {
+    if (t.kadj<t.k) {
         Xbar  = Xbar[,p]
         XX    = XX[p,p]
         means = means[p]
@@ -133,15 +137,26 @@ struct mm_ls_struct scalar mm_ls(
     ybar = y :- ymean
     Xy = qd ? quadcross(Xbar, w, ybar) : cross(Xbar, w, ybar)
     beta = lusolve(XX, Xy)
-    t.b = J(k+1, 1, 0)
-    t.b[p]   = beta 
-    t.b[k+1] = (ymean - means*beta)
+    t.b = J(t.k+1, 1, 0)
+    t.b[p]   = beta
+    t.b[t.k+1] = (ymean - means*beta) // add constant
+    t.omit = t.omit \ 0
     return(t)
 }
 
 real colvector mm_ls_b(struct mm_ls_struct scalar t)
 {
     return(t.b)
+}
+
+real colvector mm_ls_omit(struct mm_ls_struct scalar t)
+{
+    return(t.omit)
+}
+
+real colvector mm_ls_k_omit(struct mm_ls_struct scalar t)
+{
+    return(t.k - t.kadj)
 }
 
 real matrix mm_ls_V(struct mm_ls_struct scalar t)
@@ -182,7 +197,7 @@ real rowvector mm_ls_means(struct mm_ls_struct scalar t)
 
 real matrix mm_ls_XXinv(struct mm_ls_struct scalar t)
 {
-    // note: XXinv will already be filled in case of nocons or nodev
+    // note: XXinv will already be filled in case of cons=0 or demean=0
     if (t.XXinv==.z) {
         if (t.k) {
             t.XXinv = t.SSinv \ -(t.means * t.SSinv)
@@ -224,7 +239,7 @@ real scalar mm_ls_rss(struct mm_ls_struct scalar t)
 real scalar mm_ls_s(struct mm_ls_struct scalar t)
 {
     if (t.s==.z) {
-        t.s = sqrt(mm_ls_rss(t) * editmissing(1 / (mm_ls_N(t)-t.k-t.cons), 0))
+        t.s = sqrt(mm_ls_rss(t) * editmissing(1 / (mm_ls_N(t)-t.kadj-t.cons), 0))
     }
     return(t.s)
 }

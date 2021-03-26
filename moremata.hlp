@@ -1,5 +1,5 @@
 {smcl}
-{* 16mar2021}{...}
+{* 26mar2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -189,6 +189,10 @@
 {col 5}{bf:{help mf_mm_ls:mm_ls()}}{...}
 {col 22}{cmd:mm_ls()}{...}
 {col 41}linear (least-squares) regression
+
+{col 5}{bf:{help mf_mm_qr:mm_qr()}}{...}
+{col 22}{cmd:mm_qr()}{...}
+{col 41}quantile regression
 
 {col 5}{it:Distributions}
 

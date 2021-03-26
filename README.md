@@ -73,6 +73,7 @@ Functions:
   * `mm_qn()`: Qn scale coefficient
   * `mm_mc()`: Medcouple skewness measure
   * `mm_ls()`: linear (least-squares) regression
+  * `mm_qr()`: quantile regression
   * `mm_benford()`: Benford distribution
   * `mm_cauchy()`: cumulative Cauchy-Lorentz dist.
   * `mm_cauchyden()`: Cauchy-Lorentz density
@@ -154,6 +155,11 @@ Functions:
 ---
 
 Main changes:
+
+
+    26mar2021
+    - mm_qr() added (quantile regression using interior-point algorithm)
+    - mm_ls_omit() and mm_ls_k_omit() added
 
     16mar2021
     - mm_ls() added (linear regression)
