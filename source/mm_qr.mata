@@ -685,9 +685,9 @@ real scalar mm_qr::minselect(real colvector x, real colvector dx,
     real colvector min, p
     
     min = J(3,1,.)
-    p = selectindex(dx:<0)
+    p = select(1::n, dx:<0)
     if (length(p)) min[1] = min(-x[p] :/ dx[p]) * beta
-    p = selectindex(ds:<0)
+    p = select(1::n, ds:<0)
     if (length(p)) min[2] = min(-s[p] :/ ds[p]) * beta
     min[3] = 1
     return(min(min))

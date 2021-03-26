@@ -204,7 +204,7 @@ estimators. Statistical Science 12(4):279-300.
 {title:Source code}
 
 {pstd}
-{help moremata_source11##mm_qr:mm_qr.mata}
+{help moremata11_source##mm_qr:mm_qr.mata}
 
 
 {title:Author}
