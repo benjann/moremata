@@ -1171,7 +1171,7 @@ end
 
 *! {smcl}
 *! {marker mm_qr}{bf:mm_qr.mata}{asis}
-*! version 1.0.0  26mar2021  Ben Jann
+*! version 1.0.1  27mar2021  Ben Jann
 version 11
 mata:
 
@@ -1770,14 +1770,13 @@ pointer scalar mm_qr::get_X()
 
 real colvector mm_qr::unzero(real colvector y, real matrix X, real colvector b)
 {
-    real scalar    eps, shift
+    real scalar    eps, omax
     real scalar    lo, up, offset
     real colvector r, rlo, rup, b1
     
     // settings
-    eps   = 1e-06
-    shift = 0.001
-
+    eps  = 1e-06
+    omax = 0.001
     // obtain residuals from initial coefficients and check whether any of them
     // are equal to (or very close to) zero
     r   = y - _xb(X, b)
@@ -1793,7 +1792,7 @@ real colvector mm_qr::unzero(real colvector y, real matrix X, real colvector b)
     up = min(select(r, rup)) - eps
     if (up<-lo) offset = up/2
     else        offset = lo/2
-    if (offset>=.) offset = shift // can happen in case of perfect fit
+    if (offset>=.) offset = omax // can happen in case of perfect fit
     // modify residuals and initial coefficients (both have to be modified so
     // that the implied values of the dependent variable do not change)
     if (cons) {
@@ -1825,12 +1824,13 @@ real colvector mm_qr::unzero(real colvector y, real matrix X, real colvector b)
             return(r)
         }
     }
-    // fallback rule: move critical residuals away from zero by a fixed
-    // amount; do not update coefficients; this may lead to somewhat biased
-    // estimates; a better approach would be to return to the above approach
-    // and keep on searching for suitable starting values
+    // fallback rule: only move critical residuals away from zero; do not update
+    // coefficients; this may lead to somewhat biased estimates; a better
+    // approach would be to return to the above approach and keep on searching
+    // for suitable starting values
     r = y - _xb(X, b)
-    return(r - shift * (r:>-eps :& r:<0) + shift * (r:>=0 :& r:<eps))
+    offset = min((omax, max((eps,abs(offset))))) // offset in [eps, omax]
+    return(r - offset * (r:>-eps :& r:<0) + offset * (r:>=0 :& r:<eps))
 }
 
 real matrix mm_qr::cross(real matrix a, real matrix b, | real matrix c,
