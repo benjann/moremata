@@ -1258,7 +1258,7 @@ class mm_qr
         real colvector meanadj()
         void           fit(), fnb()
         pointer scalar get_X()
-        real colvector unzero()
+        void           unzero()
         real matrix    cross()
         real scalar    minselect()
 }
@@ -1689,20 +1689,9 @@ void mm_qr::fnb(real colvector y)
     if (rows(*this.w)!=1) W = (*this.w) * (n/N)
     else                  W = 1
     
-    // compute residuals to be used as input for the algorithm; if necessary,
-    // the vector of residuals will be shifted up or down by a small amount so
-    // that values equal to or very close to 0 (which would make the algorithm 
-    // fail) are avoided; in this case, the initial coefficients (y) will be
-    // adjusted so that they are consistent with the shifted residuals (to
-    // avoid bias due to an implicit change in the dependent variable); the
-    // procedure may fail in which case residuals close to zero will moved by a
-    // fixed amount without updating the initial coefficients (this may lead to
-    // a small bias in the estimates)
-    s = unzero(s, *a, y)
-
     // algorithm
-    z = s :* (s :> 0)
-    w = z - s
+    z = w = J(n,1,.)
+    unzero(s, *a, y, z, w) // fills in z and w; may update y
     x = J(n, 1, 1-p)
     s = J(n, 1, p)
     if (maxiter<=0) {
@@ -1768,9 +1757,10 @@ pointer scalar mm_qr::get_X()
     return(&x)
 }
 
-real colvector mm_qr::unzero(real colvector y, real matrix X, real colvector b)
+void mm_qr::unzero(real colvector y, real matrix X, real colvector b,
+    real colvector z, real colvector w)
 {
-    real scalar    eps, omax
+    real scalar    eps, omax, i
     real scalar    lo, up, offset
     real colvector r, rlo, rup, b1
     
@@ -1784,53 +1774,59 @@ real colvector mm_qr::unzero(real colvector y, real matrix X, real colvector b)
     rup = (r :>  eps)
     if (all(rlo :+ rup)) {
         // no residuals within [-eps,eps]; ok to proceed
-        return(r)
+        z =  r :* rup
+        w = -r :* rlo
+        return
     }
     // compute reasonable offset; we use half the distance to closest residual
-    // outside [-eps,eps]
-    lo = max(select(r, rlo)) + eps
-    up = min(select(r, rup)) - eps
-    if (up<-lo) offset = up/2
-    else        offset = lo/2
-    if (offset>=.) offset = omax // can happen in case of perfect fit
-    // modify residuals and initial coefficients (both have to be modified so
-    // that the implied values of the dependent variable do not change)
-    if (cons) {
-        // if model has a constant: simply shift the residuals and then adjust
-        // the constant
-        r = r :+ offset
-        if (abs(offset)>2*eps) {
-            // shift cannot fail if abs(offset)>2*eps
-            b[cols(X)+1] = b[cols(X)+1] - offset
-            return(r)
+    // outside [-eps,eps], with the restriction that the offset has to be 
+    // within [eps, omax]
+    lo = min((omax, max(((abs(max(select(r, rlo))) - eps)/2, eps))))
+    up = min((omax, max(((min(select(r, rup))      - eps)/2, eps))))
+    offset = (up<lo ? up : -lo)
+    if (abs(offset)>eps) {
+        // modify residuals and initial coefficients (both have to be modified so
+        // that the implied values of the dependent variable do not change)
+        if (cons) {
+            // if model has a constant: simply shift the residuals and update
+            // the constant of the coefficient vector
+            b1 = b
+            b1[cols(X)+1] = b1[cols(X)+1] - offset
+            r = r :+ offset
         }
-        if (all((r :< -eps) :| (r :>  eps))) {
-            // shift was successful despite abs(offset)<=2*eps
-            b[cols(X)+1] = b[cols(X)+1] - offset
-            return(r)
+        else {
+            // if model has no constant:
+            // (1) regress X on offset
+            // (2) update initial coefficients using coefficients from (1)
+            // (3) recompute residuals based on updated coefficients
+            b1 = mm_lsfit(J(n,1,offset), X, *this.w, 0) // (w not strictly needed)
+            b1 = b - b1
+            r = y - _xb(X, b1)
         }
-    }
-    else {
-        // if model has no constant:
-        // (1) regress X on offset
-        // (2) update initial coefficients using coefficients from (1)
-        // (3) recompute residuals based on updated coefficients
-        b1 = mm_lsfit(J(n,1,offset), X, *w, 0) // (weights not strictly needed)
-        b1 = b - b1
-        r = y - _xb(X, b1)
-        if (all((r :< -eps) :| (r :>  eps))) {
-            // shift was successful
+        // check whether shift was successful
+        rlo = (r :< -eps)
+        rup = (r :>  eps)
+        if (all(rlo :+ rup) & 0) {
             b = b1
-            return(r)
+            z =  r :* rup
+            w = -r :* rlo
+            return
         }
     }
-    // fallback rule: only move critical residuals away from zero; do not update
-    // coefficients; this may lead to somewhat biased estimates; a better
-    // approach would be to return to the above approach and keep on searching
-    // for suitable starting values
+    // fallback rule: only move critical residuals away from zero (adding 
+    // offset on both sides); do not update coefficients
+    offset = abs(offset)
     r = y - _xb(X, b)
-    offset = min((omax, max((eps,abs(offset))))) // offset in [eps, omax]
-    return(r - offset * (r:>-eps :& r:<0) + offset * (r:>=0 :& r:<eps))
+    for (i=n;i;i--) {
+        if (abs(r[i])<eps) {
+            z[i] = max((r[i], 0)) + offset
+            w[i] = max((-r[i],0)) + offset
+        }
+        else {
+            z[i] = max((r[i], 0))
+            w[i] = max((-r[i],0))
+        }
+    }
 }
 
 real matrix mm_qr::cross(real matrix a, real matrix b, | real matrix c,
