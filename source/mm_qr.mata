@@ -1,4 +1,4 @@
-*! version 1.0.1  27mar2021  Ben Jann
+*! version 1.0.2  27mar2021  Ben Jann
 version 11
 mata:
 
