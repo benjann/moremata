@@ -1,4 +1,4 @@
-*! version 1.0.2  27mar2021  Ben Jann
+*! version 1.0.3  28mar2021  Ben Jann
 version 11
 mata:
 
@@ -21,6 +21,7 @@ class mm_qr
         transmorphic   tol()
         transmorphic   maxiter()
         transmorphic   beta()
+        transmorphic   method()
         transmorphic   log()
     
     private:
@@ -37,6 +38,7 @@ class mm_qr
         real scalar    maxiter
         real scalar    tol
         real scalar    beta
+        string scalar  method
         real scalar    qd
         real scalar    demean
         real scalar    collin
@@ -85,7 +87,7 @@ class mm_qr
         real colvector meanadj()
         void           fit(), fnb()
         pointer scalar get_X()
-        void           unzero()
+        void           gen_z_w()
         real matrix    cross()
         real scalar    minselect()
 }
@@ -102,9 +104,10 @@ void mm_qr::init()
     qd        = 1
     demean    = 1
     collin    = 1
-    tol       = 1e-10
+    tol       = 1e-8
     maxiter   = st_numscalar("c(maxiter)")
     beta      = 0.99995
+    method    = "fnb"
     log       = 0
 }
 
@@ -274,6 +277,15 @@ transmorphic mm_qr::beta(| real scalar beta0)
     clear3()
 }
 
+transmorphic mm_qr::method(| string scalar method0)
+{
+    if (args()==0) return(method)
+    if (method==method0) return // no change
+    if (!anyof(("fnb"), method0)) _error(3300)
+    method = method0
+    clear3()
+}
+
 transmorphic mm_qr::log(| real scalar log0)
 {
     if (args()==0) return(log)
@@ -407,7 +419,8 @@ void mm_qr::fit()
     b = -rmomit(meanadj(b_init, -1))
     
     // interior point algorithm (b will be replaced by solution)
-    fnb(b)
+    if      (method=="fnb")  fnb(b)
+    else                     _error(3300)
     
     // rescale coefficients
     this.b = meanadj(addomit(-b), 1)
@@ -463,7 +476,6 @@ void mm_qr::_b_init()
     }
     if (b_ls==.z) (void) lsfit()
     b_init = b_ls
-    if (cons) b_init[K] = b_init[K] + mm_quantile(*y - _xb(*X, b_ls), *w, 1-p)
 }
 
 real colvector mm_qr::rmomit(real colvector b)
@@ -495,44 +507,39 @@ real colvector mm_qr::meanadj(real colvector b0, real scalar sign)
     return(b)
 }
 
-// loose translation of rqfnb.f from "quantreg" package version 5.85 for R
-// - invsym() is used inside the algorithm instead of a solver such as
-//   lusolve() because invsym() appears more robust against failure due to
-//   numerical problems and because accuracy does not seem to be a major
-//   concern within the iterations
+// translation of rqfnb.f from "quantreg" package version 5.85 for R
 void mm_qr::fnb(real colvector y)
 {
     real scalar    fp, fd, mu, g
-    real colvector dy, y0
-    real colvector W, x, s, z, w, dx, ds, dz, dw, dxdz, dsdw, dr, d, dW
-    real matrix    iada
+    real colvector b, dy, y0
+    real colvector W, x, s, z, w, dx, ds, dz, dw, dxdz, dsdw, rhs, d, r
+    real matrix    ada
     pointer scalar a
     
-    // obtain data; a copy of X will only be made if necessary; for simplicity,
-    // weights are normalized to the number of observations
+    // data
     s = -(*this.y)
-    if (cons & demean) s = s :+ ymean()
+    if (cons & demean)    s = s :+ ymean()
     a = get_X()
     if (rows(*this.w)!=1) W = (*this.w) * (n/N)
     else                  W = 1
     
     // algorithm
-    z = w = J(n,1,.)
-    unzero(s, *a, y, z, w) // fills in z and w; may update y
+    gen_z_w(z=., w=., s - _xb(*a, y), tol)
     x = J(n, 1, 1-p)
     s = J(n, 1, p)
     if (maxiter<=0) {
-        // make sure gap is not empty even if maxiter=0
+        // make sure gap is filled in even if maxiter=0
         gap = cross(z, W, x) + cross(w, W, s)
     }
+    b = cross(*a,cons, W, x,0)
     while (iter < maxiter) {
         iter = iter + 1
         d    = 1 :/ (z :/ x + w :/ s)
-        dW   = W :* (d / max(d)) // set max(d)=1 for numerical stability
-        dr   = z - w
-        iada = invsym(cross(*a,cons, dW, *a,cons))
-        dy   = iada * cross(*a,cons, dW, dr,0)
-        dx   = d :* (_xb(*a, dy) - dr)
+        ada  = cross(*a,cons, d:*W, *a,cons)
+        r    = z - w
+        rhs  = b - cross(*a,cons, W, x :- d:*r,0)
+        dy   = cholsolve(ada, rhs)
+        dx   = d :* (_xb(*a, dy) - r)
         ds   = -dx
         dz   = -z :* (1 :+ dx :/ x)
         dw   = -w :* (1 :+ ds :/ s)
@@ -545,9 +552,9 @@ void mm_qr::fnb(real colvector y)
             mu   = mu * (g / mu)^3 / (2 * n)
             dxdz = dx :* dz
             dsdw = ds :* dw
-            dr   = dr + mu:/s - mu:/x + dxdz:/x - dsdw:/s
-            dy   = iada * cross(*a,cons, dW, dr,0)
-            dx   = d :* (_xb(*a, dy) - dr)
+            r    = mu:/s - mu:/x + dxdz:/x - dsdw:/s
+            dy   = cholsolve(ada, rhs + cross(*a,cons, d:*W, r,0))
+            dx   = d :* (_xb(*a, dy) - z + w - r) 
             ds   = -dx
             dz   = (mu :- z :* dx :- dxdz) :/ x - z
             dw   = (mu :- w :* ds :- dsdw) :/ s - w
@@ -584,76 +591,16 @@ pointer scalar mm_qr::get_X()
     return(&x)
 }
 
-void mm_qr::unzero(real colvector y, real matrix X, real colvector b,
-    real colvector z, real colvector w)
+void mm_qr::gen_z_w(real colvector z, real colvector w, real colvector r,
+    real scalar eps)
 {
-    real scalar    eps, omax, i
-    real scalar    lo, up, offset
-    real colvector r, rlo, rup, b1
+    real colvector o
     
-    // settings
-    eps  = 1e-06
-    omax = 0.001
-    // obtain residuals from initial coefficients and check whether any of them
-    // are equal to (or very close to) zero
-    r   = y - _xb(X, b)
-    rlo = (r :< -eps)
-    rup = (r :>  eps)
-    if (all(rlo :+ rup)) {
-        // no residuals within [-eps,eps]; ok to proceed
-        z =  r :* rup
-        w = -r :* rlo
-        return
-    }
-    // compute reasonable offset; we use half the distance to closest residual
-    // outside [-eps,eps], with the restriction that the offset has to be 
-    // within [eps, omax]
-    lo = min((omax, max(((abs(max(select(r, rlo))) - eps)/2, eps))))
-    up = min((omax, max(((min(select(r, rup))      - eps)/2, eps))))
-    offset = (up<lo ? up : -lo)
-    if (abs(offset)>eps) {
-        // modify residuals and initial coefficients (both have to be modified so
-        // that the implied values of the dependent variable do not change)
-        if (cons) {
-            // if model has a constant: simply shift the residuals and update
-            // the constant of the coefficient vector
-            b1 = b
-            b1[cols(X)+1] = b1[cols(X)+1] - offset
-            r = r :+ offset
-        }
-        else {
-            // if model has no constant:
-            // (1) regress X on offset
-            // (2) update initial coefficients using coefficients from (1)
-            // (3) recompute residuals based on updated coefficients
-            b1 = mm_lsfit(J(n,1,offset), X, *this.w, 0) // (w not strictly needed)
-            b1 = b - b1
-            r = y - _xb(X, b1)
-        }
-        // check whether shift was successful
-        rlo = (r :< -eps)
-        rup = (r :>  eps)
-        if (all(rlo :+ rup) & 0) {
-            b = b1
-            z =  r :* rup
-            w = -r :* rlo
-            return
-        }
-    }
-    // fallback rule: only move critical residuals away from zero (adding 
-    // offset on both sides); do not update coefficients
-    offset = abs(offset)
-    r = y - _xb(X, b)
-    for (i=n;i;i--) {
-        if (abs(r[i])<eps) {
-            z[i] = max((r[i], 0)) + offset
-            w[i] = max((-r[i],0)) + offset
-        }
-        else {
-            z[i] = max((r[i], 0))
-            w[i] = max((-r[i],0))
-        }
-    }
+    z = r :* (r :> 0)
+    w = z - r
+    o = eps :* (abs(r):<eps)
+    z = z + o
+    w = w + o
 }
 
 real matrix mm_qr::cross(real matrix a, real matrix b, | real matrix c,

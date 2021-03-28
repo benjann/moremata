@@ -156,7 +156,9 @@ Functions:
 
 Main changes:
 
-
+    28mar2021
+    - revised mm_qr()
+    
     26mar2021
     - mm_qr() added (quantile regression using interior-point algorithm)
     - mm_ls_omit() and mm_ls_k_omit() added

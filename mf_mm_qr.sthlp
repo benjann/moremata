@@ -1,5 +1,5 @@
 {smcl}
-{* 26mar2021}{...}
+{* 28mar2021}{...}
 {cmd:help mata mm_qr()}
 {hline}
 
@@ -81,10 +81,10 @@ Settings
 
 {p2col:{it:S}{cmd:.p(}{it:p}{cmd:)}}evaluation probability; default is {bf:0.5} (median regression){p_end}
 {p2col:{it:S}{cmd:.b_init(}{it:b_init}{cmd:)}}{it:real colvector} containing starting values for the coefficients; the
-    default is to use a least-squares fit with quantile-adjusted intercept (unless {it:cons}=0); may specify {cmd:.z} to clear starting values{p_end}
-{p2col:{it:S}{cmd:.tol(}{it:tol}{cmd:)}}convergence tolerance; default is {bf:1e-10}{p_end}
+    default is to use a least-squares fit; may specify {cmd:.z} to clear starting values{p_end}
+{p2col:{it:S}{cmd:.tol(}{it:tol}{cmd:)}}convergence tolerance; default is {bf:1e-8}{p_end}
 {p2col:{it:S}{cmd:.maxiter(}{it:maxiter}{cmd:)}}maximum number of iterations; default is as set by {helpb set maxiter}{p_end}
-{p2col:{it:S}{cmd:.beta(}{it:beta}{cmd:)}}step length of the Frisch Newton Algorithm; default is {cmd:0.99995}{p_end}
+{p2col:{it:S}{cmd:.beta(}{it:beta}{cmd:)}}step length of the Frisch-Newton algorithm; default is {cmd:0.99995}{p_end}
 {p2col:{it:S}{cmd:.qd(}{it:qd}{cmd:)}}whether to use quad precision; default is {cmd:1}; specify {cmd:0} for single precision{p_end}
 {p2col:{it:S}{cmd:.demean(}{it:demean}{cmd:)}}whether to use demeaning; default is {cmd:1}; specify {cmd:0} to skip demeaning{p_end}
 {p2col:{it:S}{cmd:.collin(}{it:collin}{cmd:)}}whether to identify collinear terms; default is {cmd:1}; specify {cmd:0} to skip{p_end}
@@ -106,7 +106,7 @@ values. The functions do not clear results if used in this form.
 {title:Description}
 
 {pstd}
-{cmd:mm_qs()} fits a quantile regression model using an interior point
+{cmd:mm_qs()} fits a quantile regression model using an interior point (Frisch-Newton)
 algorithm (Portnoy and Koenker 1997). It solves the same estimation
 problem as official Stata's {helpb qreg} (which is based on the linear
 programming technique), although results may be slightly different
