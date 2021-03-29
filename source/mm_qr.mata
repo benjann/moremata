@@ -1,4 +1,4 @@
-*! version 1.0.3  28mar2021  Ben Jann
+*! version 1.0.4  29mar2021  Ben Jann
 version 11
 mata:
 
@@ -539,6 +539,7 @@ void mm_qr::fnb(real colvector y)
         r    = z - w
         rhs  = b - cross(*a,cons, W, x :- d:*r,0)
         dy   = cholsolve(ada, rhs)
+        if (hasmissing(dy)) dy = invsym(ada) * rhs // singularity encountered
         dx   = d :* (_xb(*a, dy) - r)
         ds   = -dx
         dz   = -z :* (1 :+ dx :/ x)
@@ -553,7 +554,9 @@ void mm_qr::fnb(real colvector y)
             dxdz = dx :* dz
             dsdw = ds :* dw
             r    = mu:/s - mu:/x + dxdz:/x - dsdw:/s
-            dy   = cholsolve(ada, rhs + cross(*a,cons, d:*W, r,0))
+            rhs  = rhs + cross(*a,cons, d:*W, r,0)
+            dy = cholsolve(ada, rhs)
+            if (hasmissing(dy)) dy = invsym(ada) * rhs
             dx   = d :* (_xb(*a, dy) - z + w - r) 
             ds   = -dx
             dz   = (mu :- z :* dx :- dxdz) :/ x - z
