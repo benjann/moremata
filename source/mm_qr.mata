@@ -1,4 +1,4 @@
-*! version 1.0.4  29mar2021  Ben Jann
+*! version 1.0.5  30mar2021  Ben Jann
 version 11
 mata:
 
@@ -289,6 +289,7 @@ transmorphic mm_qr::method(| string scalar method0)
 transmorphic mm_qr::log(| real scalar log0)
 {
     if (args()==0) return(log)
+    if (!anyof((0,1,2,3), log0)) _error(3300)
     log = log0
 }
 
@@ -572,7 +573,7 @@ void mm_qr::fnb(real colvector y)
         y    = y + fd * dy
         gap = cross(z, W, x) + cross(w, W, s)
         if (log) {
-            if (log==2) printflush(".")
+            if (log>=2) printflush(".")
             else        printlog(mreldif(y, y0), iter)
         }
         if (gap<tol) {

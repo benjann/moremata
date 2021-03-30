@@ -1,5 +1,5 @@
 {smcl}
-{* 28mar2021}{...}
+{* 30mar2021}{...}
 {cmd:help mata mm_qr()}
 {hline}
 
@@ -89,7 +89,8 @@ Settings
 {p2col:{it:S}{cmd:.demean(}{it:demean}{cmd:)}}whether to use demeaning; default is {cmd:1}; specify {cmd:0} to skip demeaning{p_end}
 {p2col:{it:S}{cmd:.collin(}{it:collin}{cmd:)}}whether to identify collinear terms; default is {cmd:1}; specify {cmd:0} to skip{p_end}
 {p2col:{it:S}{cmd:.log(}{it:log}{cmd:)}}whether to display information on estimation progress; default is {cmd:0} (no display); specify
-    {cmd:1} for an iteration log or {cmd:2} for progress dots {p_end}
+    {cmd:1} for an iteration log, {cmd:2} for progress dots (including line break at end), or {cmd:3} for progress dots 
+    (without line break){p_end}
 
 {p 12 12 2}
 Settings can be changed at any time, but note that changing a setting will clear the
