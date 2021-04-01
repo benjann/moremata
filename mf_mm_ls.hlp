@@ -1,5 +1,5 @@
 {smcl}
-{* 22mar2021}{...}
+{* 01apr2021}{...}
 {cmd:help mata mm_ls()}
 {hline}
 
@@ -23,7 +23,7 @@ Simple syntax
 {p 7 20 2}{bind:       }{it:X}:  {it:real matrix} containing predictors{p_end}
 {p 7 20 2}{bind:       }{it:w}:  {it:real colvector} containing weights; specify {cmd:1} for unweighted results{p_end}
 {p 7 20 2}{bind:    }{it:cons}:  whether to include a constant; specify {cmd:0} to omit the constant{p_end}
-{p 7 20 2}{bind:    }{it:quad}:  whether to use quad precision when computing cross products; specify {cmd:0} to use single precision{p_end}
+{p 7 20 2}{bind:    }{it:quad}:  whether to use quad precision when computing cross products; specify {cmd:0} to use double precision{p_end}
 {p 7 20 2}{bind:  }{it:demean}:  whether to compute cross products based on mean-deviated data; specify {cmd:0} to omit demeaning{p_end}
 
 {pstd}

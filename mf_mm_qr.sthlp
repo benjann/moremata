@@ -1,5 +1,5 @@
 {smcl}
-{* 30mar2021}{...}
+{* 01apr2021}{...}
 {cmd:help mata mm_qr()}
 {hline}
 
@@ -85,7 +85,7 @@ Settings
 {p2col:{it:S}{cmd:.tol(}{it:tol}{cmd:)}}convergence tolerance; default is {bf:1e-8}{p_end}
 {p2col:{it:S}{cmd:.maxiter(}{it:maxiter}{cmd:)}}maximum number of iterations; default is as set by {helpb set maxiter}{p_end}
 {p2col:{it:S}{cmd:.beta(}{it:beta}{cmd:)}}step length of the Frisch-Newton algorithm; default is {cmd:0.99995}{p_end}
-{p2col:{it:S}{cmd:.qd(}{it:qd}{cmd:)}}whether to use quad precision; default is {cmd:1}; specify {cmd:0} for single precision{p_end}
+{p2col:{it:S}{cmd:.qd(}{it:qd}{cmd:)}}whether to use quad precision; default is {cmd:1}; specify {cmd:0} for double precision{p_end}
 {p2col:{it:S}{cmd:.demean(}{it:demean}{cmd:)}}whether to use demeaning; default is {cmd:1}; specify {cmd:0} to skip demeaning{p_end}
 {p2col:{it:S}{cmd:.collin(}{it:collin}{cmd:)}}whether to identify collinear terms; default is {cmd:1}; specify {cmd:0} to skip{p_end}
 {p2col:{it:S}{cmd:.log(}{it:log}{cmd:)}}whether to display information on estimation progress; default is {cmd:0} (no display); specify
