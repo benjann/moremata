@@ -1,5 +1,5 @@
 {smcl}
-{* 18feb2009}{...}
+{* 23apr2021}{...}
 {cmd:help mata mm_collapse()}
 {hline}
 
@@ -25,6 +25,19 @@
 {it:f}{cmd:,}
 {it:...}]{cmd:)}
 
+{p 11 18 2}
+{it:real matrix} {cmd:mm_collapse2(}{it:X}{cmd:,}
+{it:w}{cmd:,}
+{it:id} [{cmd:,}
+{it:f}{cmd:,}
+{it:...}]{cmd:)}
+
+{p 11 18 2}
+{it:real matrix} {cmd:_mm_collapse2(}{it:X}{cmd:,}
+{it:w}{cmd:,}
+{it:id} [{cmd:,}
+{it:f}{cmd:,}
+{it:...}]{cmd:)}
 
 {p 4 4 2}
 where
@@ -84,6 +97,11 @@ faster and uses less memory than {cmd:mm_collapse()}.
 contains the subgroup codes in the first column; the
 second and following columns, one for each variable in {it:X}, contain
 the computed statistics.
+
+{pstd}{cmd:mm_collapse2()} and {cmd:_mm_collapse2()} are like 
+{cmd:mm_collapse()} or {cmd:_mm_collapse()} but they return a matrix that has the
+same dimension as {it:X} and in which each observation is replaced by the
+summary statistic of its group. This is similar to Stata's {helpb egen} command.
 
 
 {title:Remarks}
@@ -181,11 +199,25 @@ the computed statistics.
          {it:...}:  (depending on {it:f})
       {it:result}:  {it:g x }(1 + {it:k}), where {it:g} is the number of subgroups
 
+{pstd}
+{space 1}{cmd:mm_collapse2(}{it:X}{cmd:,} {it:w}{cmd:,}
+{it:id}{cmd:,} {it:f}{cmd:,} {it:...}{cmd:)},
+{p_end}
+{pstd}
+{cmd:_mm_collapse2(}{it:X}{cmd:,} {it:w}{cmd:,}
+{it:id}{cmd:,} {it:f}{cmd:,} {it:...}{cmd:)},
+{p_end}
+           {it:X}:  {it:n x k}
+           {it:w}:  {it:n x} 1 or 1 {it:x} 1
+          {it:id}:  {it:n x} 1
+           {it:f}:  1 {it:x} 1
+         {it:...}:  (depending on {it:f})
+      {it:result}:  {it:n} x {it:k}
+
 
 {title:Diagnostics}
 
-{pstd}{cmd:mm_collapse()} and {cmd:_mm_collapse()} cannot be used with built-in
-functions (use wrappers).
+{pstd}{it:f} cannot point to built-in functions; use wrappers.
 
 {pstd}{cmd:mm_collapse()} and {cmd:_mm_collapse()} return
 {cmd:J(0, 1 + cols(}{it:X}{cmd:), .)} if {it:X} and {it:id} are void.
@@ -199,7 +231,7 @@ functions (use wrappers).
 
 {title:Author}
 
-{pstd} Ben Jann, University of Bern, jann@soz.unibe.ch
+{pstd} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
 
 
 {title:Also see}

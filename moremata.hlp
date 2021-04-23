@@ -1,5 +1,5 @@
 {smcl}
-{* 26mar2021}{...}
+{* 23apr2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -82,7 +82,11 @@
 {col 22}{cmd:mm_collapse()}{...}
 {col 41}summary statistics by subgroups
 {col 22}{cmd:_mm_collapse()}{...}
-{col 41}summary statistics by subgroups
+{col 41}summary statistics by subgroups, without sorting
+{col 22}{cmd:mm_collapse2()}{...}
+{col 41}summary statistics by subgroups (expanded)
+{col 22}{cmd:_mm_collapse2()}{...}
+{col 41}summary stats by subgroups (expanded), without sorting
 
 {col 5}{bf:{help mf_mm_gini:mm_gini()}}{...}
 {col 22}{cmd:mm_gini()}{...}
@@ -91,6 +95,68 @@
 {col 5}{bf:{help mf_mm_nobs:mm_nobs()}}{...}
 {col 22}{cmd:mm_nobs()}{...}
 {col 41}number of observations
+
+{col 5}{it:Means, variances, & correlations}
+
+{col 5}{bf:{help mf_mm_colvar:mm_colvar()}}{...}
+{col 22}{cmd:mm_colvar()}{...}
+{col 41}variance, by column
+{col 22}{cmd:mm_meancolvar()}{...}
+{col 41}mean and variance, by column
+{col 22}{cmd:mm_variance0()}{...}
+{col 41}population variance
+{col 22}{cmd:mm_meanvariance0()}{...}
+{col 41}mean and population variance
+{col 22}{cmd:mm_mse()}{...}
+{col 41}mean squared error
+{col 22}{cmd:mm_colmse()}{...}
+{col 41}mean squared error, by column
+{col 22}{cmd:mm_sse()}{...}
+{col 41}sum of squared errors
+{col 22}{cmd:mm_colsse()}{...}
+{col 41}sum of squared errors, by column
+
+{col 5}{bf:{help mf_mm_mloc:mm_mloc()}}{...}
+{col 22}{cmd:mm_mloc()}{...}
+{col 41}robust M estimate of location
+{col 22}{cmd:mm_mscale()}{...}
+{col 41}robust M estimate of scale
+
+{col 5}{bf:{help mf_mm_hl:mm_hl()}}{...}
+{col 22}{cmd:mm_hl()}{...}
+{col 41}Hodges-Lehmann location estimator
+{col 22}{cmd:mm_qn()}{...}
+{col 41}Qn scale coefficient
+{col 22}{cmd:mm_mc()}{...}
+{col 41}Medcouple skewness measure
+
+{col 5}{it:Regression}
+
+{col 5}{bf:{help mf_mm_ls:mm_ls()}}{...}
+{col 22}{cmd:mm_ls()}{...}
+{col 41}linear (least-squares) regression
+
+{col 5}{bf:{help mf_mm_areg:mm_areg()}}{...}
+{col 22}{cmd:mm_areg()}{...}
+{col 41}linear regression with absorbing factor
+
+{col 5}{bf:{help mf_mm_qr:mm_qr()}}{...}
+{col 22}{cmd:mm_qr()}{...}
+{col 41}quantile regression
+
+{col 5}{it:Matching/reweighting}
+
+{col 5}{bf:{help mf_mm_greedy:mm_greedy()}}{...}
+{col 22}{cmd:mm_greedy()}{...}
+{col 41}one-to-one and one-to-many matching w/o replacement
+{col 22}{cmd:mm_greedy2()}{...}
+{col 41}like {cmd:mm_greedy()}, but returning edge-list
+{col 22}{cmd:mm_greedy_pairs()}{...}
+{col 41}transform result from {cmd:mm_greedy()} into edge-list
+
+{col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
+{col 22}{cmd:mm_ebal()}{...}
+{col 41}entropy balancing (Stata 11 required)
 
 {col 5}{it:Sampling, resampling, & combinations}
 
@@ -135,64 +201,6 @@
 {col 41}draw random subset
 {col 22}{cmd:mm_rcomposition()}{...}
 {col 41}draw random composition
-
-{col 5}{it:Matching/reweighting}
-
-{col 5}{bf:{help mf_mm_greedy:mm_greedy()}}{...}
-{col 22}{cmd:mm_greedy()}{...}
-{col 41}one-to-one and one-to-many matching w/o replacement
-{col 22}{cmd:mm_greedy2()}{...}
-{col 41}like {cmd:mm_greedy()}, but returning edge-list
-{col 22}{cmd:mm_greedy_pairs()}{...}
-{col 41}transform result from {cmd:mm_greedy()} into edge-list
-
-{col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
-{col 22}{cmd:mm_ebal()}{...}
-{col 41}entropy balancing (Stata 11 required)
-
-{col 5}{it:Means, variances, & correlations}
-
-{col 5}{bf:{help mf_mm_colvar:mm_colvar()}}{...}
-{col 22}{cmd:mm_colvar()}{...}
-{col 41}variance, by column
-{col 22}{cmd:mm_meancolvar()}{...}
-{col 41}mean and variance, by column
-{col 22}{cmd:mm_variance0()}{...}
-{col 41}population variance
-{col 22}{cmd:mm_meanvariance0()}{...}
-{col 41}mean and population variance
-{col 22}{cmd:mm_mse()}{...}
-{col 41}mean squared error
-{col 22}{cmd:mm_colmse()}{...}
-{col 41}mean squared error, by column
-{col 22}{cmd:mm_sse()}{...}
-{col 41}sum of squared errors
-{col 22}{cmd:mm_colsse()}{...}
-{col 41}sum of squared errors, by column
-
-{col 5}{bf:{help mf_mm_mloc:mm_mloc()}}{...}
-{col 22}{cmd:mm_mloc()}{...}
-{col 41}robust M estimate of location
-{col 22}{cmd:mm_mscale()}{...}
-{col 41}robust M estimate of scale
-
-{col 5}{bf:{help mf_mm_hl:mm_hl()}}{...}
-{col 22}{cmd:mm_hl()}{...}
-{col 41}Hodges-Lehmann location estimator
-{col 22}{cmd:mm_qn()}{...}
-{col 41}Qn scale coefficient
-{col 22}{cmd:mm_mc()}{...}
-{col 41}Medcouple skewness measure
-
-{col 5}{it:Regression}
-
-{col 5}{bf:{help mf_mm_ls:mm_ls()}}{...}
-{col 22}{cmd:mm_ls()}{...}
-{col 41}linear (least-squares) regression
-
-{col 5}{bf:{help mf_mm_qr:mm_qr()}}{...}
-{col 22}{cmd:mm_qr()}{...}
-{col 41}quantile regression
 
 {col 5}{it:Distributions}
 

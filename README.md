@@ -35,9 +35,31 @@ Functions:
   * `mm_histogram()`: produce histogram data
   * `mm_mgof()`: multinomial goodness-of-fit tests
   * `mm_collapse()`: summary statistics by subgroups
-  * `_mm_collapse()`: summary statistics by subgroups
+  * `_mm_collapse()`: summary statistics by subgroups, without sorting
+  * `mm_collapse2()`: summary statistics by subgroups (expanded)
+  * `_mm_collapse2()`: summary stats by subgroups (expanded), without sorting
   * `mm_gini()`: Gini coefficient
   * `mm_nobs()`: number of observations
+  * `mm_colvar()`: variance, by column
+  * `mm_meancolvar()`: mean and variance, by column
+  * `mm_variance0()`: population variance
+  * `mm_meanvariance0()`: mean and population variance
+  * `mm_mse()`: mean squared error
+  * `mm_colmse()`: mean squared error, by column
+  * `mm_sse()`: sum of squared errors
+  * `mm_colsse()`: sum of squared errors, by column
+  * `mm_mloc()`: robust M estimate of location
+  * `mm_mscale()`: robust M estimate of scale
+  * `mm_hl()`: Hodges-Lehmann location estimator
+  * `mm_qn()`: Qn scale coefficient
+  * `mm_mc()`: Medcouple skewness measure
+  * `mm_ls()`: linear (least-squares) regression
+  * `mm_areg()`: linear regression with absorbing factor
+  * `mm_qr()`: quantile regression
+  * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
+  * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
+  * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
+  * `mm_ebal()`: entropy balancing (Stata 11 required)
   * `mm_sample()`: draw random sample
   * `mm_srswr()`: SRS with replacement
   * `mm_srswor()`: SRS without replacement
@@ -55,25 +77,6 @@ Functions:
   * `mm_npartitionss()`: determine number of partitions
   * `mm_rsubset()`: draw random subset
   * `mm_rcomposition()`: draw random composition
-  * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
-  * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
-  * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
-  * `mm_ebal()`: entropy balancing (Stata 11 required)
-  * `mm_colvar()`: variance, by column
-  * `mm_meancolvar()`: mean and variance, by column
-  * `mm_variance0()`: population variance
-  * `mm_meanvariance0()`: mean and population variance
-  * `mm_mse()`: mean squared error
-  * `mm_colmse()`: mean squared error, by column
-  * `mm_sse()`: sum of squared errors
-  * `mm_colsse()`: sum of squared errors, by column
-  * `mm_mloc()`: robust M estimate of location
-  * `mm_mscale()`: robust M estimate of scale
-  * `mm_hl()`: Hodges-Lehmann location estimator
-  * `mm_qn()`: Qn scale coefficient
-  * `mm_mc()`: Medcouple skewness measure
-  * `mm_ls()`: linear (least-squares) regression
-  * `mm_qr()`: quantile regression
   * `mm_benford()`: Benford distribution
   * `mm_cauchy()`: cumulative Cauchy-Lorentz dist.
   * `mm_cauchyden()`: Cauchy-Lorentz density
@@ -156,6 +159,10 @@ Functions:
 
 Main changes:
 
+    23apr2021
+    - mm_areg() added (linear regression with absorbing factor)
+    - mm_collapse2() added
+    
     28mar2021
     - revised mm_qr()
     

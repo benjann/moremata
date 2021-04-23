@@ -31,7 +31,7 @@ struct mm_ls_struct scalar mm_ls(
     | real matrix    X,
       real colvector w,
       real scalar    cons,   // cons=0 excludes the constant
-      real scalar    qd,     // qd=0 uses single precision for cross products
+      real scalar    qd,     // qd=0 uses double precision for cross products
       real scalar    demean) // demean=0 does not use demeaning
 {
     real scalar     ymean

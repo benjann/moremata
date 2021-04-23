@@ -1,5 +1,5 @@
 {smcl}
-{* 01apr2021}{...}
+{* 23apr2021}{...}
 {cmd:help mata mm_ls()}
 {hline}
 
@@ -51,8 +51,8 @@ Retrieve results
 {p2col:{bind:   }{it:RSS} = {cmd:mm_ls_rss(}{it:S}{cmd:)}}residual sum of squares{p_end}
 {p2col:{bind: }{it:ymean} = {cmd:mm_ls_ymean(}{it:S}{cmd:)}}mean of y{p_end}
 {p2col:{bind: }{it:means} = {cmd:mm_ls_means(}{it:S}{cmd:)}}means of X (row vector){p_end}
-{p2col:{bind:}{it:k_omit} = {cmd:mm_ls_k_omit(}{it:S}{cmd:)}}number of omitted terms{p_end}
 {p2col:{bind:  }{it:omit} = {cmd:mm_ls_omit(}{it:S}{cmd:)}}column vector flagging omitted terms{p_end}
+{p2col:{bind:}{it:k_omit} = {cmd:mm_ls_k_omit(}{it:S}{cmd:)}}number of omitted terms{p_end}
 {p2col:{bind:     }{it:N} = {cmd:mm_ls_N(}{it:S}{cmd:)}}number of observations (sum of weights){p_end}
 
 {pmore}
