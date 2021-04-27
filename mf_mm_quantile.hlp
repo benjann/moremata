@@ -1,5 +1,5 @@
 {smcl}
-{* 01dec2020}{...}
+{* 27apr2021}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -260,7 +260,7 @@ values (zero weights are allowed, but will be omitted from the
 computations). Missing is returned if {it:X} is void. Void is returned if {it:P} is void.
 
 {pstd}
-{cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} assume {it:x} to
+{cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} assume {it:x} to be
 non-missing and sorted (in ascending order) and assume {it:w} to be non-missing
 and non-negative. The functions return invalid results if these assumptions
 are violated. Missing is returned if {it:x} is void. Void is returned if {it:p} is void.

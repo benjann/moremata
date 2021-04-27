@@ -1,5 +1,5 @@
 {smcl}
-{* 23apr2021}{...}
+{* 27apr2021}{...}
 {cmd:help mata mm_areg()}
 {hline}
 
@@ -84,12 +84,11 @@ If you are only interested in the coefficients, you can use
 {cmd:mm_aregfit()} (simple syntax) to obtain a fit without much typing:
 
         . {stata sysuse auto, clear}
-        . {stata areg price weight length, absorb(rep78)}
-        . {stata drop if rep78>=.}
+        . {stata areg price weight length, absorb(headroom)}
         . {stata "mata:"}
         : {stata y = st_data(., "price")}
         : {stata X = st_data(., "weight length")}
-        : {stata id = st_data(., "rep78")}
+        : {stata id = st_data(., "headroom")}
         : {stata mm_aregfit(y, id, X)}
         : {stata end}
 

@@ -1,4 +1,4 @@
-*! version 1.0.0  23apr2021  Ben Jann
+*! version 1.0.1  27apr2021  Ben Jann
 version 9.2
 mata:
 
@@ -11,13 +11,13 @@ real colvector mm_aregfit(real colvector y, real colvector id, | real matrix X,
 }
 
 struct mm_areg_struct {
-    pointer(real colvector) scalar y
+    pointer(real colvector) scalar y, w
     pointer(real matrix) scalar    X
-    real scalar                    a, N, ymean, rss, s, r2
-    real colvector                 u, levels, n
-    real rowvector                 means
-    real matrix                    XXinv, V
-    struct mm_ls_struct scalar     ls
+    real scalar    k, a, N, ymean, rss, s, r2
+    real colvector u, levels, n
+    real rowvector means
+    real matrix    XXinv, V
+    transmorphic   ls
 }
 
 struct mm_areg_struct scalar mm_areg(
@@ -29,8 +29,8 @@ struct mm_areg_struct scalar mm_areg(
       real scalar    qd) 
 {
     struct mm_areg_struct scalar t
-    real colvector ym
-    real matrix    Xm
+    real colvector ym, yd
+    real matrix    Xm, Xd
     pragma unset   ym
     pragma unset   Xm
     
@@ -41,15 +41,20 @@ struct mm_areg_struct scalar mm_areg(
     t.y = &y
     if (X==.) t.X = &(J(rows(y), 0, .))
     else      t.X = &X
+    t.w = &w
+    t.k = cols(*t.X)
     
     // estimate
     t.levels = _mm_areg_m(y, *t.X, w, id, sort, ym, Xm, t.n)
-    t.ls = mm_ls(y-ym, *t.X-Xm, w, 0, qd, 0)
-    t.ls.y = t.ls.X = NULL // no longer needed; free memory
+    yd = y - ym; Xd = *t.X - Xm
+    t.ls = mm_ls(yd, Xd, w, 0, qd, 0)
+    yd = J(0, 1, .); Xd = J(0, 0, .) // no longer needed; free memory
     
     // recover constant and fixed-effects
-    t.a = mm_areg_ymean(t) - (t.ls.k ? mm_ls_xb(t.ls, mm_areg_means(t)) : 0)
-    t.u = ym - (t.a :+ (t.ls.k ? mm_ls_xb(t.ls, Xm) : J(rows(*t.y),1,0)))
+    t.a = mm_areg_ymean(t)
+    if (t.k) t.a = t.a - mm_ls_xb(t.ls, mm_areg_means(t))
+    t.u = ym :- t.a
+    if (t.k) t.u = t.u - mm_ls_xb(t.ls, Xm)
     
     // return
     return(t)
@@ -107,7 +112,7 @@ real scalar mm_areg_ymean(struct mm_areg_struct scalar t)
 {
     if (t.ymean==.z) {
         if (rows(*t.y)==0) t.ymean = .
-        else               t.ymean = quadcross(*t.ls.w, *t.y) / mm_areg_N(t)
+        else               t.ymean = quadcross(*t.w, *t.y) / mm_areg_N(t)
     }
     return(t.ymean)
 }
@@ -115,24 +120,26 @@ real scalar mm_areg_ymean(struct mm_areg_struct scalar t)
 real rowvector mm_areg_means(struct mm_areg_struct scalar t)
 {
     if (t.means==.z) {
-        if      (t.ls.k==0)     t.means = J(1, 0, .)
-        else if (rows(*t.X)==0) t.means = J(1, t.ls.k, .)
-        else                    t.means = quadcross(*t.ls.w, *t.X) / mm_areg_N(t)
+        if      (t.k==0)        t.means = J(1, 0, .)
+        else if (rows(*t.X)==0) t.means = J(1, t.k, .)
+        else                    t.means = quadcross(*t.w, *t.X) / mm_areg_N(t)
     }
     return(t.means)
 }
 
 real colvector mm_areg_b(struct mm_areg_struct scalar t)
 {
-    return(t.ls.b \ t.a)
+    return(mm_ls_b(t.ls) \ t.a)
 }
 
 real colvector mm_areg_xb(struct mm_areg_struct scalar t, | real matrix X)
 {
     if (args()==2) {
-        return((t.ls.k ? mm_ls_xb(t.ls, X) : J(rows(*t.y),1,0)) :+ t.a)
+        if (t.k) return(mm_ls_xb(t.ls, X) :+ t.a)
+        return(J(rows(*t.y), 1, t.a))
     }
-    return((t.ls.k ? mm_ls_xb(t.ls, *t.X) : J(rows(*t.y),1,0)) :+ t.a)
+    if (t.k) return(mm_ls_xb(t.ls, *t.X) :+ t.a)
+    return(J(rows(*t.y), 1, t.a))
 }
 
 real colvector mm_areg_ue(struct mm_areg_struct scalar t)
@@ -178,7 +185,7 @@ real colvector mm_areg_k_omit(struct mm_areg_struct scalar t)
 real scalar mm_areg_N(struct mm_areg_struct scalar t)
 {
     if (t.N==.z) {
-        t.N = rows(*t.ls.w)==1 ? *t.ls.w * rows(*t.y) : quadsum(*t.ls.w)
+        t.N = rows(*t.w)==1 ? *t.w * rows(*t.y) : quadsum(*t.w)
     }
     return(t.N)
 }
@@ -191,7 +198,7 @@ real colvector mm_areg_n(struct mm_areg_struct scalar t)
 real scalar mm_areg_rss(struct mm_areg_struct scalar t)
 {
     if (t.rss==.z) {
-        t.rss = quadcross(*t.ls.w, (*t.y - mm_areg_xbu(t)):^2)
+        t.rss = quadcross(*t.w, (*t.y - mm_areg_xbu(t)):^2)
     }
     return(t.rss)
 }
@@ -200,7 +207,8 @@ real scalar mm_areg_s(struct mm_areg_struct scalar t)
 {
     if (t.s==.z) {
         t.s = sqrt(mm_areg_rss(t) * 
-            editmissing(1 / (mm_areg_N(t)-t.ls.kadj-rows(t.levels)), 0))
+            editmissing(1 / (mm_areg_N(t) - (t.k - mm_ls_k_omit(t.ls))
+                 - rows(t.levels)), 0))
     }
     return(t.s)
 }
@@ -209,7 +217,7 @@ real scalar mm_areg_r2(struct mm_areg_struct scalar t)
 {
     if (t.r2==.z) {
         t.r2 = 1 - mm_areg_rss(t) / 
-                   quadcross(*t.ls.w, (*t.y :- mm_areg_ymean(t)):^2)
+                   quadcross(*t.w, (*t.y :- mm_areg_ymean(t)):^2)
     }
     return(t.r2)
 }
@@ -217,9 +225,9 @@ real scalar mm_areg_r2(struct mm_areg_struct scalar t)
 real matrix mm_areg_XXinv(struct mm_areg_struct scalar t)
 {
     if (t.XXinv==.z) {
-        t.XXinv = t.ls.XXinv \ -(mm_areg_means(t) * t.ls.XXinv)
-        t.XXinv = (t.XXinv, (t.XXinv[t.ls.k+1,]' \
-                   1/mm_areg_N(t) - mm_areg_means(t) * t.XXinv[t.ls.k+1,]'))
+        t.XXinv = mm_ls_XXinv(t.ls) \ -(mm_areg_means(t) * mm_ls_XXinv(t.ls))
+        t.XXinv = (t.XXinv, (t.XXinv[t.k+1,]' \
+                   1/mm_areg_N(t) - mm_areg_means(t) * t.XXinv[t.k+1,]'))
     }
     return(t.XXinv)
 }

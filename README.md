@@ -56,6 +56,7 @@ Functions:
   * `mm_ls()`: linear (least-squares) regression
   * `mm_areg()`: linear regression with absorbing factor
   * `mm_qr()`: quantile regression
+  * `mm_aqreg()`: quantile regression with absorbing factor
   * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
   * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
   * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
@@ -159,6 +160,10 @@ Functions:
 
 Main changes:
 
+    27apr2021
+    - mm_aqreg() added
+    - some internal changes to code of mm_areg()
+    
     23apr2021
     - mm_areg() added (linear regression with absorbing factor)
     - mm_collapse2() added

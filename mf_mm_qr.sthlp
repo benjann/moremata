@@ -1,5 +1,5 @@
 {smcl}
-{* 01apr2021}{...}
+{* 27apr2021}{...}
 {cmd:help mata mm_qr()}
 {hline}
 
@@ -107,7 +107,7 @@ values. The functions do not clear results if used in this form.
 {title:Description}
 
 {pstd}
-{cmd:mm_qs()} fits a quantile regression model using an interior point (Frisch-Newton)
+{cmd:mm_qr()} fits a quantile regression model using an interior point (Frisch-Newton)
 algorithm (Portnoy and Koenker 1997). It solves the same estimation
 problem as official Stata's {helpb qreg} (which is based on the linear
 programming technique), although results may be slightly different

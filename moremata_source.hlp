@@ -3322,7 +3322,7 @@ end
 
 *! {smcl}
 *! {marker mm_areg}{bf:mm_areg.mata}{asis}
-*! version 1.0.0  23apr2021  Ben Jann
+*! version 1.0.1  27apr2021  Ben Jann
 version 9.2
 mata:
 
@@ -3335,13 +3335,13 @@ real colvector mm_aregfit(real colvector y, real colvector id, | real matrix X,
 }
 
 struct mm_areg_struct {
-    pointer(real colvector) scalar y
+    pointer(real colvector) scalar y, w
     pointer(real matrix) scalar    X
-    real scalar                    a, N, ymean, rss, s, r2
-    real colvector                 u, levels, n
-    real rowvector                 means
-    real matrix                    XXinv, V
-    struct mm_ls_struct scalar     ls
+    real scalar    k, a, N, ymean, rss, s, r2
+    real colvector u, levels, n
+    real rowvector means
+    real matrix    XXinv, V
+    transmorphic   ls
 }
 
 struct mm_areg_struct scalar mm_areg(
@@ -3353,8 +3353,8 @@ struct mm_areg_struct scalar mm_areg(
       real scalar    qd) 
 {
     struct mm_areg_struct scalar t
-    real colvector ym
-    real matrix    Xm
+    real colvector ym, yd
+    real matrix    Xm, Xd
     pragma unset   ym
     pragma unset   Xm
     
@@ -3365,15 +3365,20 @@ struct mm_areg_struct scalar mm_areg(
     t.y = &y
     if (X==.) t.X = &(J(rows(y), 0, .))
     else      t.X = &X
+    t.w = &w
+    t.k = cols(*t.X)
     
     // estimate
     t.levels = _mm_areg_m(y, *t.X, w, id, sort, ym, Xm, t.n)
-    t.ls = mm_ls(y-ym, *t.X-Xm, w, 0, qd, 0)
-    t.ls.y = t.ls.X = NULL // no longer needed; free memory
+    yd = y - ym; Xd = *t.X - Xm
+    t.ls = mm_ls(yd, Xd, w, 0, qd, 0)
+    yd = J(0, 1, .); Xd = J(0, 0, .) // no longer needed; free memory
     
     // recover constant and fixed-effects
-    t.a = mm_areg_ymean(t) - (t.ls.k ? mm_ls_xb(t.ls, mm_areg_means(t)) : 0)
-    t.u = ym - (t.a :+ (t.ls.k ? mm_ls_xb(t.ls, Xm) : J(rows(*t.y),1,0)))
+    t.a = mm_areg_ymean(t)
+    if (t.k) t.a = t.a - mm_ls_xb(t.ls, mm_areg_means(t))
+    t.u = ym :- t.a
+    if (t.k) t.u = t.u - mm_ls_xb(t.ls, Xm)
     
     // return
     return(t)
@@ -3431,7 +3436,7 @@ real scalar mm_areg_ymean(struct mm_areg_struct scalar t)
 {
     if (t.ymean==.z) {
         if (rows(*t.y)==0) t.ymean = .
-        else               t.ymean = quadcross(*t.ls.w, *t.y) / mm_areg_N(t)
+        else               t.ymean = quadcross(*t.w, *t.y) / mm_areg_N(t)
     }
     return(t.ymean)
 }
@@ -3439,24 +3444,26 @@ real scalar mm_areg_ymean(struct mm_areg_struct scalar t)
 real rowvector mm_areg_means(struct mm_areg_struct scalar t)
 {
     if (t.means==.z) {
-        if      (t.ls.k==0)     t.means = J(1, 0, .)
-        else if (rows(*t.X)==0) t.means = J(1, t.ls.k, .)
-        else                    t.means = quadcross(*t.ls.w, *t.X) / mm_areg_N(t)
+        if      (t.k==0)        t.means = J(1, 0, .)
+        else if (rows(*t.X)==0) t.means = J(1, t.k, .)
+        else                    t.means = quadcross(*t.w, *t.X) / mm_areg_N(t)
     }
     return(t.means)
 }
 
 real colvector mm_areg_b(struct mm_areg_struct scalar t)
 {
-    return(t.ls.b \ t.a)
+    return(mm_ls_b(t.ls) \ t.a)
 }
 
 real colvector mm_areg_xb(struct mm_areg_struct scalar t, | real matrix X)
 {
     if (args()==2) {
-        return((t.ls.k ? mm_ls_xb(t.ls, X) : J(rows(*t.y),1,0)) :+ t.a)
+        if (t.k) return(mm_ls_xb(t.ls, X) :+ t.a)
+        return(J(rows(*t.y), 1, t.a))
     }
-    return((t.ls.k ? mm_ls_xb(t.ls, *t.X) : J(rows(*t.y),1,0)) :+ t.a)
+    if (t.k) return(mm_ls_xb(t.ls, *t.X) :+ t.a)
+    return(J(rows(*t.y), 1, t.a))
 }
 
 real colvector mm_areg_ue(struct mm_areg_struct scalar t)
@@ -3502,7 +3509,7 @@ real colvector mm_areg_k_omit(struct mm_areg_struct scalar t)
 real scalar mm_areg_N(struct mm_areg_struct scalar t)
 {
     if (t.N==.z) {
-        t.N = rows(*t.ls.w)==1 ? *t.ls.w * rows(*t.y) : quadsum(*t.ls.w)
+        t.N = rows(*t.w)==1 ? *t.w * rows(*t.y) : quadsum(*t.w)
     }
     return(t.N)
 }
@@ -3515,7 +3522,7 @@ real colvector mm_areg_n(struct mm_areg_struct scalar t)
 real scalar mm_areg_rss(struct mm_areg_struct scalar t)
 {
     if (t.rss==.z) {
-        t.rss = quadcross(*t.ls.w, (*t.y - mm_areg_xbu(t)):^2)
+        t.rss = quadcross(*t.w, (*t.y - mm_areg_xbu(t)):^2)
     }
     return(t.rss)
 }
@@ -3524,7 +3531,8 @@ real scalar mm_areg_s(struct mm_areg_struct scalar t)
 {
     if (t.s==.z) {
         t.s = sqrt(mm_areg_rss(t) * 
-            editmissing(1 / (mm_areg_N(t)-t.ls.kadj-rows(t.levels)), 0))
+            editmissing(1 / (mm_areg_N(t) - (t.k - mm_ls_k_omit(t.ls))
+                 - rows(t.levels)), 0))
     }
     return(t.s)
 }
@@ -3533,7 +3541,7 @@ real scalar mm_areg_r2(struct mm_areg_struct scalar t)
 {
     if (t.r2==.z) {
         t.r2 = 1 - mm_areg_rss(t) / 
-                   quadcross(*t.ls.w, (*t.y :- mm_areg_ymean(t)):^2)
+                   quadcross(*t.w, (*t.y :- mm_areg_ymean(t)):^2)
     }
     return(t.r2)
 }
@@ -3541,9 +3549,9 @@ real scalar mm_areg_r2(struct mm_areg_struct scalar t)
 real matrix mm_areg_XXinv(struct mm_areg_struct scalar t)
 {
     if (t.XXinv==.z) {
-        t.XXinv = t.ls.XXinv \ -(mm_areg_means(t) * t.ls.XXinv)
-        t.XXinv = (t.XXinv, (t.XXinv[t.ls.k+1,]' \
-                   1/mm_areg_N(t) - mm_areg_means(t) * t.XXinv[t.ls.k+1,]'))
+        t.XXinv = mm_ls_XXinv(t.ls) \ -(mm_areg_means(t) * mm_ls_XXinv(t.ls))
+        t.XXinv = (t.XXinv, (t.XXinv[t.k+1,]' \
+                   1/mm_areg_N(t) - mm_areg_means(t) * t.XXinv[t.k+1,]'))
     }
     return(t.XXinv)
 }
@@ -3557,6 +3565,282 @@ real matrix mm_areg_V(struct mm_areg_struct scalar t)
 real colvector mm_areg_se(struct mm_areg_struct scalar t)
 {
     return(sqrt(diagonal(mm_areg_V(t))))
+}
+
+end
+
+
+*! {smcl}
+*! {marker mm_aqreg}{bf:mm_aqreg.mata}{asis}
+*! version 1.0.0  27apr2021  Ben Jann
+version 9.2
+mata:
+
+real matrix mm_aqregfit(real colvector y, real colvector id, | real matrix X,
+    real colvector w, real vector tau, real scalar sort, real scalar qd)
+{
+    if (args()<3) X = J(rows(y), 0, .)
+    if (args()<4) w = 1
+    if (args()<5) tau = 0.5
+    return(mm_aqreg_b(mm_aqreg(y, id, X, w, tau, sort, qd)))
+}
+
+struct mm_aqreg_struct {
+    pointer(real colvector) scalar y, w
+    pointer(real matrix) scalar    X
+    real scalar     k, N, ymean
+    real colvector  levels, n
+    real rowvector  means
+    transmorphic    L, S
+    real rowvector  tau, q
+    real scalar     beta0, gamma0
+    real colvector  alpha, delta
+}
+
+struct mm_aqreg_struct scalar mm_aqreg(
+    real colvector   y,
+    real colvector   id,
+    | real matrix    X,
+      real colvector w,
+      real vector    tau,
+      real scalar    sort,
+      real scalar    qd) 
+{
+    struct mm_aqreg_struct scalar t
+    real colvector ym, yd, r, rm, rd, e, u, info, p
+    real matrix    Xm, Xd
+    pragma unset   ym
+    pragma unset   Xm
+    pragma unset   info
+    pragma unset   p
+    
+    // data
+    if (args()<3) X = J(rows(y), 0, .)
+    if (args()<4) w = 1
+    t.y = &y
+    if (X==.) t.X = &(J(rows(y), 0, .))
+    else      t.X = &X
+    t.w = &w
+    t.k = cols(*t.X)
+    t.N = t.ymean = t.means = .z
+    
+    // quantiles
+    if (args()<5)    tau = 0.5
+    if (rows(tau)>1) t.tau = tau'
+    else             t.tau = tau
+    if (length(tau)==0) _error(3200)
+    if (any(tau:<=0 :| tau:>=1)) _error(3300, "tau must be between 0 and 1")
+    
+    // groups
+    t.levels = _mm_aqreg_m(y, *t.X, w, id, sort, ym, Xm, t.n, info, p)
+    yd = y - ym; Xd = *t.X - Xm
+    
+    // location fit (beta0: global constant; alpha: fixed effects)
+    t.L = mm_ls(yd, Xd, w, 0, qd, 0)
+    t.beta0 = mm_aqreg_ymean(t)
+    if (t.k) t.beta0 = t.beta0 - mm_ls_xb(t.L, mm_aqreg_means(t))
+    if (t.k) t.alpha = ym - mm_ls_xb(t.L, Xm)
+    else     t.alpha = ym
+    t.alpha = t.alpha :- t.beta0
+    if (t.k) e = yd - mm_ls_xb(t.L)
+    else     e = yd
+    
+    // scale fit (gamma0: global constant; delta: fixed effects)
+    r = 2 * e :* ((e:>=0) :- mean(e:>=0, w))
+    if (sort) {
+        rm = J(rows(r), 1, .)
+        rm[p] = __mm_aqreg_m(r[p], rows(w)==1 ? w : w[p], info)
+    }
+    else rm = __mm_aqreg_m(r, w, info)
+    rd = r - rm
+    t.S = mm_ls(rd, Xd, w, 0, qd, 0)
+    t.gamma0 = mean(r, w)
+    if (t.k) t.gamma0 = t.gamma0 - mm_ls_xb(t.S, mm_aqreg_means(t))
+    if (t.k) t.delta = rm - mm_ls_xb(t.S, Xm)
+    else     t.delta = rm
+    if (t.k) u = e :/ (mm_ls_xb(t.S, *t.X) + t.delta)
+    else     u = e :/ t.delta
+    t.delta = t.delta :- t.gamma0
+    
+    // quantiles
+    if (hasmissing(u)) t.q = mm_quantile(select(u, u:<.),
+                             rows(w)!=1 ? select(w, u:<.) : w, t.tau)
+    else               t.q = mm_quantile(editmissing(u,0), w, t.tau)
+    
+    // free memory (reset data pointed to by t.L and t.S)
+    yd = rd = J(0, 1, .); Xd = J(0, 0, .)
+    
+    // return
+    return(t)
+}
+
+real colvector _mm_aqreg_m(real colvector y, real matrix X, real colvector w,
+    real colvector id, real scalar sort, real colvector ym, real matrix Xm,
+    real colvector n, real colvector info, real colvector p)
+{
+    real scalar    j
+    real colvector levels
+    real colvector ws
+    
+    j = cols(X)
+    Xm = J(rows(X), j, .)
+    if (sort) {
+        p = order(id, 1)
+        n = _mm_panels(id[p])
+        info = mm_colrunsum(n)
+        levels = (id[p])[info] 
+        ws = (rows(w)==1 ? w : w[p])
+        ym = J(rows(y),1,.)
+        ym[p] = __mm_aqreg_m(y[p], ws, info)
+        for (; j; j--) Xm[p,j] = __mm_aqreg_m(X[p,j], ws, info)
+        return(levels)
+    }
+    n = _mm_panels(id)
+    info = mm_colrunsum(n)
+    levels = id[info]
+    ym = __mm_aqreg_m(y, w, info)
+    for (; j; j--) Xm[,j] = __mm_aqreg_m(X[,j], w, info)
+    return(levels)
+}
+
+real colvector __mm_aqreg_m(real colvector y, real colvector w, real matrix info)
+{
+    real scalar    i, n, a, b, ww
+    real colvector m
+
+    m = y
+    if (rows(m)<1) return(m)
+    ww = (rows(w)!=1)
+    n = rows(info)
+    b = 0
+    for (i=1; i<=n; i++) {
+        a = b + 1
+        b = info[i]
+        m[|a \ b|] = J(b-a+1, 1, mean(m[|a \ b|], ww ? w[|a \ b|] : w))
+    }
+    return(m)
+}
+
+real scalar mm_aqreg_N(struct mm_aqreg_struct scalar t)
+{
+    if (t.N==.z) {
+        t.N = rows(*t.w)==1 ? *t.w * rows(*t.y) : quadsum(*t.w)
+    }
+    return(t.N)
+}
+
+real scalar mm_aqreg_ymean(struct mm_aqreg_struct scalar t)
+{
+    if (t.ymean==.z) {
+        if (rows(*t.y)==0) t.ymean = .
+        else               t.ymean = quadcross(*t.w, *t.y) / mm_aqreg_N(t)
+    }
+    return(t.ymean)
+}
+
+real rowvector mm_aqreg_means(struct mm_aqreg_struct scalar t)
+{
+    if (t.means==.z) {
+        if      (t.k==0)        t.means = J(1, 0, .)
+        else if (rows(*t.X)==0) t.means = J(1, t.k, .)
+        else                    t.means = quadcross(*t.w, *t.X) / mm_aqreg_N(t)
+    }
+    return(t.means)
+}
+
+real matrix mm_aqreg_b(struct mm_aqreg_struct scalar t)
+{
+    return((mm_ls_b(t.L) :+ mm_ls_b(t.S) :* J(t.k, 1, t.q)) \ 
+           (t.beta0 :+ t.gamma0 :* t.q))
+}
+
+real matrix mm_aqreg_xb(struct mm_aqreg_struct scalar t, | real matrix X)
+{
+    real matrix b
+    
+    b = mm_aqreg_b(t)
+    if (args()==2) {
+        if (cols(X)!=t.k) _error(3200)
+        if (t.k) return(X * b[|1,1 \ t.k,.|] :+ b[t.k+1,])
+        return(J(rows(X), 1, b))
+    }
+    if (t.k) return(*t.X * b[|1,1 \ t.k,.|] :+ b[t.k+1,])
+    return(J(rows(*t.y), 1, b))
+}
+
+real matrix mm_aqreg_ue(struct mm_aqreg_struct scalar t)
+{
+    return(*t.y :- mm_aqreg_xb(t))
+}
+
+real matrix mm_aqreg_xbu(struct mm_aqreg_struct scalar t)
+{
+    return(mm_aqreg_xb(t) + mm_aqreg_u(t))
+}
+
+real matrix mm_aqreg_u(struct mm_aqreg_struct scalar t)
+{
+    return(t.alpha :+ t.delta :* J(rows(t.delta), 1, t.q))
+}
+
+real matrix mm_aqreg_e(struct mm_aqreg_struct scalar t)
+{
+    return(*t.y :- mm_aqreg_xbu(t))
+}
+
+real colvector mm_aqreg_levels(struct mm_aqreg_struct scalar t)
+{
+    return(t.levels)
+}
+
+real colvector mm_aqreg_k_levels(struct mm_aqreg_struct scalar t)
+{
+    return(rows(t.levels))
+}
+
+real colvector mm_aqreg_omit(struct mm_aqreg_struct scalar t)
+{
+    return(mm_ls_omit(t.L) \ 0)
+}
+
+real colvector mm_aqreg_k_omit(struct mm_aqreg_struct scalar t)
+{
+    return(mm_ls_k_omit(t.L))
+}
+
+real colvector mm_aqreg_n(struct mm_aqreg_struct scalar t)
+{
+    return(t.n)
+}
+
+real colvector mm_aqreg_beta(struct mm_aqreg_struct scalar t)
+{
+    return(mm_ls_b(t.L) \ t.beta0)
+}
+
+real colvector mm_aqreg_alpha(struct mm_aqreg_struct scalar t)
+{
+    return(t.alpha)
+}
+
+real colvector mm_aqreg_gamma(struct mm_aqreg_struct scalar t)
+{
+    return(mm_ls_b(t.S) \ t.gamma0)
+}
+
+real colvector mm_aqreg_delta(struct mm_aqreg_struct scalar t)
+{
+    return(t.delta)
+}
+
+real rowvector mm_aqreg_tau(struct mm_aqreg_struct scalar t)
+{
+    return(t.tau)
+}
+
+real rowvector mm_aqreg_q(struct mm_aqreg_struct scalar t)
+{
+    return(t.q)
 }
 
 end
