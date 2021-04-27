@@ -3663,9 +3663,9 @@ struct mm_aqreg_struct scalar mm_aqreg(
     t.delta = t.delta :- t.gamma0
     
     // quantiles
-    if (hasmissing(u)) t.q = mm_quantile(select(u, u:<.),
-                             rows(w)!=1 ? select(w, u:<.) : w, t.tau)
-    else               t.q = mm_quantile(editmissing(u,0), w, t.tau)
+    if (missing(u)) t.q = mm_quantile(select(u, u:<.),
+                          rows(w)!=1 ? select(w, u:<.) : w, t.tau)
+    else            t.q = mm_quantile(editmissing(u,0), w, t.tau)
     
     // free memory (reset data pointed to by t.L and t.S)
     yd = rd = J(0, 1, .); Xd = J(0, 0, .)
