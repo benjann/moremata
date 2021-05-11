@@ -1,4 +1,4 @@
-*! version 1.0.1  27apr2021  Ben Jann
+*! version 1.0.2  30apr2021  Ben Jann
 version 9.2
 mata:
 
@@ -17,7 +17,17 @@ struct mm_areg_struct {
     real colvector u, levels, n
     real rowvector means
     real matrix    XXinv, V
-    transmorphic   ls
+    struct mm_ls_struct scalar ls
+}
+
+struct mm_areg_struct_grps {
+    real colvector p
+    real colvector idx, levels, n
+}
+
+struct mm_areg_struct_data {
+    real colvector ym, yd
+    real matrix    Xm, Xd
 }
 
 struct mm_areg_struct scalar mm_areg(
@@ -26,83 +36,126 @@ struct mm_areg_struct scalar mm_areg(
     | real matrix    X,
       real colvector w,
       real scalar    sort,
-      real scalar    qd) 
+      real scalar    qd,
+      struct mm_areg_struct_grps g,
+      // - if empty g is provided, g will be filled in with info on groups
+      // - if filled-in g is provided, info on groups will be taken from g
+      // - g is considered empty if rows(g.idx)==0
+      struct mm_areg_struct_data d
+      // - if empty d is provided, d will be filled in with transformed data
+      // - if filled-in d is provided, transformed data will be taken from d
+      // - status of d will be evaluated separately for y and X
+      // - d will be considered empty for y, if rows(d.ym)==0
+      // - d will be considered empty for X, if rows(d.Xm)==0
+      )
 {
     struct mm_areg_struct scalar t
-    real colvector ym, yd
-    real matrix    Xm, Xd
-    pragma unset   ym
-    pragma unset   Xm
     
     // setup
     if (args()<3) X = J(rows(y), 0, .)
     if (args()<4) w = 1
+    if (length(g)==0) g = mm_areg_struct_grps(1)
+    if (length(d)==0) d = mm_areg_struct_data(1)
     t.N = t.rss = t.s = t.r2 = t.XXinv = t.V = t.ymean = t.means = .z
     t.y = &y
     if (X==.) t.X = &(J(rows(y), 0, .))
     else      t.X = &X
     t.w = &w
     t.k = cols(*t.X)
+    if (rows(id)!=rows(y)) _error(3200)
+    
+    // collect information on groups
+    if (rows(g.idx)==0) _mm_areg_grps(g, id, sort)
+    t.levels = g.levels; t.n = g.n
+    
+    // transform data
+    if (rows(d.ym)==0) {
+        d.ym = _mm_areg_gmean(g, y, w, sort)
+        d.yd = y - d.ym
+    }
+    if (rows(d.Xm)==0) {
+        d.Xm = _mm_areg_gmean(g, *t.X, w, sort)
+        d.Xd = *t.X - d.Xm
+    }
     
     // estimate
-    t.levels = _mm_areg_m(y, *t.X, w, id, sort, ym, Xm, t.n)
-    yd = y - ym; Xd = *t.X - Xm
-    t.ls = mm_ls(yd, Xd, w, 0, qd, 0)
-    yd = J(0, 1, .); Xd = J(0, 0, .) // no longer needed; free memory
+    t.ls = mm_ls(d.yd, d.Xd, w, 0, qd, 0)
+    t.ls.y = t.ls.X = t.ls.w = NULL // release pointers to data (save memory)
     
     // recover constant and fixed-effects
     t.a = mm_areg_ymean(t)
     if (t.k) t.a = t.a - mm_ls_xb(t.ls, mm_areg_means(t))
-    t.u = ym :- t.a
-    if (t.k) t.u = t.u - mm_ls_xb(t.ls, Xm)
+    t.u = d.ym :- t.a
+    if (t.k) t.u = t.u - mm_ls_xb(t.ls, d.Xm)
     
     // return
     return(t)
 }
 
-real colvector _mm_areg_m(real colvector y, real matrix X, real colvector w,
-    real colvector id, real scalar sort, real colvector ym, real matrix Xm,
-    real colvector n)
+void _mm_areg_grps(struct mm_areg_struct_grps scalar g, real colvector id, 
+    real scalar sort)
 {
-    real matrix    info
-    real scalar    j
-    real colvector p, levels
-    real colvector ws
-    
-    j = cols(X)
-    Xm = J(rows(X), j, .)
-    if (sort) {
-        p = order(id, 1)
-        n = _mm_panels(id[p])
-        info = mm_colrunsum(n)
-        levels = (id[p])[info] 
-        ws = (rows(w)==1 ? w : w[p])
-        ym = J(rows(y),1,.)
-        ym[p] = __mm_areg_m(y[p], ws, info)
-        for (; j; j--) Xm[p,j] = __mm_areg_m(X[p,j], ws, info)
-        return(levels)
-    }
-    n = _mm_panels(id)
-    info = mm_colrunsum(n)
-    levels = id[info]
-    ym = __mm_areg_m(y, w, info)
-    for (; j; j--) Xm[,j] = __mm_areg_m(X[,j], w, info)
-    return(levels)
+    if (sort) __mm_areg_grps(g, id[g.p = order(id, 1)])
+    else      __mm_areg_grps(g, id)
 }
 
-real colvector __mm_areg_m(real colvector y, real colvector w, real matrix info)
+void __mm_areg_grps(struct mm_areg_struct_grps scalar g, real colvector id)
+{
+    real scalar r
+    
+    r = rows(id)
+    if (r==0) {
+        g.idx = g.levels = g.n = J(0,1,.)
+    }
+    else if (r==1) {
+        g.idx = 1
+        g.levels = id
+        g.n = r
+    }
+    else {
+        g.idx = (id :!= (id[|2\.|] \ id[1]))
+        g.idx[r] = 1 // should id be constant
+        g.idx = select(1::r, g.idx) // index of last obs in each group
+        g.levels = id[g.idx]
+        g.n = g.idx - (0 \ g.idx)[|1 \ rows(g.idx)|] // group sizes
+    }
+}
+
+real matrix _mm_areg_gmean(struct mm_areg_struct_grps scalar g, 
+    real matrix X, real colvector w, real scalar sort)
+{
+    real scalar    j
+    real colvector ws
+    real matrix    Xm
+    
+    j = cols(X)
+    if (j==0) return(J(rows(X), 0, .))
+    if (sort) {
+        ws = (rows(w)==1 ? w : w[g.p])
+        Xm = X[g.p,]
+        for (; j; j--) Xm[g.p,j] = __mm_areg_gmean(Xm[,j], ws, g.idx)
+    }
+    else {
+        Xm = J(rows(X), j, .)
+        for (; j; j--) Xm[,j] = __mm_areg_gmean(X[,j], w, g.idx)
+    }
+    return(Xm)
+}
+
+real colvector __mm_areg_gmean(real colvector x, real colvector w,
+    real colvector idx)
 {
     real scalar    i, n, a, b, ww
     real colvector m
 
-    m = y
+    m = x
     if (rows(m)<1) return(m)
     ww = (rows(w)!=1)
-    n = rows(info)
+    n = rows(idx)
     b = 0
     for (i=1; i<=n; i++) {
         a = b + 1
-        b = info[i]
+        b = idx[i]
         m[|a \ b|] = J(b-a+1, 1, mean(m[|a \ b|], ww ? w[|a \ b|] : w))
     }
     return(m)

@@ -1,5 +1,5 @@
 {smcl}
-{* 27apr2021}{...}
+{* 11may2021}{...}
 {cmd:help mata mm_aqreg()}
 {hline}
 
@@ -16,7 +16,7 @@ Simple syntax
 
 {p 8 24 2}
 {it:b} =
-{cmd:mm_aregfit(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:tau}{cmd:,} {it:sort}{cmd:,} {it:quad}]{cmd:)}
+{cmd:mm_aqregfit(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:tau}{cmd:,} {it:sort}{cmd:,} {it:quad}]{cmd:)}
 
 {p 7 20 2}{bind:       }{it:y}:  {it:real colvector} containing dependent variable{p_end}
 {p 7 20 2}{bind:      }{it:id}:  {it:real colvector} containing categorical factor to be absorbed{p_end}
@@ -91,7 +91,7 @@ is well-behaved (reasonable means, not much collinearity).
 
 {pstd}
 A Stata implementation of the estimator by Machado and Santos Silva (2019)
-is available as {helpb xtqreg} (Machado and Santos Silva 2019).
+is available as {helpb xtqreg} (Machado and Santos Silva 2018).
 
 
 {title:Examples}
@@ -111,7 +111,7 @@ If you are only interested in the coefficients, you can use
 {pstd}
 For more sophisticated applications, use the advanced syntax. Function
 {cmd:mm_aqreg()} defines the problem and performs the main calculations. You can then
-use functions such as {cmd:mm_aqreg_b()}, {cmd:mm_areg_xb()}, etc. to obtain results. 
+use functions such as {cmd:mm_aqreg_b()}, {cmd:mm_aqreg_xb()}, etc. to obtain results. 
 
         . {stata "mata:"}
         : {stata S = mm_aqreg(y, id, X)}

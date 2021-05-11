@@ -160,6 +160,11 @@ Functions:
 
 Main changes:
 
+    11may2021
+    - made some changes to mm_areg() and mm_aqreg() so that intermediate results
+      (group info and transformed data) can be stored (undocumented)
+    - removed unnecessary colon operator in mm_diff() (seems to improve speed)
+    
     27apr2021
     - mm_aqreg() added
     - some internal changes to code of mm_areg()
