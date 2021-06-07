@@ -160,6 +160,9 @@ Functions:
 
 Main changes:
 
+    06jun2021
+    - fixed typo in mf_mm_mloc.hlp
+    
     11may2021
     - made some changes to mm_areg() and mm_aqreg() so that intermediate results
       (group info and transformed data) can be stored (undocumented)

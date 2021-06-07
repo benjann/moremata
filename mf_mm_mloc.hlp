@@ -1,5 +1,5 @@
 {smcl}
-{* 03mar2021}{...}
+{* 06jun2021}{...}
 {cmd:help mata mm_mloc()}
 {hline}
 
@@ -76,14 +76,14 @@ Optimize
 Retrieve results
 
 {p2colset 9 34 36 2}{...}
-{p2col:{bind:    }{it:b} =  {cmd:mm_mloc_b(}{it:S}{cmd:)}}scale estimate{p_end}
-{p2col:{bind: }{it:conv} =  {cmd:mm_mloc_conv(}{it:S}{cmd:)}}1 if converged, 0 else{p_end}
-{p2col:{bind:    }{it:d} =  {cmd:mm_mloc_d(}{it:S}{cmd:)}}value of convergence criterion{p_end}
-{p2col:{bind: }{it:iter} =  {cmd:mm_mloc_iter(}{it:S}{cmd:)}}number of iterations{p_end}
-{p2col:{bind:    }{it:k} =  {cmd:mm_mloc_k(}{it:S}{cmd:)}}tuning constant{p_end}
-{p2col:{bind:   }{it:bp} =  {cmd:mm_mloc_eff(}{it:S}{cmd:)}}breakdown point (in percent){p_end}
-{p2col:{bind:   }{it:b0} =  {cmd:mm_mloc_b0(}{it:S}{cmd:)}}starting value{p_end}
-{p2col:{bind:    }{it:l} =  {cmd:mm_mloc_s(}{it:S}{cmd:)}}location{p_end}
+{p2col:{bind:    }{it:b} =  {cmd:mm_mscale_b(}{it:S}{cmd:)}}scale estimate{p_end}
+{p2col:{bind: }{it:conv} =  {cmd:mm_mscale_conv(}{it:S}{cmd:)}}1 if converged, 0 else{p_end}
+{p2col:{bind:    }{it:d} =  {cmd:mm_mscale_d(}{it:S}{cmd:)}}value of convergence criterion{p_end}
+{p2col:{bind: }{it:iter} =  {cmd:mm_mscale_iter(}{it:S}{cmd:)}}number of iterations{p_end}
+{p2col:{bind:    }{it:k} =  {cmd:mm_mscale_k(}{it:S}{cmd:)}}tuning constant{p_end}
+{p2col:{bind:   }{it:bp} =  {cmd:mm_mscale_eff(}{it:S}{cmd:)}}breakdown point (in percent){p_end}
+{p2col:{bind:   }{it:b0} =  {cmd:mm_mscale_b0(}{it:S}{cmd:)}}starting value{p_end}
+{p2col:{bind:    }{it:l} =  {cmd:mm_mscale_s(}{it:S}{cmd:)}}location{p_end}
 
 {pstd}
 Specifying an optional argument as missing (either {cmd:.} or {cmd:""} depending on type
