@@ -1,5 +1,5 @@
 {smcl}
-{* 06jun2021}{...}
+{* 07jun2021}{...}
 {cmd:help mata mm_mloc()}
 {hline}
 
@@ -75,7 +75,7 @@ Optimize
 {pstd}
 Retrieve results
 
-{p2colset 9 34 36 2}{...}
+{p2colset 9 36 38 2}{...}
 {p2col:{bind:    }{it:b} =  {cmd:mm_mscale_b(}{it:S}{cmd:)}}scale estimate{p_end}
 {p2col:{bind: }{it:conv} =  {cmd:mm_mscale_conv(}{it:S}{cmd:)}}1 if converged, 0 else{p_end}
 {p2col:{bind:    }{it:d} =  {cmd:mm_mscale_d(}{it:S}{cmd:)}}value of convergence criterion{p_end}
