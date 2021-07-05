@@ -17,7 +17,7 @@ real matrix mm_iqrange(real matrix X, | real colvector w, real scalar def,
 real scalar _mm_iqrange(real colvector X, | real colvector w, real scalar def, 
     real scalar fw)
 {   // X assumed sorted and non-missing
-    // w assumed non-missing and strictly positive
+    // w assumed non-missing and non-negative
     real matrix q
 
     if (args()<2) w = 1

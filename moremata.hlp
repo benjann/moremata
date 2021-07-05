@@ -1,5 +1,5 @@
 {smcl}
-{* 23apr2021}{...}
+{* 04jul2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -43,6 +43,14 @@
 {col 41}compute median
 {col 22}{cmd:mm_iqrange()}{...}
 {col 41}compute inter-quartile range
+
+{col 5}{bf:{help mf_mm_hdq:mm_hdq()}}{...}
+{col 22}{cmd:mm_hdq()}{...}
+{col 41}compute Harrell-Davis quantiles
+{col 22}{cmd:mm_hdmed()}{...}
+{col 41}compute Harrell-Davis median
+{col 22}{cmd:mm_hdiqr()}{...}
+{col 41}compute Harrell-Davis inter-quartile range
 
 {col 5}{bf:{help mf_mm_ecdf:mm_ecdf()}}{...}
 {col 22}{cmd:mm_ecdf()}{...}

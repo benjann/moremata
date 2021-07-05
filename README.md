@@ -25,6 +25,9 @@ Functions:
   * `mm_quantile()`: compute quantiles
   * `mm_median()`: compute median
   * `mm_iqrange()`: compute inter-quartile range
+  * `mm_hdq()`: compute Harrell-Davis quantiles
+  * `mm_hdmed()`: compute Harrell-Davis median
+  * `mm_hdiqr()`: compute Harrell-Davis inter-quartile range
   * `mm_ecdf()`: compute cumulative distribution function
   * `mm_ecdf2()`: cumulative distribution at unique values
   * `mm_ranks()`: compute ranks/cumulative frequencies
@@ -160,6 +163,14 @@ Functions:
 
 Main changes:
 
+    05jul2021
+    - for quantile definitions 4-9, mm_quantile() now uses an improved approach for
+      weighted quantiles that no longer depends on sort order of weights within ties
+    - mm_quantile() now additionally supports Harrell-Davis quantiles (def=10)
+    - mm_hdq(), mm_hdmed(), and mm_hdiqr() added (wrappers for mm_quantile(), 
+      mm_median() and mm_iqrange() using Harrell-Davis quantiles) 
+    - mm_median() now allows arguments def and fw
+    
     06jun2021
     - fixed typo in mf_mm_mloc.hlp
     
