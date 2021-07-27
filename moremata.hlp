@@ -1,5 +1,5 @@
 {smcl}
-{* 04jul2021}{...}
+{* 27jul2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -166,9 +166,17 @@
 {col 22}{cmd:mm_greedy_pairs()}{...}
 {col 41}transform result from {cmd:mm_greedy()} into edge-list
 
+{col 5}{bf:{help mf_mm_ebalance:mm_ebalance()}}{...}
+{col 22}{cmd:mm_ebalance()}{...}
+{col 41}entropy balancing (Stata 11 required)
+
+{col 5}{bf:{help mf_mm_wbal:mm_wbal()}}{...}
+{col 22}{cmd:mm_wbal()}{...}
+{col 41}wrapper for {cmd:mm_ebalance()} (Stata 11 required)
+
 {col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
 {col 22}{cmd:mm_ebal()}{...}
-{col 41}entropy balancing (Stata 11 required)
+{col 41}entropy balancing, older version (Stata 11 required)
 
 {col 5}{it:Sampling, resampling, & combinations}
 

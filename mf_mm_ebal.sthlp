@@ -1,5 +1,5 @@
 {smcl}
-{* 20aug2019}{...}
+{* 27jul2021}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
@@ -228,6 +228,14 @@
     be highly accurate as long as a balancing solution exists.
 
 {pstd}
+    A newer function for entropy balancing with somewhat different
+    features is available as {helpb mf_mm_ebalance:mm_ebalance()}. A wrapper
+    that obtains balancing weights in a single
+    line of code is available as {helpb mf_mm_wbal:mm_wbal()}. A Stata command
+    based on {helpb mf_mm_ebalance:mm_ebalance()} is available as 
+    {helpb ebalfit} (Jann 2021).
+
+{pstd}
     {cmd:mm_ebal()} requires Stata 11 or newer.
 
 {pstd}
@@ -405,17 +413,22 @@
     Journal of Statistical Software
     54(7):1-18. DOI: {browse "http://doi.org/10.18637/jss.v054.i07":10.18637/jss.v054.i07}
     {p_end}
+{phang}
+    Jann, B. (2021). ebalfit: Stata module to perform entropy balancing. Available
+    from http://github.com/benjann/ebalfit/.
+    {p_end}
 
 {title:Author}
 
-{pstd} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+{pstd} Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}
 
 {psee}
 Online:  help for
-{bf:{help mf_optimize:[M-5] optimize()}},
-{bf:{help moremata}}, {bf:{help ebalance}} (if installed)
+{helpb mf_optimize:[M-5] optimize()},
+{helpb moremata}, {helpb mf_mm_ebalance:mm_ebalance()}, {helpb mf_mm_wbal:mm_wbal()}, 
+{helpb ebalance} (if installed), {helpb ebalfit} (if installed),
 {p_end}
 

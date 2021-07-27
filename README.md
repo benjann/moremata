@@ -63,7 +63,9 @@ Functions:
   * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
   * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
   * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
-  * `mm_ebal()`: entropy balancing (Stata 11 required)
+  * `mm_ebalance()`: entropy balancing (Stata 11 required)
+  * `mm_wbal()`: wrapper for `mm_ebalance()` (Stata 11 required)
+  * `mm_ebal()`: entropy balancing, older version (Stata 11 required)
   * `mm_sample()`: draw random sample
   * `mm_srswr()`: SRS with replacement
   * `mm_srswor()`: SRS without replacement
@@ -163,6 +165,9 @@ Functions:
 
 Main changes:
 
+    27jul2021
+    - functions mm_ebalance() and mm_wbal() added
+    
     05jul2021
     - for quantile definitions 4-9, mm_quantile() now uses an improved approach for
       weighted quantiles that no longer depends on sort order of weights within ties
