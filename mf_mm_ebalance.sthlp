@@ -1,5 +1,5 @@
 {smcl}
-{* 27jul2021}{...}
+{* 28jul2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -49,6 +49,12 @@ Settings
     singular H methods in {helpb mf_optimize##i_singularH:optimize()} and
     the description of the {cmd:difficult} option in {helpb maximize}
     {p_end}
+{p2col:{it:S}{cmd:.nostd(}{it:nostd}{cmd:)}}whether standardization should be applied
+    during optimization to improve robustness of the algorithm; {it:nostd}=0 (the default)
+    fits the coefficients using standardized data and then back-transforms the
+    results; {it:nostd}=1 omits such standardization (not recommended); in any case,
+    the balancing loss of the final fit will be obtained from the original data 
+    {p_end}
 {p2col:{it:S}{cmd:.nowarn(}{it:nowarn}{cmd:)}}whether "convergence not achieved"
     and "balance not achieved" messages should be displayed; {it:nowarn}=0 (the default)
     displays the messages; {it:nowarn}!=0 suppresses the messages{p_end}
@@ -90,8 +96,8 @@ Provide data
     missing values and negative base weights should be skipped (to save computer
     time); specify {it:fast}!=0 to skip the checks; omitted {it:fast} is
     equivalent to {it:fast}=0; specify {it:fast}!=0 only if you are certain that
-    there are no missing values and that there are no negative base weights
-    ({cmd:mm_ebalance()} may break or return invalid results if either condition is violated)
+    there are no missing values and that there are no negative base weights;
+    {cmd:mm_ebalance()} may break or return invalid results if either condition is violated
     {p_end}
 
 {p 8 8 2}
@@ -135,6 +141,7 @@ Retrieve information on data
 {p2col:{it:Nref}{bind:   } = {it:S}{cmd:.Nref()}}number of rows in reference sample{p_end}
 {p2col:{it:Wref}{bind:   } = {it:S}{cmd:.Wref()}}size (sum of weights) of reference sample{p_end}
 {p2col:{it:mref}{bind:   } = {it:S}{cmd:.mref()}}means of {it:Xref} (the balancing target){p_end}
+{p2col:{it:scale}{bind:  } = {it:S}{cmd:.scale()}}scales used for standardization{p_end}
 
 
 {title:Description}

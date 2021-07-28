@@ -1,4 +1,4 @@
-*! version 1.0.0  27jul2021  Ben Jann
+*! version 1.0.1  28jul2021  Ben Jann
 
 version 11.2
 
@@ -38,12 +38,14 @@ struct `SETUP' {
     `Int'   N, N0    // number of obs
     `RS'    W, W0    // sum of weights
     `RR'    m, m0    // means
+    `RR'    scale    // scales for standardization
     `Int'   k        // number of terms
     `BoolC' omit     // flag collinear terms
     `Int'   k_omit   // number of omitted terms
     
     // settings
     `SS'   ltype      // type of loss function
+    `Bool' nostd      // do not standardize
     `SS'   trace      // trace level
     `Bool' difficult  // use hybrid optimization
     `Int'  maxiter    // max number of iterations
@@ -61,53 +63,58 @@ struct `IF' {
 class `MAIN' {
     // settings
     private:
-        void    new()           // initialize class with default settings
-        void    clear()         // clear all results
-        `Bool'  nodata()        // whether data is set
-        `Setup' setup           // container for data and settings
+        void    new()             // initialize class with default settings
+        void    clear()           // clear all results
+        `Bool'  nodata()          // whether data is set
+        `Setup' setup             // container for data and settings
     public:
         void    data()
-        `RM'    X(), Xref()     // retrieve data
-        `RC'    w(), wref()     // retrieve base weights
-        `RS'    N(), Nref()     // retrieve number of obs
-        `RS'    W(), Wref()     // retrieve sum of weights
-        `RR'    m(), mref()     // retrieve moments
-        `Int'   k()             // retrieve number of terms
-        `RC'    omit()          // retrieve omitted flags
-        `Int'   k_omit()        // retrieve number of omitted terms
-        `T'     ltype()         // set/retrieve loss function
-        `T'     trace()         // set/retrieve trace level
-        `T'     difficult()     // set/retrieve difficult flag
-        `T'     maxiter()       // set/retrieve max iterations
-        `T'     ptol()          // set/retrieve p-tolerance
-        `T'     vtol()          // set/retrieve v-tolerance
-        `T'     btol()          // set/retrieve balancing tolerance
-        `T'     nowarn()        // set/retrieve nowarn flag
+        `RM'    X(), Xref()       // retrieve data
+        `RC'    w(), wref()       // retrieve base weights
+        `RS'    N(), Nref()       // retrieve number of obs
+        `RS'    W(), Wref()       // retrieve sum of weights
+        `RR'    m(), mref()       // retrieve moments
+        `RR'    scale()           // retrieve scale
+        `Int'   k()               // retrieve number of terms
+        `RC'    omit()            // retrieve omitted flags
+        `Int'   k_omit()          // retrieve number of omitted terms
+        `T'     ltype()           // set/retrieve loss function
+        `T'     nostd()           // set/retrieve nostd flag
+        `T'     trace()           // set/retrieve trace level
+        `T'     difficult()       // set/retrieve difficult flag
+        `T'     maxiter()         // set/retrieve max iterations
+        `T'     ptol()            // set/retrieve p-tolerance
+        `T'     vtol()            // set/retrieve v-tolerance
+        `T'     btol()            // set/retrieve balancing tolerance
+        `T'     nowarn()          // set/retrieve nowarn flag
     
     // results
     public:
-        `RC'    b()             // retrieve coefficients
-        `RS'    a()             // retrieve normalizing intercept
-        `RC'    wbal()          // retrieve balancing weights
-        `RR'    madj()          // adjusted (reweighted) means
-        `Int'   iter()          // retrieve number of iterations
-        `Bool'  converged()     // retrieve convergence flag
-        `RS'    loss()          // retrieve final balancing loss
-        `Bool'  balanced()      // retrieve balancing flag
+        `RC'    b()               // retrieve coefficients
+        `RS'    a()               // retrieve normalizing intercept
+        `RC'    wbal()            // retrieve balancing weights
+        `RR'    madj()            // adjusted (reweighted) means
+        `Int'   iter()            // retrieve number of iterations
+        `Bool'  converged()       // retrieve convergence flag
+        `RS'    loss()            // retrieve final balancing loss
+        `Bool'  balanced()        // retrieve balancing flag
         `RM'    IF_b(), IFref_b() // retrieve IF of coefficients
         `RC'    IF_a(), IFref_a() // retrieve IF of intercept
     private:
-        `RC'    b               // coefficients
-        `RS'    a               // normalizing intercept
-        `RC'    wbal            // balancing weights
-        `RR'    madj            // adjusted (reweighted) means
-        `Int'   iter            // number of iterations
-        `Bool'  conv            // optimize() convergence
-        `RC'    loss            // balancing loss
-        `Bool'  balanced        // balance achieved
-        `If'    IF              // influence functions
-        void    Fit(), _Fit_a(), _Fit_b() // fit coefficients
-        void    _IF_b(), _IF_a() // generate influence functions
+        `RC'    b                 // coefficients
+        `RS'    a                 // normalizing intercept
+        `RC'    wbal              // balancing weights
+        `RR'    madj              // adjusted (reweighted) means
+        `Int'   iter              // number of iterations
+        `Bool'  conv              // optimize() convergence
+        `RC'    loss              // balancing loss
+        `Bool'  balanced          // balance achieved
+        `If'    IF                // influence functions
+        void    _IF_b(), _IF_a()  // generate influence functions
+        void    Fit()             // fit coefficients
+        void    _Fit_b(), _Fit_a()
+        `RM'    _Fit_b_X()
+        `RR'    _Fit_b_m()
 }
 
 // init -----------------------------------------------------------------------
@@ -115,6 +122,7 @@ class `MAIN' {
 void `MAIN'::new()
 {
     setup.ltype     = "reldif"
+    setup.nostd     = 0
     setup.trace     = (st_global("c(iterlog)")=="off" ? "none" : "value")
     setup.difficult = 0
     setup.maxiter   = st_numscalar("c(maxiter)")
@@ -176,10 +184,12 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     setup.m  = mean(X, w)
     if (setup.k==0) {
         setup.omit = J(0,1,.)
+        setup.scale = J(1,0,.)
         setup.k_omit = 0
     }
     else {
         CP = quadcrossdev(X, setup.m, w, X, setup.m)
+        setup.scale = sqrt(diagonal(CP)' / setup.W)
         setup.omit = (diagonal(invsym(CP)):==0) // or: diagonal(invsym(CP, 1..setup.k)):==0
         setup.k_omit = sum(setup.omit)
     }
@@ -225,6 +235,8 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 
 `RR' `MAIN'::mref() return(setup.m0)
 
+`RR' `MAIN'::scale() return(setup.scale)
+
 `Int' `MAIN'::k() return(setup.k)
 
 `RC'  `MAIN'::omit() return(setup.omit)
@@ -242,6 +254,14 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
         _error(3498)
     }
     setup.ltype = ltype
+    clear()
+}
+
+`T' `MAIN'::nostd(| `Bool' nostd)
+{
+    if (args()==0) return(setup.nostd)
+    if (setup.nostd==(nostd!=0)) return // no change
+    setup.nostd = (nostd!=0)
     clear()
 }
 
@@ -401,8 +421,8 @@ void `MAIN'::Fit()
     _Fit_a()      // compute intercept (and balancing weights)
     
     // check balancing
-    if (k_omit()) {
-        // recompute balancing loss in case of omitted terms
+    if (k_omit() | nostd()==0) {
+        // recompute balancing loss using raw data
         loss = _mm_ebalance_loss(ltype(), mean(X():-mref(), wbal), mref())
     }
     if (trace()!="none") {
@@ -445,11 +465,11 @@ void `MAIN'::_Fit_b()
     optimize_init_conv_warning(S, nowarn() ? "off" : "on")
     optimize_init_tracelevel(S, trace())
     optimize_init_valueid(S, "balancing loss")
-    optimize_init_params(S, J(1, k()-k_omit(), 0))
-    optimize_init_argument(S, 1, k_omit() ? X()[,p]:-mref()[p] : X():-mref())
-    optimize_init_argument(S, 2, w())
-    optimize_init_argument(S, 3, k_omit() ? mref()[p] : mref())
-    optimize_init_argument(S, 4, ltype())
+    optimize_init_params(S, J(1, k()-k_omit(), 0)) // starting values
+    optimize_init_argument(S, 1, _Fit_b_X(p))      // centered data
+    optimize_init_argument(S, 2, w())              // base weights
+    optimize_init_argument(S, 3, _Fit_b_m(p))      // target moments
+    optimize_init_argument(S, 4, ltype())          // loss type
     
     // run optimizer
     (void) _optimize(S)
@@ -463,12 +483,36 @@ void `MAIN'::_Fit_b()
     // obtain results
     if (k_omit()) {
         b = J(k(), 1, 0)
-        b[p] = optimize_result_params(S)'
+        if (nostd()) b[p] = optimize_result_params(S)'
+        else         b[p] = (optimize_result_params(S) :/ scale()[p])'
     }
-    else b = optimize_result_params(S)'
+    else {
+        if (nostd()) b = optimize_result_params(S)'
+        else         b = (optimize_result_params(S) :/ scale())'
+    }
     iter = optimize_result_iterations(S)
     loss = optimize_result_value(S)
     conv = optimize_result_converged(S)
+}
+
+`RM' `MAIN'::_Fit_b_X(`IntC' p)
+{
+    if (k_omit()) {
+        if (nostd()) return(X()[,p] :- mref()[p])
+        return((X()[,p] :- mref()[p]) :/ scale()[p])
+    }
+    if (nostd()) return(X() :- mref())
+    return((X() :- mref()) :/ scale())
+}
+
+`RR' `MAIN'::_Fit_b_m(`IntC' p)
+{
+    if (k_omit()) {
+        if (nostd()) return(mref()[p])
+        return((mref() :/ scale())[p])
+    }
+    if (nostd()) return(mref())
+    return(mref() :/ scale())
 }
 
 void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
@@ -481,7 +525,7 @@ void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
     w = w0 :* exp(w :- max(w)) // set exp(max)=1 to avoid numerical overflow
     W = quadsum(w)
     g = quadcross(w, X) / W
-    v = _mm_ebalance_loss(ltype, g, m) //mreldif(g+m, m)
+    v = _mm_ebalance_loss(ltype, g, m)
     if (todo==2) H = quadcross(X, w, X) / W
 }
 
