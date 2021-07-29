@@ -1,4 +1,4 @@
-*! version 1.0.1  28jul2021  Ben Jann
+*! version 1.0.2  28jul2021  Ben Jann
 
 version 11.2
 
@@ -45,6 +45,7 @@ struct `SETUP' {
     
     // settings
     `SS'   ltype      // type of loss function
+    `Bool' alteval    // alternative evaluator
     `Bool' nostd      // do not standardize
     `SS'   trace      // trace level
     `Bool' difficult  // use hybrid optimization
@@ -79,6 +80,7 @@ class `MAIN' {
         `RC'    omit()            // retrieve omitted flags
         `Int'   k_omit()          // retrieve number of omitted terms
         `T'     ltype()           // set/retrieve loss function
+        `T'     alteval()         // set/retrieve alteval flag
         `T'     nostd()           // set/retrieve nostd flag
         `T'     trace()           // set/retrieve trace level
         `T'     difficult()       // set/retrieve difficult flag
@@ -93,6 +95,8 @@ class `MAIN' {
         `RC'    b()               // retrieve coefficients
         `RS'    a()               // retrieve normalizing intercept
         `RC'    wbal()            // retrieve balancing weights
+        `RC'    xb()              // retrieve linear prediction
+        `RC'    pr()              // retrieve propensity score
         `RR'    madj()            // adjusted (reweighted) means
         `Int'   iter()            // retrieve number of iterations
         `Bool'  converged()       // retrieve convergence flag
@@ -103,6 +107,7 @@ class `MAIN' {
     private:
         `RC'    b                 // coefficients
         `RS'    a                 // normalizing intercept
+        `RC'    xb                // linear prediction (without a)
         `RC'    wbal              // balancing weights
         `RR'    madj              // adjusted (reweighted) means
         `Int'   iter              // number of iterations
@@ -122,6 +127,7 @@ class `MAIN' {
 void `MAIN'::new()
 {
     setup.ltype     = "reldif"
+    setup.alteval   = 0
     setup.nostd     = 0
     setup.trace     = (st_global("c(iterlog)")=="off" ? "none" : "value")
     setup.difficult = 0
@@ -249,11 +255,19 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 {
     if (args()==0) return(setup.ltype)
     if (setup.ltype==ltype) return // no change
-    if (!anyof(("reldif", "absdif"), ltype)) {
+    if (!anyof(("reldif", "absdif", "norm"), ltype)) {
         printf("{err}'%s' not allowed\n", ltype)
         _error(3498)
     }
     setup.ltype = ltype
+    clear()
+}
+
+`T' `MAIN'::alteval(| `Bool' alteval)
+{
+    if (args()==0) return(setup.alteval)
+    if (setup.alteval==(alteval!=0)) return // no change
+    setup.alteval = (alteval!=0)
     clear()
 }
 
@@ -349,6 +363,18 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     return(wbal)
 }
 
+`RC' `MAIN'::xb()
+{
+    if (length(b)==0) Fit()
+    return(xb :+ a)
+}
+
+`RC' `MAIN'::pr()
+{
+    if (length(b)==0) Fit()
+    return(invlogit(xb :+ a))
+}
+
 `RR' `MAIN'::madj()
 {
     if (length(madj)) return(madj)
@@ -421,7 +447,7 @@ void `MAIN'::Fit()
     _Fit_a()      // compute intercept (and balancing weights)
     
     // check balancing
-    if (k_omit() | nostd()==0) {
+    if (k_omit() | nostd()==0 | alteval()) {
         // recompute balancing loss using raw data
         loss = _mm_ebalance_loss(ltype(), mean(X():-mref(), wbal), mref())
     }
@@ -437,7 +463,6 @@ void `MAIN'::Fit()
 void `MAIN'::_Fit_a()
 {
     `RS' ul
-    `RC' xb
     
     xb = X() * b
     ul = max(xb) // set exp(max)=1 to avoid numerical overflow
@@ -454,7 +479,14 @@ void `MAIN'::_Fit_b()
     if (k_omit()) p = select(1::k(), omit():==0)
     S = optimize_init()
     optimize_init_which(S, "min")
-    optimize_init_evaluator(S, &_mm_ebalance_eval())
+    if (alteval()) {
+        optimize_init_evaluator(S, &_mm_ebalance_alteval())
+        optimize_init_valueid(S, "criterion L(p)")
+    }
+    else {
+        optimize_init_evaluator(S, &_mm_ebalance_eval())
+        optimize_init_valueid(S, "balancing loss")
+    }
     optimize_init_evaluatortype(S, "d2")
     optimize_init_technique(S, "nr")
     optimize_init_singularHmethod(S, difficult() ? "hybrid" : "")
@@ -464,7 +496,6 @@ void `MAIN'::_Fit_b()
     optimize_init_conv_ignorenrtol(S, "on")
     optimize_init_conv_warning(S, nowarn() ? "off" : "on")
     optimize_init_tracelevel(S, trace())
-    optimize_init_valueid(S, "balancing loss")
     optimize_init_params(S, J(1, k()-k_omit(), 0)) // starting values
     optimize_init_argument(S, 1, _Fit_b_X(p))      // centered data
     optimize_init_argument(S, 2, w())              // base weights
@@ -522,16 +553,34 @@ void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
     `RC' w
     
     w = X * b'
-    w = w0 :* exp(w :- max(w)) // set exp(max)=1 to avoid numerical overflow
+    w = w0 :* exp(w :- max(w)) // avoid numerical overflow
     W = quadsum(w)
     g = quadcross(w, X) / W
     v = _mm_ebalance_loss(ltype, g, m)
     if (todo==2) H = quadcross(X, w, X) / W
 }
 
+void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
+    `SS' ltype, `RS' v, `RR' g, `RM' H)
+{
+    `RS' W
+    `RC' w
+    
+    w = X * b'
+    W = max(w)
+    w = w0 :* exp(w :- W) // avoid numerical overflow
+    v = ln(quadsum(w)) + W
+    if (todo>=1) {
+        W = quadsum(w)
+        g = quadcross(w, X) / W
+        if (todo==2) H = quadcross(X, w, X) / W
+    }
+}
+
 `RS' _mm_ebalance_loss(`SS' ltype, `RR' d, `RR' m)
 {
     if (ltype=="absdif") return(max(abs(d)))
+    if (ltype=="norm") return(sqrt(d*d'))
     return(mreldif(d+m, m)) // ltype=="reldif"
 }
 

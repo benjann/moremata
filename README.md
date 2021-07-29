@@ -165,6 +165,11 @@ Functions:
 
 Main changes:
 
+    29jul2021
+    - S.xb() (linear prediction) and S.pr() (propensity score) added in mm_ebalance()
+    - S.ltype()=="norm" added in mm_ebalance()
+    - S.alteval() added in mm_ebalance()
+    
     27jul2021
     - functions mm_ebalance() and mm_wbal() added
     

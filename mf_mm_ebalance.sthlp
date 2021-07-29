@@ -1,5 +1,5 @@
 {smcl}
-{* 28jul2021}{...}
+{* 29jul2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -26,7 +26,14 @@ Settings
     balancing is achieved if the balancing loss is smaller than {it:btol}
     {p_end}
 {p2col:{it:S}{cmd:.ltype(}{it:ltype}{cmd:)}}type of loss function, can be {cmd:"reldif"}
-    (maximum relative difference; the default) or {cmd:"absdif"} (maximum absolute difference)
+    (maximum relative difference; the default), {cmd:"absdif"} 
+    (maximum absolute difference), or {cmd:"norm"} (norm of differences)
+    {p_end}
+{p2col:{it:S}{cmd:.alteval(}{it:alteval}{cmd:)}}whether to use an alternative
+    evaluator based on an optimization criterion defined in terms of the
+    weights instead of the balancing differences; {it:alteval}!=0 uses the alternative
+    evaluator, {it:alteval}=0 uses the default evaluator; when using the alternative
+    evaluator you might want to reduce {it:vtol} a bit (e.g. to {bf:1e-10})
     {p_end}
 {p2col:{it:S}{cmd:.trace(}{it:trace}{cmd:)}}trace level; default is {cmd:"value"};
     specify {cmd:"none"} to suppress iteration log; see
@@ -109,8 +116,9 @@ Retrieve results
 {p2colset 9 34 36 2}{...}
 {p2col:{it:b}{bind:      } = {it:S}{cmd:.b()}}fitted coefficients (column vector){p_end}
 {p2col:{it:a}{bind:      } = {it:S}{cmd:.a()}}normalizing intercept (scalar){p_end}
-{p2col:{it:wbal}{bind:   } = {it:S}{cmd:.wbal()}}balancing weights (column vector); the
-    sum of {it:wbal} will be equal to the size (sum of weights) of the reference sample{p_end}
+{p2col:{it:wbal}{bind:   } = {it:S}{cmd:.wbal()}}balancing weights: {it:w} * exp({it:Xb} + {it:a}){p_end}
+{p2col:{it:xb}{bind:     } = {it:S}{cmd:.xb()}}linear predictions: {it:Xb} + {it:a}{p_end}
+{p2col:{it:pr}{bind:     } = {it:S}{cmd:.pr()}}propensity scores: invlogit({it:Xb} + {it:a}){p_end}
 {p2col:{it:madj}{bind:   } = {it:S}{cmd:.madj()}}means of {it:X} after reweighting{p_end}
 {p2col:{it:iter}{bind:   } = {it:S}{cmd:.iter()}}number of iterations of the optimization algorithm{p_end}
 {p2col:{it:conv}{bind:   } = {it:S}{cmd:.converged()}}1 if the optimization algorithm converged, 0 else{p_end}
@@ -123,6 +131,10 @@ Retrieve results
 
 {p 8 8 2}
 Specifying any of the above functions will trigger estimation, if not already carried out.
+
+{p 8 8 2}
+The normalizing intercept ({it:a}) is set such that the sum of balancing weights ({it:wbal}) is equal to the size 
+(sum of weights) of the reference sample.
 
 {pstd}
 Retrieve information on data
