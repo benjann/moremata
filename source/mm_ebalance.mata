@@ -1,4 +1,4 @@
-*! version 1.0.2  28jul2021  Ben Jann
+*! version 1.0.3  02aug2021  Ben Jann
 
 version 11.2
 
@@ -23,6 +23,7 @@ local Bool   real scalar
 local BoolC  real colvector
 // transmorphic
 local T      transmorphic
+local TS     transmorphic scalar
 // pointers
 local PC     pointer(real colvector) scalar
 local PM     pointer(real matrix) scalar
@@ -44,6 +45,7 @@ struct `SETUP' {
     `Int'   k_omit   // number of omitted terms
     
     // settings
+    `T'    tau        // target sum of weights
     `SS'   ltype      // type of loss function
     `Bool' alteval    // alternative evaluator
     `Bool' nostd      // do not standardize
@@ -76,9 +78,11 @@ class `MAIN' {
         `RS'    W(), Wref()       // retrieve sum of weights
         `RR'    m(), mref()       // retrieve moments
         `RR'    scale()           // retrieve scale
+        `RR'    mu()              // retrieve target moments
         `Int'   k()               // retrieve number of terms
         `RC'    omit()            // retrieve omitted flags
         `Int'   k_omit()          // retrieve number of omitted terms
+        `T'     tau()             // retrieve/set target sum of weights
         `T'     ltype()           // set/retrieve loss function
         `T'     alteval()         // set/retrieve alteval flag
         `T'     nostd()           // set/retrieve nostd flag
@@ -92,9 +96,9 @@ class `MAIN' {
     
     // results
     public:
+        `RC'    wbal()            // retrieve balancing weights
         `RC'    b()               // retrieve coefficients
         `RS'    a()               // retrieve normalizing intercept
-        `RC'    wbal()            // retrieve balancing weights
         `RC'    xb()              // retrieve linear prediction
         `RC'    pr()              // retrieve propensity score
         `RR'    madj()            // adjusted (reweighted) means
@@ -105,6 +109,7 @@ class `MAIN' {
         `RM'    IF_b(), IFref_b() // retrieve IF of coefficients
         `RC'    IF_a(), IFref_a() // retrieve IF of intercept
     private:
+        `RS'    tau               // target sum of weight
         `RC'    b                 // coefficients
         `RS'    a                 // normalizing intercept
         `RC'    xb                // linear prediction (without a)
@@ -126,6 +131,7 @@ class `MAIN' {
 
 void `MAIN'::new()
 {
+    setup.tau       = "Wref"
     setup.ltype     = "reldif"
     setup.alteval   = 0
     setup.nostd     = 0
@@ -140,6 +146,7 @@ void `MAIN'::new()
 
 void `MAIN'::clear()
 {
+    tau  = .
     b    = J(0,1,.)
     a    = .
     wbal = J(0,1,.)
@@ -243,6 +250,8 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 
 `RR' `MAIN'::scale() return(setup.scale)
 
+`RR' `MAIN'::mu() return(setup.m0)
+
 `Int' `MAIN'::k() return(setup.k)
 
 `RC'  `MAIN'::omit() return(setup.omit)
@@ -250,6 +259,30 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 `Int' `MAIN'::k_omit() return(setup.k_omit)
 
 // settings -------------------------------------------------------------------
+
+`T' `MAIN'::tau(| `TS' tau)
+{
+    if (args()==0) {
+        if (tau<.) return(tau)
+        if (nodata()) return(setup.tau)
+        if      (setup.tau=="Wref") tau = setup.W0
+        else if (setup.tau=="W")    tau = setup.W
+        else if (setup.tau=="Nref") tau = setup.N0
+        else if (setup.tau=="N")    tau = setup.N
+        else                        tau = setup.tau
+        return(tau)
+    }
+    if (setup.tau==tau) return // no change
+    if (isstring(tau)) {
+        if (!anyof(("Wref", "W", "Nref", "N"), tau)) {
+            printf("{err}'%s' not allowed\n", tau)
+            _error(3498)
+        }
+    }
+    else if (tau<=0 | tau>=.) _error(3498, "setting out of range")
+    setup.tau = tau
+    clear()
+}
 
 `T' `MAIN'::ltype(| `SS' ltype)
 {
@@ -449,7 +482,7 @@ void `MAIN'::Fit()
     // check balancing
     if (k_omit() | nostd()==0 | alteval()) {
         // recompute balancing loss using raw data
-        loss = _mm_ebalance_loss(ltype(), mean(X():-mref(), wbal), mref())
+        loss = _mm_ebalance_loss(ltype(), mean(X():-mu(), wbal), mu())
     }
     if (trace()!="none") {
         printf("{txt}Final fit:     balancing loss = {res}%10.0g\n", loss)
@@ -466,7 +499,7 @@ void `MAIN'::_Fit_a()
     
     xb = X() * b
     ul = max(xb) // set exp(max)=1 to avoid numerical overflow
-    a  = ln(Wref()) - ln(quadsum(w() :* exp(xb :- ul))) - ul
+    a  = ln(tau()) - ln(quadsum(w() :* exp(xb :- ul))) - ul
     wbal = w() :* exp(xb :+ a)
 }
 
@@ -529,21 +562,21 @@ void `MAIN'::_Fit_b()
 `RM' `MAIN'::_Fit_b_X(`IntC' p)
 {
     if (k_omit()) {
-        if (nostd()) return(X()[,p] :- mref()[p])
-        return((X()[,p] :- mref()[p]) :/ scale()[p])
+        if (nostd()) return(X()[,p] :- mu()[p])
+        return((X()[,p] :- mu()[p]) :/ scale()[p])
     }
-    if (nostd()) return(X() :- mref())
-    return((X() :- mref()) :/ scale())
+    if (nostd()) return(X() :- mu())
+    return((X() :- mu()) :/ scale())
 }
 
 `RR' `MAIN'::_Fit_b_m(`IntC' p)
 {
     if (k_omit()) {
-        if (nostd()) return(mref()[p])
-        return((mref() :/ scale())[p])
+        if (nostd()) return(mu()[p])
+        return((mu() :/ scale())[p])
     }
-    if (nostd()) return(mref())
-    return(mref() :/ scale())
+    if (nostd()) return(mu())
+    return(mu() :/ scale())
 }
 
 void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
@@ -565,6 +598,8 @@ void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
 {
     `RS' W
     `RC' w
+    pragma unused m
+    pragma unused ltype
     
     w = X * b'
     W = max(w)
@@ -589,32 +624,34 @@ void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
 void `MAIN'::_IF_b()
 {
     if (length(b)==0) Fit()
-    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, mref())
+    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, mu(), tau(), Wref())
 }
 
 void `MAIN'::_IF_a()
 {
     if (rows(IF.b)==0) _IF_b()
-    _mm_ebalance_IF_a(IF, madj(), w(), wbal, Wref())
+    _mm_ebalance_IF_a(IF, X(), w(), wbal, tau(), W())
 }
 
-void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mref)
+void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mu, 
+    `RS' tau, `RS' Wref)
 {
     `RM' Q
     
-    IF.b = X :- mref                        // moment condition of b
-    Q = -invsym(quadcross(IF.b, wbal, X))   // derivative
-    IF.b  = wbal:/w :* (IF.b * Q')          // contribution of main sample
-    IF.b0 = (mref :- Xref) * Q'             // contribution of reference sample
+    IF.b  = X :- mu
+    Q     = invsym(quadcross(IF.b, wbal, X))
+    IF.b  = wbal:/w :* (IF.b * -Q')
+    IF.b0 = (tau/Wref) * (Xref :- mu) * Q'
 }
 
-void _mm_ebalance_IF_a(`If' IF, `RR' madj, `RC' w, `RC' wbal, `RS' Wref)
+void _mm_ebalance_IF_a(`If' IF, `RM' X, `RC' w, `RC' wbal, `RS' tau, `RS' W)
 {
     `RM' Q
     
-    Q = madj * Wref                         // cross-derivative
-    IF.a  = -(wbal:/w :+ IF.b * Q') / Wref  // contribution of main sample
-    IF.a0 =  (1 :- IF.b0 * Q') / Wref       // contribution of reference sample
+    // using simplified IF assuming tau as fixed
+    Q = quadcross(wbal, X)
+    IF.a  = ((wbal:/w :- tau/W) + IF.b * Q') / -tau
+    IF.a0 = (IF.b0 * Q') / -tau
 }
 
 end

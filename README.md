@@ -165,6 +165,10 @@ Functions:
 
 Main changes:
 
+    02aug2021
+    - S.tau() now sets the target sum of weights in mm_ebalance()
+    - some adjustment to IFs in mm_ebalance(); tau is now always assumed fixed
+
     29jul2021
     - S.xb() (linear prediction) and S.pr() (propensity score) added in mm_ebalance()
     - S.ltype()=="norm" added in mm_ebalance()

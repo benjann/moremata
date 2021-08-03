@@ -1,5 +1,5 @@
 {smcl}
-{* 29jul2021}{...}
+{* 02aug2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -22,6 +22,10 @@ Initialize a new {cmd:mm_ebalance()} object
 Settings
 
 {p2colset 9 34 36 2}{...}
+{p2col:{it:S}{cmd:.tau(}{it:tau}{cmd:)}}target sum of weights; {it:tau} can be a real number > 0
+    or {cmd:"Wref"} (sum of weights in reference sample), {cmd:"W"} (sum of weight in main sample), {cmd:"Nref"} 
+    (number of rows in {it:Xref}), or {cmd:"N"} (number of rows in {it:X});  default is {cmd:"Wref"}
+    {p_end}
 {p2col:{it:S}{cmd:.btol(}{it:btol}{cmd:)}}balancing tolerance; default is {bf:1e-6};
     balancing is achieved if the balancing loss is smaller than {it:btol}
     {p_end}
@@ -149,7 +153,7 @@ Retrieve information on data
 {p2col:{it:W}{bind:      } = {it:S}{cmd:.W()}}size (sum of weights) of main sample{p_end}
 {p2col:{it:m}{bind:      } = {it:S}{cmd:.m()}}means of {it:X} (before reweighting){p_end}
 {p2col:{it:Xref}{bind:   } = {it:S}{cmd:.Xref()}}data of reference sample{p_end}
-{p2col:{it:wref}{bind:   } = {it:S}{cmd:.Wref()}}base weights of reference sample{p_end}
+{p2col:{it:wref}{bind:   } = {it:S}{cmd:.wref()}}base weights of reference sample{p_end}
 {p2col:{it:Nref}{bind:   } = {it:S}{cmd:.Nref()}}number of rows in reference sample{p_end}
 {p2col:{it:Wref}{bind:   } = {it:S}{cmd:.Wref()}}size (sum of weights) of reference sample{p_end}
 {p2col:{it:mref}{bind:   } = {it:S}{cmd:.mref()}}means of {it:Xref} (the balancing target){p_end}
@@ -219,7 +223,7 @@ Retrieve information on data
     the same as in the reference sample (non-unionized workers).
 
 {pstd}
-    The sum of the balancing weights is equal to the size of the reference sample.
+    By default, the sum of the balancing weights will be equal to the size of the reference sample.
 
 {dlgtab:Adjust sample to population}
 
