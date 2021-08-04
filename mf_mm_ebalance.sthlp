@@ -1,5 +1,5 @@
 {smcl}
-{* 02aug2021}{...}
+{* 04aug2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -22,22 +22,23 @@ Initialize a new {cmd:mm_ebalance()} object
 Settings
 
 {p2colset 9 34 36 2}{...}
-{p2col:{it:S}{cmd:.tau(}{it:tau}{cmd:)}}target sum of weights; {it:tau} can be a real number > 0
+{p2col:{it:S}{cmd:.tau(}{it:tau}{cmd:)}}target sum of balancing weights; {it:tau} can be a real number > 0
     or {cmd:"Wref"} (sum of weights in reference sample), {cmd:"W"} (sum of weight in main sample), {cmd:"Nref"} 
     (number of rows in {it:Xref}), or {cmd:"N"} (number of rows in {it:X});  default is {cmd:"Wref"}
     {p_end}
 {p2col:{it:S}{cmd:.btol(}{it:btol}{cmd:)}}balancing tolerance; default is {bf:1e-6};
     balancing is achieved if the balancing loss is smaller than {it:btol}
     {p_end}
-{p2col:{it:S}{cmd:.ltype(}{it:ltype}{cmd:)}}type of loss function, can be {cmd:"reldif"}
+{p2col:{it:S}{cmd:.ltype(}{it:ltype}{cmd:)}}type of balancing loss function, can be {cmd:"reldif"}
     (maximum relative difference; the default), {cmd:"absdif"} 
-    (maximum absolute difference), or {cmd:"norm"} (norm of differences)
+    (maximum absolute difference), or {cmd:"norm"} (Euclidean norm of differences)
     {p_end}
-{p2col:{it:S}{cmd:.alteval(}{it:alteval}{cmd:)}}whether to use an alternative
-    evaluator based on an optimization criterion defined in terms of the
-    weights instead of the balancing differences; {it:alteval}!=0 uses the alternative
-    evaluator, {it:alteval}=0 uses the default evaluator; when using the alternative
-    evaluator you might want to reduce {it:vtol} a bit (e.g. to {bf:1e-10})
+{p2col:{it:S}{cmd:.etype(}{it:etype}{cmd:)}}evaluator type, can be {cmd:"bl"}
+    (evaluator based on balancing loss; the default), {cmd:"wl"} 
+    (evaluator based on distribution of weights), {cmd:"mm"} (method of moments
+    evaluator), or {cmd:"mma"} (method of moments evaluator including intercept);
+    when using an evaluator other than {cmd:"bl"} you might want to reduce 
+    {it:vtol} a bit (e.g. to {bf:1e-10})
     {p_end}
 {p2col:{it:S}{cmd:.trace(}{it:trace}{cmd:)}}trace level; default is {cmd:"value"};
     specify {cmd:"none"} to suppress iteration log; see
@@ -156,8 +157,10 @@ Retrieve information on data
 {p2col:{it:wref}{bind:   } = {it:S}{cmd:.wref()}}base weights of reference sample{p_end}
 {p2col:{it:Nref}{bind:   } = {it:S}{cmd:.Nref()}}number of rows in reference sample{p_end}
 {p2col:{it:Wref}{bind:   } = {it:S}{cmd:.Wref()}}size (sum of weights) of reference sample{p_end}
-{p2col:{it:mref}{bind:   } = {it:S}{cmd:.mref()}}means of {it:Xref} (the balancing target){p_end}
+{p2col:{it:mref}{bind:   } = {it:S}{cmd:.mref()}}means of {it:Xref}{p_end}
 {p2col:{it:scale}{bind:  } = {it:S}{cmd:.scale()}}scales used for standardization{p_end}
+{p2col:{it:mu}{bind:     } = {it:S}{cmd:.mu()}}target moments; equivalent to {it:S}{cmd:.mref()}{p_end}
+{p2col:{it:tau}{bind:    } = {it:S}{cmd:.tau()}}target sum of balancing weight{p_end}
 
 
 {title:Description}

@@ -1,4 +1,4 @@
-*! version 1.0.3  02aug2021  Ben Jann
+*! version 1.0.4  04aug2021  Ben Jann
 
 version 11.2
 
@@ -47,7 +47,7 @@ struct `SETUP' {
     // settings
     `T'    tau        // target sum of weights
     `SS'   ltype      // type of loss function
-    `Bool' alteval    // alternative evaluator
+    `SS'   etype      // evaluator type
     `Bool' nostd      // do not standardize
     `SS'   trace      // trace level
     `Bool' difficult  // use hybrid optimization
@@ -84,7 +84,8 @@ class `MAIN' {
         `Int'   k_omit()          // retrieve number of omitted terms
         `T'     tau()             // retrieve/set target sum of weights
         `T'     ltype()           // set/retrieve loss function
-        `T'     alteval()         // set/retrieve alteval flag
+        `T'     etype()           // set/retrieve evaluator type
+        `T'     alteval()         // set/retrieve alteval flag (old)
         `T'     nostd()           // set/retrieve nostd flag
         `T'     trace()           // set/retrieve trace level
         `T'     difficult()       // set/retrieve difficult flag
@@ -123,8 +124,8 @@ class `MAIN' {
         void    _IF_b(), _IF_a()  // generate influence functions
         void    Fit()             // fit coefficients
         void    _Fit_b(), _Fit_a()
-        `RM'    _Fit_b_X()
-        `RR'    _Fit_b_m()
+        `RM'    _Fit_b_X(), _Fit_b_Xc()
+        `RR'    _Fit_b_mu()
 }
 
 // init -----------------------------------------------------------------------
@@ -133,7 +134,7 @@ void `MAIN'::new()
 {
     setup.tau       = "Wref"
     setup.ltype     = "reldif"
-    setup.alteval   = 0
+    setup.etype     = "bl"
     setup.nostd     = 0
     setup.trace     = (st_global("c(iterlog)")=="off" ? "none" : "value")
     setup.difficult = 0
@@ -296,11 +297,23 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     clear()
 }
 
-`T' `MAIN'::alteval(| `Bool' alteval)
+`T' `MAIN'::etype(| `SS' etype)
 {
-    if (args()==0) return(setup.alteval)
-    if (setup.alteval==(alteval!=0)) return // no change
-    setup.alteval = (alteval!=0)
+    if (args()==0) return(setup.etype)
+    if (setup.etype==etype) return // no change
+    if (!anyof(("bl","wl","mm","mma"), etype)) {
+        printf("{err}'%g' not allowed\n", etype)
+        _error(3498)
+    }
+    setup.etype = etype
+    clear()
+}
+
+`T' `MAIN'::alteval(| `Bool' alteval) // for backward compatibility
+{
+    if (args()==0) return(setup.etype=="wl")
+    if (setup.etype==(alteval!=0 ? "wl" : "bl")) return // no change
+    setup.etype = (alteval!=0 ? "wl" : "bl")
     clear()
 }
 
@@ -480,7 +493,7 @@ void `MAIN'::Fit()
     _Fit_a()      // compute intercept (and balancing weights)
     
     // check balancing
-    if (k_omit() | nostd()==0 | alteval()) {
+    if (k_omit() | nostd()==0 | etype()!="bl") {
         // recompute balancing loss using raw data
         loss = _mm_ebalance_loss(ltype(), mean(X():-mu(), wbal), mu())
     }
@@ -505,6 +518,7 @@ void `MAIN'::_Fit_a()
 
 void `MAIN'::_Fit_b()
 {
+    `RR'   beta
     `IntC' p
     `T'    S
     
@@ -512,14 +526,6 @@ void `MAIN'::_Fit_b()
     if (k_omit()) p = select(1::k(), omit():==0)
     S = optimize_init()
     optimize_init_which(S, "min")
-    if (alteval()) {
-        optimize_init_evaluator(S, &_mm_ebalance_alteval())
-        optimize_init_valueid(S, "criterion L(p)")
-    }
-    else {
-        optimize_init_evaluator(S, &_mm_ebalance_eval())
-        optimize_init_valueid(S, "balancing loss")
-    }
     optimize_init_evaluatortype(S, "d2")
     optimize_init_technique(S, "nr")
     optimize_init_singularHmethod(S, difficult() ? "hybrid" : "")
@@ -529,11 +535,39 @@ void `MAIN'::_Fit_b()
     optimize_init_conv_ignorenrtol(S, "on")
     optimize_init_conv_warning(S, nowarn() ? "off" : "on")
     optimize_init_tracelevel(S, trace())
-    optimize_init_params(S, J(1, k()-k_omit(), 0)) // starting values
-    optimize_init_argument(S, 1, _Fit_b_X(p))      // centered data
-    optimize_init_argument(S, 2, w())              // base weights
-    optimize_init_argument(S, 3, _Fit_b_m(p))      // target moments
-    optimize_init_argument(S, 4, ltype())          // loss type
+    if (etype()=="mma") {
+        optimize_init_evaluator(S, &_mm_ebalance_mma())   // gmm w/ alpha
+        optimize_init_valueid(S, "criterion Q(p)")
+        optimize_init_params(S, J(1, k()-k_omit()+1, 0)) // starting values
+        optimize_init_argument(S, 1, _Fit_b_X(p))        // data
+        optimize_init_argument(S, 2, _Fit_b_mu(p))       // target moments
+        optimize_init_argument(S, 3, w()/W())            // norm. base weights
+        optimize_init_argument(S, 4, tau()/W())          // normalized tau
+    }
+    else if (etype()=="mm") {
+        optimize_init_evaluator(S, &_mm_ebalance_mm())   // gmm
+        optimize_init_valueid(S, "criterion Q(p)")
+        optimize_init_params(S, J(1, k()-k_omit(), 0))   // starting values
+        optimize_init_argument(S, 1, _Fit_b_X(p))        // data
+        optimize_init_argument(S, 2, _Fit_b_mu(p))       // target moments
+        optimize_init_argument(S, 3, w())                // base weights
+    }
+    else if (etype()=="wl") {
+        optimize_init_evaluator(S, &_mm_ebalance_lw())   // sum(ln(w))
+        optimize_init_valueid(S, "criterion L(w)")
+        optimize_init_params(S, J(1, k()-k_omit(), 0))   // starting values
+        optimize_init_argument(S, 1, _Fit_b_Xc(p))       // centered data
+        optimize_init_argument(S, 2, w())                // base weights
+    }
+    else {
+        optimize_init_evaluator(S, &_mm_ebalance_bl())  // balance loss
+        optimize_init_valueid(S, "balancing loss")
+        optimize_init_params(S, J(1, k()-k_omit(), 0))  // starting values
+        optimize_init_argument(S, 1, _Fit_b_Xc(p))      // centered data
+        optimize_init_argument(S, 2, _Fit_b_mu(p))      // target moments
+        optimize_init_argument(S, 3, w())               // base weights
+        optimize_init_argument(S, 4, ltype())           // loss type
+    }
     
     // run optimizer
     (void) _optimize(S)
@@ -545,14 +579,16 @@ void `MAIN'::_Fit_b()
     }
     
     // obtain results
+    beta = optimize_result_params(S)
+    if (etype()=="mma") beta = beta[|1\length(beta)-1|] // discard alpha
     if (k_omit()) {
         b = J(k(), 1, 0)
-        if (nostd()) b[p] = optimize_result_params(S)'
-        else         b[p] = (optimize_result_params(S) :/ scale()[p])'
+        if (nostd()) b[p] = beta'
+        else         b[p] = (beta :/ scale()[p])'
     }
     else {
-        if (nostd()) b = optimize_result_params(S)'
-        else         b = (optimize_result_params(S) :/ scale())'
+        if (nostd()) b = beta'
+        else         b = (beta :/ scale())'
     }
     iter = optimize_result_iterations(S)
     loss = optimize_result_value(S)
@@ -562,6 +598,16 @@ void `MAIN'::_Fit_b()
 `RM' `MAIN'::_Fit_b_X(`IntC' p)
 {
     if (k_omit()) {
+        if (nostd()) return(X()[,p])
+        return(X()[,p] :/ scale()[p])
+    }
+    if (nostd()) return(X())
+    return(X() :/ scale())
+}
+
+`RM' `MAIN'::_Fit_b_Xc(`IntC' p)
+{
+    if (k_omit()) {
         if (nostd()) return(X()[,p] :- mu()[p])
         return((X()[,p] :- mu()[p]) :/ scale()[p])
     }
@@ -569,7 +615,7 @@ void `MAIN'::_Fit_b()
     return((X() :- mu()) :/ scale())
 }
 
-`RR' `MAIN'::_Fit_b_m(`IntC' p)
+`RR' `MAIN'::_Fit_b_mu(`IntC' p)
 {
     if (k_omit()) {
         if (nostd()) return(mu()[p])
@@ -579,9 +625,9 @@ void `MAIN'::_Fit_b()
     return(mu() :/ scale())
 }
 
-void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
+void _mm_ebalance_bl(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `SS' ltype,
     `RS' v, `RR' g, `RM' H)
-{
+{   // evaluator based on balance loss
     `RS' W
     `RC' w
     
@@ -589,17 +635,15 @@ void _mm_ebalance_eval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m, `SS' ltype,
     w = w0 :* exp(w :- max(w)) // avoid numerical overflow
     W = quadsum(w)
     g = quadcross(w, X) / W
-    v = _mm_ebalance_loss(ltype, g, m)
+    v = _mm_ebalance_loss(ltype, g, mu)
     if (todo==2) H = quadcross(X, w, X) / W
 }
 
-void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
-    `SS' ltype, `RS' v, `RR' g, `RM' H)
-{
+void _mm_ebalance_lw(`Int' todo, `RR' b, `RM' X, `RC' w0,
+    `RS' v, `RR' g, `RM' H)
+{   // evaluator using sum(ln(weights)) as criterion
     `RS' W
     `RC' w
-    pragma unused m
-    pragma unused ltype
     
     w = X * b'
     W = max(w)
@@ -612,11 +656,53 @@ void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
     }
 }
 
-`RS' _mm_ebalance_loss(`SS' ltype, `RR' d, `RR' m)
+`RS' _mm_ebalance_loss(`SS' ltype, `RR' d, `RR' mu)
 {
     if (ltype=="absdif") return(max(abs(d)))
     if (ltype=="norm") return(sqrt(d*d'))
-    return(mreldif(d+m, m)) // ltype=="reldif"
+    return(mreldif(d+mu, mu)) // ltype=="reldif"
+}
+
+void _mm_ebalance_mm(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0,
+    `RS' v, `RR' g, `RM' H)
+{   // gmm type evaluator
+    `RC' w
+    `RR' d
+    `RM' h, G
+    
+    w = X * b'
+    w = w0 :* exp(w :- max(w))   // avoid numerical overflow
+    w = w :/ quadcolsum(w)
+    h = w :* (X :- mu)
+    d = quadcolsum(h)
+    v = d * d'
+    if (todo>=1) {
+        G = quadcross(h, X) - quadcross(h, J(rows(h), 1, quadcolsum(w:*X)))
+            // how can the second term be computed more efficiently?
+        g = d * G
+        if (todo==2) H = G'G 
+    }
+}
+
+void _mm_ebalance_mma(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `RS' tau, 
+    `RS' v, `RR' g, `RM' H)
+{   // gmm type evaluator including alpha in optimization problem
+    `RS' d_a
+    `RC' w, h_a
+    `RR' d_b
+    `RM' h_b, G
+    
+    w   = w0 :* exp(X*b[|1\cols(b)-1|]' :+ b[cols(b)])
+    h_b = w :* (X :- mu)
+    h_a = w :- w0:*tau  // = w0 * (e(xb+a) - tau/sum(w0))
+    d_b = quadcolsum(h_b)
+    d_a = quadsum(h_a)
+    v   = (d_b, d_a) * (d_b, d_a)'
+    if (todo>=1) {
+        G = (quadcross(h_b, X), d_b') \ (quadcross(w, X), colsum(w))
+        g = (d_b, d_a) * G
+        if (todo==2) H = G'G 
+    }
 }
 
 // influence functions --------------------------------------------------------
@@ -624,7 +710,7 @@ void _mm_ebalance_alteval(`Int' todo, `RR' b, `RM' X, `RC' w0, `RR' m,
 void `MAIN'::_IF_b()
 {
     if (length(b)==0) Fit()
-    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, mu(), tau(), Wref())
+    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, mu(), tau(), Wref(), omit())
 }
 
 void `MAIN'::_IF_a()
@@ -634,12 +720,28 @@ void `MAIN'::_IF_a()
 }
 
 void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mu, 
-    `RS' tau, `RS' Wref)
+    `RS' tau, `RS' Wref, | `BoolC' omit)
 {
-    `RM' Q
+    `Int'  k
+    `IntC' p
+    `RM'   Q
     
-    IF.b  = X :- mu
-    Q     = invsym(quadcross(IF.b, wbal, X))
+    IF.b = X :- mu
+    if (length(omit)==0) {
+        // no information on omitted terms; use qrinv()
+        Q = qrinv(quadcross(IF.b, wbal, X))
+    }
+    else if (any(omit)) {
+        // discard omitted terms during inversion
+        k = cols(X)
+        p = select(1::k, omit:==0)
+        Q = J(k, k, 0)
+        Q[p,p] = luinv(quadcross(IF.b[,p], wbal, X[,p]))
+    }
+    else {
+        // no omitted terms; save to use luinv()
+        Q = luinv(quadcross(IF.b, wbal, X))
+    }
     IF.b  = wbal:/w :* (IF.b * -Q')
     IF.b0 = (tau/Wref) * (Xref :- mu) * Q'
 }
