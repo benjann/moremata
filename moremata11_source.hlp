@@ -3573,7 +3573,7 @@ end
 
 *! {smcl}
 *! {marker mm_ebalance}{bf:mm_ebalance.mata}{asis}
-*! version 1.0.4  04aug2021  Ben Jann
+*! version 1.0.5  05aug2021  Ben Jann
 
 version 11.2
 
@@ -4252,8 +4252,7 @@ void _mm_ebalance_mm(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0,
     d = quadcolsum(h)
     v = d * d'
     if (todo>=1) {
-        G = quadcross(h, X) - quadcross(h, J(rows(h), 1, quadcolsum(w:*X)))
-            // how can the second term be computed more efficiently?
+        G = quadcross(h, X :- quadcolsum(w:*X))
         g = d * G
         if (todo==2) H = G'G 
     }
@@ -4296,36 +4295,36 @@ void `MAIN'::_IF_a()
 
 void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mu, 
     `RS' tau, `RS' Wref, | `BoolC' omit)
-{
+{   // using "alternative approach" formulas
     `Int'  k
     `IntC' p
-    `RM'   Q
+    `RM'   G, Q
     
-    IF.b = X :- mu
+    IF.b = (wbal/tau) :* (X :- mu)
+    G = quadcross(IF.b, X :- quadcolsum((wbal/tau) :* X))
     if (length(omit)==0) {
         // no information on omitted terms; use qrinv()
-        Q = qrinv(quadcross(IF.b, wbal, X))
+        Q = -qrinv(G)
     }
     else if (any(omit)) {
         // discard omitted terms during inversion
         k = cols(X)
         p = select(1::k, omit:==0)
         Q = J(k, k, 0)
-        Q[p,p] = luinv(quadcross(IF.b[,p], wbal, X[,p]))
+        Q[p,p] = -luinv(G[p,p])
     }
     else {
         // no omitted terms; save to use luinv()
-        Q = luinv(quadcross(IF.b, wbal, X))
+        Q = -luinv(G)
     }
-    IF.b  = wbal:/w :* (IF.b * -Q')
-    IF.b0 = (tau/Wref) * (Xref :- mu) * Q'
+    IF.b  = (IF.b :/ w) * Q'
+    IF.b0 = (-1/Wref) * (Xref :- mu) * Q'
 }
 
 void _mm_ebalance_IF_a(`If' IF, `RM' X, `RC' w, `RC' wbal, `RS' tau, `RS' W)
-{
+{    // using simplified IF assuming tau as fixed
     `RM' Q
     
-    // using simplified IF assuming tau as fixed
     Q = quadcross(wbal, X)
     IF.a  = ((wbal:/w :- tau/W) + IF.b * Q') / -tau
     IF.a0 = (IF.b0 * Q') / -tau

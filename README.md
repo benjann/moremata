@@ -165,6 +165,11 @@ Functions:
 
 Main changes:
 
+    04aug2021
+    - mm_ebalance(): now using alternative-approach equations for IF of beta; results
+      only differ if balance is not reached
+    - mm_ebalance(): more efficient computation of G in _mm_ebalance_mm()
+
     02aug2021
     - S.tau() now sets the target sum of weights in mm_ebalance()
     - some adjustment to IFs in mm_ebalance(); tau is now always assumed fixed
