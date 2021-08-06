@@ -1,4 +1,4 @@
-*! version 1.0.5  05aug2021  Ben Jann
+*! version 1.0.6  06aug2021  Ben Jann
 
 version 11.2
 
@@ -46,15 +46,15 @@ struct `SETUP' {
     
     // settings
     `T'    tau        // target sum of weights
+    `RC'   btol       // balancing tolerance
     `SS'   ltype      // type of loss function
     `SS'   etype      // evaluator type
-    `Bool' nostd      // do not standardize
     `SS'   trace      // trace level
-    `Bool' difficult  // use hybrid optimization
     `Int'  maxiter    // max number of iterations
     `RS'   ptol       // convergence tolerance for the parameter vector
     `RS'   vtol       // convergence tolerance for the balancing loss
-    `RC'   btol       // balancing tolerance
+    `Bool' difficult  // use hybrid optimization
+    `Bool' nostd      // do not standardize
     `Bool' nowarn     // do not display no convergence/balance warning
 }
 
@@ -83,30 +83,32 @@ class `MAIN' {
         `RC'    omit()            // retrieve omitted flags
         `Int'   k_omit()          // retrieve number of omitted terms
         `T'     tau()             // retrieve/set target sum of weights
+        `T'     btol()            // set/retrieve balancing tolerance
         `T'     ltype()           // set/retrieve loss function
         `T'     etype()           // set/retrieve evaluator type
         `T'     alteval()         // set/retrieve alteval flag (old)
-        `T'     nostd()           // set/retrieve nostd flag
         `T'     trace()           // set/retrieve trace level
-        `T'     difficult()       // set/retrieve difficult flag
         `T'     maxiter()         // set/retrieve max iterations
         `T'     ptol()            // set/retrieve p-tolerance
         `T'     vtol()            // set/retrieve v-tolerance
-        `T'     btol()            // set/retrieve balancing tolerance
+        `T'     difficult()       // set/retrieve difficult flag
+        `T'     nostd()           // set/retrieve nostd flag
         `T'     nowarn()          // set/retrieve nowarn flag
     
     // results
     public:
-        `RC'    wbal()            // retrieve balancing weights
         `RC'    b()               // retrieve coefficients
         `RS'    a()               // retrieve normalizing intercept
         `RC'    xb()              // retrieve linear prediction
+        `RC'    wbal()            // retrieve balancing weights
         `RC'    pr()              // retrieve propensity score
         `RR'    madj()            // adjusted (reweighted) means
-        `Int'   iter()            // retrieve number of iterations
-        `Bool'  converged()       // retrieve convergence flag
+        `RS'    wsum()            // retrieve sum of balancing weights
         `RS'    loss()            // retrieve final balancing loss
         `Bool'  balanced()        // retrieve balancing flag
+        `RS'    value()           // retrieve value of optimization criterion
+        `Int'   iter()            // retrieve number of iterations
+        `Bool'  converged()       // retrieve convergence flag
         `RM'    IF_b(), IFref_b() // retrieve IF of coefficients
         `RC'    IF_a(), IFref_a() // retrieve IF of intercept
     private:
@@ -116,10 +118,12 @@ class `MAIN' {
         `RC'    xb                // linear prediction (without a)
         `RC'    wbal              // balancing weights
         `RR'    madj              // adjusted (reweighted) means
-        `Int'   iter              // number of iterations
-        `Bool'  conv              // optimize() convergence
+        `RS'    wsum              // sum of balancing weights
         `RC'    loss              // balancing loss
         `Bool'  balanced          // balance achieved
+        `RS'    value             // value of optimization criterion
+        `Int'   iter              // number of iterations
+        `Bool'  conv              // optimize() convergence
         `If'    IF                // influence functions
         void    _IF_b(), _IF_a()  // generate influence functions
         void    Fit()             // fit coefficients
@@ -147,12 +151,12 @@ void `MAIN'::new()
 
 void `MAIN'::clear()
 {
-    tau  = .
+    tau  = wsum = .
     b    = J(0,1,.)
     a    = .
-    wbal = J(0,1,.)
+    xb   = wbal = J(0,1,.)
     madj = J(1,0,.)
-    iter = conv = loss = balanced = .
+    loss = balanced = value = iter = conv = .
     IF   = `IF'()
 }
 
@@ -285,6 +289,15 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     clear()
 }
 
+`T' `MAIN'::btol(| `RS' btol)
+{
+    if (args()==0) return(setup.btol)
+    if (setup.btol==btol) return // no change
+    if (btol<=0) _error(3498, "setting out of range")
+    setup.btol = btol
+    clear()
+}
+
 `T' `MAIN'::ltype(| `SS' ltype)
 {
     if (args()==0) return(setup.ltype)
@@ -317,14 +330,6 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     clear()
 }
 
-`T' `MAIN'::nostd(| `Bool' nostd)
-{
-    if (args()==0) return(setup.nostd)
-    if (setup.nostd==(nostd!=0)) return // no change
-    setup.nostd = (nostd!=0)
-    clear()
-}
-
 `T' `MAIN'::trace(| `SS' trace)
 {
     `T' S
@@ -334,14 +339,6 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     S = optimize_init()
     optimize_init_tracelevel(S, trace) // throw error if trace is invalid
     setup.trace = trace
-    clear()
-}
-
-`T' `MAIN'::difficult(| `Bool' difficult)
-{
-    if (args()==0) return(setup.difficult)
-    if (setup.difficult==(difficult!=0)) return // no change
-    setup.difficult = (difficult!=0)
     clear()
 }
 
@@ -372,12 +369,19 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     clear()
 }
 
-`T' `MAIN'::btol(| `RS' btol)
+`T' `MAIN'::difficult(| `Bool' difficult)
 {
-    if (args()==0) return(setup.btol)
-    if (setup.btol==btol) return // no change
-    if (btol<=0) _error(3498, "setting out of range")
-    setup.btol = btol
+    if (args()==0) return(setup.difficult)
+    if (setup.difficult==(difficult!=0)) return // no change
+    setup.difficult = (difficult!=0)
+    clear()
+}
+
+`T' `MAIN'::nostd(| `Bool' nostd)
+{
+    if (args()==0) return(setup.nostd)
+    if (setup.nostd==(nostd!=0)) return // no change
+    setup.nostd = (nostd!=0)
     clear()
 }
 
@@ -418,7 +422,7 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 `RC' `MAIN'::pr()
 {
     if (length(b)==0) Fit()
-    return(invlogit(xb :+ a))
+    return(invlogit(xb :+ (a + ln(Wref()/tau()))))
 }
 
 `RR' `MAIN'::madj()
@@ -429,17 +433,12 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     return(madj)
 }
 
-`Int' `MAIN'::iter()
+`RS' `MAIN'::wsum()
 {
-    
+    if (wsum<.) return(wsum)
     if (length(b)==0) Fit()
-    return(iter)
-}
-
-`Bool' `MAIN'::converged()
-{
-    if (length(b)==0) Fit()
-    return(conv)
+    wsum = quadsum(wbal)
+    return(wsum)
 }
 
 `RS' `MAIN'::loss()
@@ -453,6 +452,25 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     if (length(b)==0) Fit()
     return(balanced)
 }
+
+`RS' `MAIN'::value()
+{
+    if (length(b)==0) Fit()
+    return(value)
+}
+
+`Int' `MAIN'::iter()
+{
+    if (length(b)==0) Fit()
+    return(iter)
+}
+
+`Bool' `MAIN'::converged()
+{
+    if (length(b)==0) Fit()
+    return(conv)
+}
+
 
 `RM' `MAIN'::IF_b()
 {
@@ -493,17 +511,18 @@ void `MAIN'::Fit()
     _Fit_a()      // compute intercept (and balancing weights)
     
     // check balancing
-    if (k_omit() | nostd()==0 | etype()!="bl") {
+    if (etype()!="bl" | nostd()==0 | k_omit()) {
         // recompute balancing loss using raw data
         loss = _mm_ebalance_loss(ltype(), mean(X():-mu(), wbal), mu())
     }
+    else loss = value
     if (trace()!="none") {
         printf("{txt}Final fit:     balancing loss = {res}%10.0g\n", loss)
     }
     balanced = (loss<btol())
     if (balanced) return
     if (nowarn()) return
-    display("{txt}balance not achieved")
+    display("{err}balance not achieved")
 }
 
 void `MAIN'::_Fit_a()
@@ -526,15 +545,15 @@ void `MAIN'::_Fit_b()
     if (k_omit()) p = select(1::k(), omit():==0)
     S = optimize_init()
     optimize_init_which(S, "min")
-    optimize_init_evaluatortype(S, "d2")
     optimize_init_technique(S, "nr")
-    optimize_init_singularHmethod(S, difficult() ? "hybrid" : "")
+    optimize_init_evaluatortype(S, "d2")
+    optimize_init_conv_ignorenrtol(S, "on")
+    optimize_init_tracelevel(S, trace())
     optimize_init_conv_maxiter(S, maxiter())
     optimize_init_conv_ptol(S, ptol())
     optimize_init_conv_vtol(S, vtol())
-    optimize_init_conv_ignorenrtol(S, "on")
+    optimize_init_singularHmethod(S, difficult() ? "hybrid" : "")
     optimize_init_conv_warning(S, nowarn() ? "off" : "on")
-    optimize_init_tracelevel(S, trace())
     if (etype()=="mma") {
         optimize_init_evaluator(S, &_mm_ebalance_mma())   // gmm w/ alpha
         optimize_init_valueid(S, "criterion Q(p)")
@@ -590,9 +609,9 @@ void `MAIN'::_Fit_b()
         if (nostd()) b = beta'
         else         b = (beta :/ scale())'
     }
-    iter = optimize_result_iterations(S)
-    loss = optimize_result_value(S)
-    conv = optimize_result_converged(S)
+    iter  = optimize_result_iterations(S)
+    value = optimize_result_value(S)
+    conv  = optimize_result_converged(S)
 }
 
 `RM' `MAIN'::_Fit_b_X(`IntC' p)
@@ -625,6 +644,13 @@ void `MAIN'::_Fit_b()
     return(mu() :/ scale())
 }
 
+`RS' _mm_ebalance_loss(`SS' ltype, `RR' d, `RR' mu)
+{
+    if (ltype=="absdif") return(max(abs(d)))
+    if (ltype=="norm") return(sqrt(d*d'))
+    return(mreldif(d+mu, mu)) // ltype=="reldif"
+}
+
 void _mm_ebalance_bl(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `SS' ltype,
     `RS' v, `RR' g, `RM' H)
 {   // evaluator based on balance loss
@@ -654,13 +680,6 @@ void _mm_ebalance_lw(`Int' todo, `RR' b, `RM' X, `RC' w0,
         g = quadcross(w, X) / W
         if (todo==2) H = quadcross(X, w, X) / W
     }
-}
-
-`RS' _mm_ebalance_loss(`SS' ltype, `RR' d, `RR' mu)
-{
-    if (ltype=="absdif") return(max(abs(d)))
-    if (ltype=="norm") return(sqrt(d*d'))
-    return(mreldif(d+mu, mu)) // ltype=="reldif"
 }
 
 void _mm_ebalance_mm(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0,
@@ -709,7 +728,8 @@ void _mm_ebalance_mma(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `RS' tau,
 void `MAIN'::_IF_b()
 {
     if (length(b)==0) Fit()
-    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, mu(), tau(), Wref(), omit())
+    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, madj(), mu(), tau(), Wref(), 
+        omit())
 }
 
 void `MAIN'::_IF_a()
@@ -718,15 +738,14 @@ void `MAIN'::_IF_a()
     _mm_ebalance_IF_a(IF, X(), w(), wbal, tau(), W())
 }
 
-void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mu, 
-    `RS' tau, `RS' Wref, | `BoolC' omit)
+void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' madj,
+    `RR' mu, `RS' tau, `RS' Wref, | `BoolC' omit)
 {   // using "alternative approach" formulas
     `Int'  k
     `IntC' p
     `RM'   G, Q
     
-    IF.b = (wbal/tau) :* (X :- mu)
-    G = quadcross(IF.b, X :- quadcolsum((wbal/tau) :* X))
+    G = quadcrossdev(X, mu, wbal/tau, X, madj)
     if (length(omit)==0) {
         // no information on omitted terms; use qrinv()
         Q = -qrinv(G)
@@ -742,7 +761,7 @@ void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' mu,
         // no omitted terms; save to use luinv()
         Q = -luinv(G)
     }
-    IF.b  = (IF.b :/ w) * Q'
+    IF.b  = (wbal/tau):/w :* (X :- madj) * Q' // [sic!] using madj instead of mu
     IF.b0 = (-1/Wref) * (Xref :- mu) * Q'
 }
 

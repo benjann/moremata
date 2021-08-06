@@ -165,6 +165,12 @@ Functions:
 
 Main changes:
 
+    06aug2021
+    - mm_ebalance(): S.pr() fixed for case where S.tau()!=S.Wref()
+    - mm_ebalance(): S.value() now returns value of optimization criterion
+    - mm_ebalance(): S.wsum() now returns total of balancing weights
+    - mm_ebalance(): changes in computation if IFs; only relevant if not balanced
+
     04aug2021
     - mm_ebalance(): now using alternative-approach equations for IF of beta; results
       only differ if balance is not reached

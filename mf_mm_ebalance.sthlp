@@ -1,5 +1,5 @@
 {smcl}
-{* 04aug2021}{...}
+{* 06aug2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -51,8 +51,8 @@ Settings
     vector; default is {bf:1e-6}; convergence is reached if {it:ptol} or {it:vtol} is
     satisfied; also see {helpb mf_optimize##i_ptol:optimize()}
     {p_end}
-{p2col:{it:S}{cmd:.vtol(}{it:vtol}{cmd:)}}convergence tolerance for the balancing
-    loss; default is {bf:1e-7}; convergence is reached if {it:ptol} or {it:vtol} is
+{p2col:{it:S}{cmd:.vtol(}{it:vtol}{cmd:)}}convergence tolerance for the minimization
+    criterion; default is {bf:1e-7}; convergence is reached if {it:ptol} or {it:vtol} is
     satisfied; also see {helpb mf_optimize##i_ptol:optimize()}
     {p_end}
 {p2col:{it:S}{cmd:.difficult(}{it:difficult}{cmd:)}}stepping
@@ -123,12 +123,14 @@ Retrieve results
 {p2col:{it:a}{bind:      } = {it:S}{cmd:.a()}}normalizing intercept (scalar){p_end}
 {p2col:{it:wbal}{bind:   } = {it:S}{cmd:.wbal()}}balancing weights: {it:w} * exp({it:Xb} + {it:a}){p_end}
 {p2col:{it:xb}{bind:     } = {it:S}{cmd:.xb()}}linear predictions: {it:Xb} + {it:a}{p_end}
-{p2col:{it:pr}{bind:     } = {it:S}{cmd:.pr()}}propensity scores: invlogit({it:Xb} + {it:a}){p_end}
+{p2col:{it:pr}{bind:     } = {it:S}{cmd:.pr()}}propensity scores: invlogit({it:Xb} + {it:a} + ln({it:Wref}/{it:tau})){p_end}
 {p2col:{it:madj}{bind:   } = {it:S}{cmd:.madj()}}means of {it:X} after reweighting{p_end}
-{p2col:{it:iter}{bind:   } = {it:S}{cmd:.iter()}}number of iterations of the optimization algorithm{p_end}
-{p2col:{it:conv}{bind:   } = {it:S}{cmd:.converged()}}1 if the optimization algorithm converged, 0 else{p_end}
+{p2col:{it:wsum}{bind:   } = {it:S}{cmd:.wsum()}}total of balancing weights: sum({it:wbal}){p_end}
 {p2col:{it:loss}{bind:   } = {it:S}{cmd:.loss()}}balancing loss at final fit{p_end}
 {p2col:{it:bal}{bind:    } = {it:S}{cmd:.balanced()}}1 if balance is achieved ({it:loss} < {it:btol}), 0 else{p_end}
+{p2col:{it:value}{bind:  } = {it:S}{cmd:.value()}}value of the optimization criterion at final fit{p_end}
+{p2col:{it:iter}{bind:   } = {it:S}{cmd:.iter()}}number of iterations of the optimization algorithm{p_end}
+{p2col:{it:conv}{bind:   } = {it:S}{cmd:.converged()}}1 if the optimization algorithm converged, 0 else{p_end}
 {p2col:{it:IF_b}{bind:   } = {it:S}{cmd:.IF_b()}}influence functions of coefficients (main sample){p_end}
 {p2col:{it:IFref_b}{bind:} = {it:S}{cmd:.IFref_b()}}influence functions of coefficients (reference sample){p_end}
 {p2col:{it:IF_a}{bind:   } = {it:S}{cmd:.IF_a()}}influence function of intercept (main sample){p_end}
@@ -136,10 +138,6 @@ Retrieve results
 
 {p 8 8 2}
 Specifying any of the above functions will trigger estimation, if not already carried out.
-
-{p 8 8 2}
-The normalizing intercept ({it:a}) is set such that the sum of balancing weights ({it:wbal}) is equal to the size 
-(sum of weights) of the reference sample.
 
 {pstd}
 Retrieve information on data
@@ -245,7 +243,7 @@ Retrieve information on data
         : {stata S = mm_ebalance()}
         : {stata S.data(X, 1, mu, N)}
         : {stata mean(X)', mean(X,S.wbal())'}
-        : {stata sum(S.wbal())}
+        : {stata S.wsum()}
         : {stata end}
 
 
