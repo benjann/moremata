@@ -1,4 +1,4 @@
-*! version 1.0.6  06aug2021  Ben Jann
+*! version 1.0.7  14aug2021  Ben Jann
 
 version 11.2
 
@@ -16,6 +16,8 @@ local RM     real matrix
 // counters
 local Int    real scalar
 local IntC   real colvector
+local IntR   real rowvector
+local IntM   real matrix
 // string
 local SS     string scalar
 // boolean
@@ -34,28 +36,30 @@ mata:
 
 struct `SETUP' {
     // data
-    `PM'    X, X0    // pointers to main data and reference data
-    `PC'    w, w0    // pointers to base weights
-    `Int'   N, N0    // number of obs
-    `RS'    W, W0    // sum of weights
-    `RR'    m, m0    // means
-    `RR'    scale    // scales for standardization
-    `Int'   k        // number of terms
-    `BoolC' omit     // flag collinear terms
-    `Int'   k_omit   // number of omitted terms
+    `PM'    X, X0      // pointers to main data and reference data
+    `PC'    w, w0      // pointers to base weights
+    `Int'   N, N0      // number of obs
+    `RS'    W, W0      // sum of weights
+    `RR'    m, m0      // means
+    `RR'    s, s0      // scales
+    `Int'   k          // number of terms
+    `BoolC' omit       // flag collinear terms
+    `Int'   k_omit     // number of omitted terms
     
     // settings
-    `T'    tau        // target sum of weights
-    `RC'   btol       // balancing tolerance
-    `SS'   ltype      // type of loss function
-    `SS'   etype      // evaluator type
-    `SS'   trace      // trace level
-    `Int'  maxiter    // max number of iterations
-    `RS'   ptol       // convergence tolerance for the parameter vector
-    `RS'   vtol       // convergence tolerance for the balancing loss
-    `Bool' difficult  // use hybrid optimization
-    `Bool' nostd      // do not standardize
-    `Bool' nowarn     // do not display no convergence/balance warning
+    `IntR'  adj, noadj // indices of columns to be adjusted/not adjusted
+    `T'     tau        // target sum of weights
+    `SS'    scale      // type of scales
+    `RC'    btol       // balancing tolerance
+    `SS'    ltype      // type of loss function
+    `SS'    etype      // evaluator type
+    `SS'    trace      // trace level
+    `Int'   maxiter    // max number of iterations
+    `RS'    ptol       // convergence tolerance for the parameter vector
+    `RS'    vtol       // convergence tolerance for the balancing loss
+    `Bool'  difficult  // use hybrid optimization
+    `Bool'  nostd      // do not standardize
+    `Bool'  nowarn     // do not display no convergence/balance warning
 }
 
 struct `IF' {
@@ -77,12 +81,14 @@ class `MAIN' {
         `RS'    N(), Nref()       // retrieve number of obs
         `RS'    W(), Wref()       // retrieve sum of weights
         `RR'    m(), mref()       // retrieve moments
-        `RR'    scale()           // retrieve scale
+        `RR'    s(), sref()       // retrieve scales
         `RR'    mu()              // retrieve target moments
         `Int'   k()               // retrieve number of terms
         `RC'    omit()            // retrieve omitted flags
         `Int'   k_omit()          // retrieve number of omitted terms
-        `T'     tau()             // retrieve/set target sum of weights
+        `T'     adj(), noadj()    // set/retrieve adj/noadj
+        `T'     tau()             // set/retrieve target sum of weights
+        `T'     scale()           // set/retrieve scales
         `T'     btol()            // set/retrieve balancing tolerance
         `T'     ltype()           // set/retrieve loss function
         `T'     etype()           // set/retrieve evaluator type
@@ -113,6 +119,9 @@ class `MAIN' {
         `RC'    IF_a(), IFref_a() // retrieve IF of intercept
     private:
         `RS'    tau               // target sum of weight
+        `RR'    mu                // target means
+        `IntM'  adj, noadj        // permutation vectors for source of mu
+        `RR'    scale             // scales for standardization
         `RC'    b                 // coefficients
         `RS'    a                 // normalizing intercept
         `RC'    xb                // linear prediction (without a)
@@ -130,6 +139,7 @@ class `MAIN' {
         void    _Fit_b(), _Fit_a()
         `RM'    _Fit_b_X(), _Fit_b_Xc()
         `RR'    _Fit_b_mu()
+        void    _setadj()         // fill in adj and noadj
 }
 
 // init -----------------------------------------------------------------------
@@ -137,6 +147,7 @@ class `MAIN' {
 void `MAIN'::new()
 {
     setup.tau       = "Wref"
+    setup.scale     = "main"
     setup.ltype     = "reldif"
     setup.etype     = "bl"
     setup.nostd     = 0
@@ -147,10 +158,13 @@ void `MAIN'::new()
     setup.vtol      = 1e-7
     setup.btol      = 1e-6
     setup.nowarn    = 0
+    setup.adj       = .
 }
 
 void `MAIN'::clear()
 {
+    mu   = J(1,0,.)
+    adj  = noadj = J(0,0,.)
     tau  = wsum = .
     b    = J(0,1,.)
     a    = .
@@ -173,6 +187,7 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
         if (any(w:<0) | any(w0:<0)) _error(3498, "w and wref must be positive")
     }
     // obtain main data
+    setup.k = cols(X)
     setup.X = &X
     setup.w = &w
     setup.N = rows(X)
@@ -194,24 +209,29 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     }
     else setup.W0 = setup.N0 * w0
     if (setup.N0!=0 & setup.W0==0) _error(3498, "sum(wref) must be > 0")
+    // if scale is set by user
+    if (setup.scale=="user") {
+        if (setup.k!=length(scale)) _error(3200, "X not conformable with scale")
+    }
+    else scale = J(1,0,.) // (clear scale)
     // target moments
-    setup.k = cols(X)
     if (setup.k!=cols(X0)) _error(3200, "X and Xref not conformable")
     setup.m0 = mean(X0, w0)
     // identify collinear terms
     setup.m  = mean(X, w)
     if (setup.k==0) {
         setup.omit = J(0,1,.)
-        setup.scale = J(1,0,.)
+        setup.s = J(1,0,.)
         setup.k_omit = 0
     }
     else {
         CP = quadcrossdev(X, setup.m, w, X, setup.m)
-        setup.scale = sqrt(diagonal(CP)' / setup.W)
+        setup.s = sqrt(diagonal(CP)' / setup.W)
         setup.omit = (diagonal(invsym(CP)):==0) // or: diagonal(invsym(CP, 1..setup.k)):==0
         setup.k_omit = sum(setup.omit)
     }
     // clear results
+    setup.s0 = J(1,0,.) // (scale of refdata will be set later only if needed)
     clear()
 }
 
@@ -253,9 +273,15 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 
 `RR' `MAIN'::mref() return(setup.m0)
 
-`RR' `MAIN'::scale() return(setup.scale)
+`RR' `MAIN'::s() return(setup.s)
 
-`RR' `MAIN'::mu() return(setup.m0)
+`RR' `MAIN'::sref() {
+    if (length(setup.s0)) return(setup.s0)
+    if (nodata()) return(setup.s0)
+    setup.s0 = sqrt(diagonal(quadcrossdev(*setup.X0, setup.m0, *setup.w0, 
+        *setup.X0, setup.m0))'/setup.W0)
+    return(setup.s0)
+}
 
 `Int' `MAIN'::k() return(setup.k)
 
@@ -286,6 +312,51 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     }
     else if (tau<=0 | tau>=.) _error(3498, "setting out of range")
     setup.tau = tau
+    clear()
+}
+
+`T' `MAIN'::scale(| `T' scale0)
+{
+    `RR' s
+    
+    if (args()==0) {
+        if (length(scale)) return(scale)
+        if (setup.scale=="user") return(scale)
+        if (nodata()) return(setup.scale)
+        if      (setup.scale=="main") scale = s()
+        else if (setup.scale=="ref")  scale = sref()
+        else if (setup.scale=="avg")  scale = (s() + sref()) / 2
+        else if (setup.scale=="wavg") scale = (s()*W() + sref()*Wref()) / 
+                                              (W() + Wref())
+        else if (setup.scale=="pooled") {
+            scale = sqrt(diagonal(mm_variance0(X() \ Xref(), 
+                (rows(w())==1  ? J(N(), 1, w())   : w()) \ 
+                (rows(wref())==1 ? J(Nref(), 1, wref()) : wref())))')
+        }
+        _editvalue(scale, 0, 1)
+        return(scale)
+    }
+    if (isstring(scale0)) {
+        if (length(scale0)!=1) _error(3200)
+        if (setup.scale==scale0) return // no change
+        if (!anyof(("main", "ref", "avg", "wavg","pooled"), scale0)) {
+            printf("{err}'%s' not allowed\n", scale0)
+            _error(3498)
+        }
+        setup.scale = scale0
+        scale = J(1,0,.)
+    }
+    else {
+        s = editvalue(vec(scale0)', 0, 1)
+        if (scale==s) return // no change
+        if (missing(s)) _error(3351)
+        if (any(s:<=0)) _error(3498, "scale must be positive")
+        if (nodata()==0) {
+            if (setup.k!=length(s)) _error(3200, "scale not conformable with X")
+        }
+        setup.scale = "user"
+        scale = s
+    }
     clear()
 }
 
@@ -391,6 +462,105 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
     if (setup.nowarn==(nowarn!=0)) return // no change
     setup.nowarn = (nowarn!=0)
     clear()
+}
+
+// target means ---------------------------------------------------------------
+
+`T' `MAIN'::adj(| `RM' adj0)
+{
+    `RR' adj
+    
+    if (args()==0) {
+        if (nodata()) return(setup.adj)
+        _setadj()
+        return(this.adj)
+    }
+    adj = mm_unique(trunc(vec(adj0)))'
+    if (length(setup.noadj)==0) {
+        if (setup.adj==adj) return // no change
+    }
+    if (adj!=.) {
+        if (any(adj:<1)) _error(3498, "setting out of range")
+    }
+    setup.adj   = adj
+    setup.noadj = J(1,0,.)
+    clear()
+}
+
+`T' `MAIN'::noadj(| `RM' noadj0)
+{
+    `RR' noadj
+    
+    if (args()==0) {
+        if (nodata()) return(setup.noadj)
+        _setadj()
+        return(this.noadj)
+    }
+    noadj = mm_unique(trunc(vec(noadj0)))'
+    if (setup.adj==.) {
+        if (setup.noadj==noadj) return // no change
+    }
+    if (any(noadj:<1)) _error(3498, "setting out of range")
+    setup.adj   = .
+    setup.noadj = noadj
+    clear()
+}
+
+void `MAIN'::_setadj() // assumes that data has been set
+{
+    `Int'  i, j, k
+    `IntR' p
+    
+    if (rows(adj)) return // already set
+    // zero variables
+    k = k()
+    if (k==0) {
+        adj = noadj = J(1,0,.)
+        return
+    }
+    // case 1: noadj() has been set
+    if (length(setup.noadj)) {
+        p = J(1,k,1)
+        for (i=length(setup.noadj); i; i--) {
+            j = setup.noadj[i]
+            if (j>k) continue // be tolerant and ignore invalid subscripts
+            p[j] = 0
+        }
+    }
+    // case 2: adj() has been set
+    else if (setup.adj!=.) {
+        p = J(1,k,0)
+        for (i=length(setup.adj); i; i--) {
+            j = setup.adj[i]
+            if (j>k) continue // be tolerant and ignore invalid subscripts
+            p[j] = 1
+        }
+    }
+    // case 3: default (adjust all)
+    else p = 1
+    // fill in adj/noadj
+    if (allof(p, 1)) {
+        adj   = .
+        noadj = J(1,0,.)
+    }
+    else {
+        adj   = select(1..k, p)
+        noadj = select(1..k,!p)
+    }
+}
+
+`RR' `MAIN'::mu()
+{
+    if (length(mu)) return(mu)
+    if (nodata())   return(mu)
+    if (adj()==.) {
+        mu = setup.m0
+    }
+    else {
+        mu = setup.m
+        if (length(adj())) mu[adj()] = setup.m0[adj()]
+    }
+    return(mu)
 }
 
 // results --------------------------------------------------------------------
@@ -500,11 +670,19 @@ void `MAIN'::data(`RM' X, `RC' w, `RM' X0, `RC' w0, | `Bool' fast)
 
 void `MAIN'::Fit()
 {
+    `Bool' nofit
+    
     // optimize
     if (nodata()) _error(3498, "data not set")
-    if ((k()-k_omit())<=0) { // no covariates
+    nofit = 0
+    if ((k()-k_omit())<=0)   nofit = 1     // no covariates
+    else if (!length(adj())) nofit = 1     // no adjustments
+    else if (length(noadj()) & k_omit()) { // no adjustments among non-omitted
+        nofit = all(omit()[adj()])
+    }
+    if (nofit) {
         b = J(k(), 1, 0)
-        iter = loss = 0
+        iter = value = 0
         conv = 1
     }
     else _Fit_b() // fit coefficients
@@ -512,7 +690,7 @@ void `MAIN'::Fit()
     
     // check balancing
     if (etype()!="bl" | nostd()==0 | k_omit()) {
-        // recompute balancing loss using raw data
+        // compute balancing loss using raw data
         loss = _mm_ebalance_loss(ltype(), mean(X():-mu(), wbal), mu())
     }
     else loss = value
@@ -728,8 +906,8 @@ void _mm_ebalance_mma(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `RS' tau,
 void `MAIN'::_IF_b()
 {
     if (length(b)==0) Fit()
-    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, madj(), mu(), tau(), Wref(), 
-        omit())
+    _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, madj(), mu(), tau(), W(),
+        Wref(), adj(), noadj(), omit())
 }
 
 void `MAIN'::_IF_a()
@@ -739,7 +917,8 @@ void `MAIN'::_IF_a()
 }
 
 void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' madj,
-    `RR' mu, `RS' tau, `RS' Wref, | `BoolC' omit)
+    `RR' mu, `RS' tau, `RS' W, `RS' Wref, `IntR' adj, `IntR' noadj,
+    | `BoolC' omit)
 {   // using "alternative approach" formulas
     `Int'  k
     `IntC' p
@@ -762,7 +941,14 @@ void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' madj,
         Q = -luinv(G)
     }
     IF.b  = (wbal/tau):/w :* (X :- madj) * Q' // [sic!] using madj instead of mu
-    IF.b0 = (-1/Wref) * (Xref :- mu) * Q'
+    if (adj==.) IF.b0 = (-1/Wref) * (Xref :- mu) * Q'
+    else {
+        IF.b0 = J(rows(Xref), cols(Xref), 0)
+        if (length(adj)) IF.b0[, adj] = 
+            (-1/Wref) * (Xref[,adj] :- mu[adj]) * Q[adj,adj]'
+        if (length(noadj)) IF.b[,noadj] = 
+            IF.b[,noadj] - (X[,noadj] :- mu[noadj])/W * Q[noadj,noadj]'
+    }
 }
 
 void _mm_ebalance_IF_a(`If' IF, `RM' X, `RC' w, `RC' wbal, `RS' tau, `RS' W)

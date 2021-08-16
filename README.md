@@ -165,6 +165,12 @@ Functions:
 
 Main changes:
 
+    16aug2021
+    - mm_ebalance(): S.adj() and S.noadj() added
+    - mm_ebalance(): S.scale() can now be used to set the (type of) scales to be
+      used for standardization; S.s() and S.sref() now return the standard
+      deviations of the samples
+    
     06aug2021
     - mm_ebalance(): S.pr() fixed for case where S.tau()!=S.Wref()
     - mm_ebalance(): S.value() now returns value of optimization criterion

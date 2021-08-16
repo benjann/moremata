@@ -1,5 +1,5 @@
 {smcl}
-{* 06aug2021}{...}
+{* 16aug2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
@@ -21,10 +21,31 @@ Initialize a new {cmd:mm_ebalance()} object
 {pstd}
 Settings
 
-{p2colset 9 34 36 2}{...}
-{p2col:{it:S}{cmd:.tau(}{it:tau}{cmd:)}}target sum of balancing weights; {it:tau} can be a real number > 0
-    or {cmd:"Wref"} (sum of weights in reference sample), {cmd:"W"} (sum of weight in main sample), {cmd:"Nref"} 
-    (number of rows in {it:Xref}), or {cmd:"N"} (number of rows in {it:X});  default is {cmd:"Wref"}
+{p2colset 9 30 32 2}{...}
+{p2col:{it:S}{cmd:.tau(}{it:tau}{cmd:)}}target sum of balancing weights; {it:tau}
+    can be a (strictly positive) real number or, alternatively, {cmd:"Wref"}
+    (sum of weights in reference sample), {cmd:"W"} (sum of weight in main
+    sample), {cmd:"Nref"} (number of rows in {it:Xref}), or {cmd:"N"} (number of
+    rows in {it:X}); default is {cmd:"Wref"}
+    {p_end}
+{p2col:{it:S}{cmd:.scale(}{it:scale}{cmd:)}}scales to be used for standardization; 
+    {it:scale} can be a (strictly positive) real vector providing custom values 
+    (same length as columns in {it:X}) or, alternatively, 
+    {cmd:"main"} (standard deviations from main sample), {cmd:"ref"}
+    (standard deviations from reference sample), {cmd:"avg"} 
+    (average between {cmd:main} and {cmd:ref}), {cmd:"wavg"} (weighted average 
+    between {cmd:main} and {cmd:ref}), or {cmd:pooled} (standard deviations from
+    pooled sample); standard deviations are computed using population formulas (division
+    by N rather than N-1); scales equal to 0 will be reset to 1; default is {cmd:"main"}
+    {p_end}
+{p2col:{it:S}{cmd:.}[{cmd:no}]{cmd:adj(}{it:p}{cmd:)}}selects the means to be
+    adjusted where {it:p} is a vector of indices referring to columns of {it:X};
+    {it:S}{cmd:.adj(}{it:p}{cmd:)} causes all selected means to be adjusted and
+    all non-selected means to be held fixed; alternatively, 
+    {it:S}{cmd:.noadj(}{it:p}{cmd:)} causes all selected means to be held fixed
+    and all non-selected means to be adjusted; the elements in {it:p} must be
+    >= 1; duplicates and elements pointing to columns that do not exist
+    will be ignored; specify {it:S}{cmd:.adj(.)} to adjust all means (the default)
     {p_end}
 {p2col:{it:S}{cmd:.btol(}{it:btol}{cmd:)}}balancing tolerance; default is {bf:1e-6};
     balancing is achieved if the balancing loss is smaller than {it:btol}
@@ -55,9 +76,9 @@ Settings
     criterion; default is {bf:1e-7}; convergence is reached if {it:ptol} or {it:vtol} is
     satisfied; also see {helpb mf_optimize##i_ptol:optimize()}
     {p_end}
-{p2col:{it:S}{cmd:.difficult(}{it:difficult}{cmd:)}}stepping
-    algorithm to be used in nonconcave regions; {it:difficult}=0 (the default) uses
-    the standard algorithm; {it:difficult}!=0 uses an alternative algorithm; see the
+{p2col:{it:S}{cmd:.difficult(}{it:diff}{cmd:)}}stepping
+    algorithm to be used in nonconcave regions; {it:diff}=0 (the default) uses
+    the standard algorithm; {it:diff}!=0 uses an alternative algorithm; see the
     singular H methods in {helpb mf_optimize##i_singularH:optimize()} and
     the description of the {cmd:difficult} option in {helpb maximize}
     {p_end}
@@ -151,13 +172,15 @@ Retrieve information on data
 {p2col:{it:N}{bind:      } = {it:S}{cmd:.N()}}number of rows in main sample{p_end}
 {p2col:{it:W}{bind:      } = {it:S}{cmd:.W()}}size (sum of weights) of main sample{p_end}
 {p2col:{it:m}{bind:      } = {it:S}{cmd:.m()}}means of {it:X} (before reweighting){p_end}
+{p2col:{it:s}{bind:      } = {it:S}{cmd:.s()}}standard deviations of {it:X}{p_end}
 {p2col:{it:Xref}{bind:   } = {it:S}{cmd:.Xref()}}data of reference sample{p_end}
 {p2col:{it:wref}{bind:   } = {it:S}{cmd:.wref()}}base weights of reference sample{p_end}
 {p2col:{it:Nref}{bind:   } = {it:S}{cmd:.Nref()}}number of rows in reference sample{p_end}
 {p2col:{it:Wref}{bind:   } = {it:S}{cmd:.Wref()}}size (sum of weights) of reference sample{p_end}
 {p2col:{it:mref}{bind:   } = {it:S}{cmd:.mref()}}means of {it:Xref}{p_end}
+{p2col:{it:sref}{bind:   } = {it:S}{cmd:.sref()}}standard deviations of {it:Xref}{p_end}
 {p2col:{it:scale}{bind:  } = {it:S}{cmd:.scale()}}scales used for standardization{p_end}
-{p2col:{it:mu}{bind:     } = {it:S}{cmd:.mu()}}target moments; equivalent to {it:S}{cmd:.mref()}{p_end}
+{p2col:{it:mu}{bind:     } = {it:S}{cmd:.mu()}}target values for means of reweighted {it:X}{p_end}
 {p2col:{it:tau}{bind:    } = {it:S}{cmd:.tau()}}target sum of balancing weight{p_end}
 
 
@@ -180,9 +203,11 @@ Retrieve information on data
 {pstd}
     In addition to the balancing weights and the coefficients,
     {cmd:mm_ebalance()} also provides influence functions that are useful for
-    the computation of standard errors of the coefficients (see section 3.8 in
-    Jann 2020a) and for the correction of standard errors of statistics that have
-    been estimated from reweighted data (see section 3.7.9 in Jann 2020b).
+    the computation of standard errors of the coefficients and for the correction
+    of standard errors of statistics that have been estimated from reweighted
+    data; see {browse "http://ideas.repec.org/p/bss/wpaper/39.html":Jann (2021b)},
+    which also provides details on the methods and formulas implemented in
+    {cmd:mm_ebalance()}.
 
 {pstd}
     A wrapper for {cmd:mm_ebalance()} that obtains balancing weights in a single
@@ -191,7 +216,7 @@ Retrieve information on data
     features is available as {helpb mf_mm_ebal:mm_ebal()}.
 
 {pstd}
-    See {helpb ebalfit} (Jann 2021) for an easy to use Stata implementation
+    See {helpb ebalfit} (Jann 2021a) for an easy to use Stata implementation
     of entropy balancing that is based on {cmd:mm_ebalance()}. For an alternative
     Stata implementation see {helpb ebalance} by Hainmueller and Xu (2011, 2013).
 
@@ -224,7 +249,19 @@ Retrieve information on data
     the same as in the reference sample (non-unionized workers).
 
 {pstd}
-    By default, the sum of the balancing weights will be equal to the size of the reference sample.
+    By default, the sum of the balancing weights will be equal to the size
+    of the reference sample.
+
+{pstd}
+    Balance only a subset of the means and hold the other means fixed at their
+    original values:
+
+        . {stata "mata:"}
+        : {stata S.adj(2)}      {it:(balance work experience only)}
+        : {stata mean(Xref)', mean(X)', mean(X, S.wbal())'}
+        : {stata S.noadj(2)}    {it:(do not balance work experience)}
+        : {stata mean(Xref)', mean(X)', mean(X, S.wbal())'}
+        : {stata end}
 
 {dlgtab:Adjust sample to population}
 
@@ -272,19 +309,15 @@ Retrieve information on data
     54(7):1-18. DOI: {browse "http://doi.org/10.18637/jss.v054.i07":10.18637/jss.v054.i07}
     {p_end}
 {phang}
-    Jann, B. (2020a). Influence functions continued. A framework for estimating standard errors in reweighting,
-    matching, and regression adjustment. University of Bern Social Sciences Working Papers 35. Available from
-    {browse "http://ideas.repec.org/p/bss/wpaper/35.html"}.
-    {p_end}
-{phang}
-    Jann, B. (2020b). Relative distribution analysis in Stata. University of Bern Social Sciences Working
-    Papers 37. Available from
-    {browse "http://ideas.repec.org/p/bss/wpaper/37.html"}.
-    {p_end}
-{phang}
-    Jann, B. (2021). ebalfit: Stata module to perform entropy balancing. Available
+    Jann, B. (2021a). ebalfit: Stata module to perform entropy balancing. Available
     from http://github.com/benjann/ebalfit/.
     {p_end}
+{phang}
+    Jann, B. (2021b). Entropy balancing as an estimation command. University of 
+    Bern Social Sciences Working Papers 39. Available from
+    {browse "http://ideas.repec.org/p/bss/wpaper/39.html"}.
+    {p_end}
+
 
 {title:Author}
 
