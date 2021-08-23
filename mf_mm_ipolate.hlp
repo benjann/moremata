@@ -1,5 +1,5 @@
 {smcl}
-{* 08jul2020}{...}
+{* 21aug2021}{...}
 {cmd:help mata mm_ipolate()}
 {hline}
 
@@ -28,7 +28,7 @@ where
 
                      {it:x}:  {it:real colvector x}
                      {it:y}:  {it:real colvector y}
-                     {it:x}:  {it:real colvector xnew}
+                  {it:xnew}:  {it:real colvector xnew}
                  {it:outer}:  {it:real scalar outer}
 
 

@@ -392,6 +392,10 @@
 {col 5}{hline 3}{c RT}{it: Matrix manipulation functions }{c LT}{hline}
 {col 5}   {c BLC}{hline 31}{c BRC}
 
+{col 5}{bf:{help mf_mm_crosswalk:mm_crosswalk()}}{...}
+{col 22}{cmd:mm_crosswalk()}{...}
+{col 41}fast bulk recoding
+
 {col 5}{bf:{help mf_mm_clip:mm_clip()}}{...}
 {col 22}{cmd:mm_clip()}{...}
 {col 41}clip/limit the values in a matrix

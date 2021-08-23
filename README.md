@@ -134,6 +134,7 @@ Functions:
   * `mm_which()`: positions of nonzero elements
   * `mm_locate()`: search an ordered vector
   * `mm_hunt()`: consecutive search
+  * `mm_crosswalk()`: fast bulk recoding
   * `mm_clip()`: clip/limit the values in a matrix
   * `mm_clipmin()`: limit the minimum
   * `mm_clipmax()`: limit the maximum
@@ -164,6 +165,9 @@ Functions:
 ---
 
 Main changes:
+
+    23aug2021
+    - mm_crosswalk() added (bulk recoding)
 
     16aug2021
     - mm_ebalance(): S.adj() and S.noadj() added
