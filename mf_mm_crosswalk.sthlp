@@ -160,7 +160,7 @@ Function {cmd:mm_crosswalk_hash()} directly calls the hash-based algorithm.
 {title:Source code}
 
 {pstd}
-{help moremata_source11##mm_crosswalk:mm_crosswalk.mata}
+{help moremata11_source##mm_crosswalk:mm_crosswalk.mata}
 
 
 {title:Author}
