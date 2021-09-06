@@ -166,6 +166,11 @@ Functions:
 
 Main changes:
 
+    06sep2021
+    - mm_areg()/mm_aqreg() retured missing fixed effects for groups for which 
+      all weights were zero; this is fixed
+    - mm_areg()/mm_aqreg() are now somewhat faster
+
     23aug2021
     - mm_crosswalk() added (bulk recoding)
 

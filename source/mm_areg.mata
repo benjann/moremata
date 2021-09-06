@@ -1,4 +1,4 @@
-*! version 1.0.2  30apr2021  Ben Jann
+*! version 1.0.3  06sep2021  Ben Jann
 version 9.2
 mata:
 
@@ -145,18 +145,37 @@ real matrix _mm_areg_gmean(struct mm_areg_struct_grps scalar g,
 real colvector __mm_areg_gmean(real colvector x, real colvector w,
     real colvector idx)
 {
-    real scalar    i, n, a, b, ww
-    real colvector m
+    real scalar    i, n, a, b, k, W
+    real colvector m, ww
 
     m = x
     if (rows(m)<1) return(m)
-    ww = (rows(w)!=1)
     n = rows(idx)
     b = 0
+    if (rows(w)==1) {
+        for (i=1; i<=n; i++) {
+            a = b + 1
+            b = idx[i]
+            k = b - a
+            if (k) { // no averaging necessary less than two obs
+                k++
+                m[|a \ b|] = J(k, 1, quadsum(m[|a \ b|])/k)
+            }
+        }
+        return(m)
+    }
     for (i=1; i<=n; i++) {
         a = b + 1
         b = idx[i]
-        m[|a \ b|] = J(b-a+1, 1, mean(m[|a \ b|], ww ? w[|a \ b|] : w))
+        k = b - a
+        if (k) { // no averaging necessary less than two obs
+            k++
+            ww = w[|a \ b|]
+            W = quadsum(ww)
+            if (W) m[|a \ b|] = J(k, 1, quadsum(ww:*m[|a \ b|])/W)
+            else   m[|a \ b|] = J(k, 1, quadsum(m[|a \ b|])/k)
+                // using unweighted average if sum of weights is 0
+        }
     }
     return(m)
 }
