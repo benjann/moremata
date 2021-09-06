@@ -157,7 +157,7 @@ real colvector __mm_areg_gmean(real colvector x, real colvector w,
             a = b + 1
             b = idx[i]
             k = b - a
-            if (k) { // no averaging necessary less than two obs
+            if (k) { // no averaging necessary if less than two obs
                 k++
                 m[|a \ b|] = J(k, 1, quadsum(m[|a \ b|])/k)
             }
@@ -168,7 +168,7 @@ real colvector __mm_areg_gmean(real colvector x, real colvector w,
         a = b + 1
         b = idx[i]
         k = b - a
-        if (k) { // no averaging necessary less than two obs
+        if (k) { // no averaging necessary if less than two obs
             k++
             ww = w[|a \ b|]
             W = quadsum(ww)
