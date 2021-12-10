@@ -5,7 +5,7 @@ To install `moremata` from the SSC Archive, type
 
     . ssc install moremata, replace
 
-in Stata. Stata version 9.2 or newer is required. Some functions may require
+in Stata. Stata version 11.2 or newer is required. Some functions may require
 newer Stata versions.
 
 ---
