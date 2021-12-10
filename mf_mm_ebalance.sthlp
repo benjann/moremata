@@ -1,12 +1,12 @@
 {smcl}
-{* 16aug2021}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_ebalance()}
 {hline}
 
 {title:Title}
 
 {pstd}
-    {bf:mm_ebalance() -- Entropy balancing (Stata 11 required)}
+    {bf:mm_ebalance() -- Entropy balancing}
 
 
 {title:Syntax}
@@ -219,9 +219,6 @@ Retrieve information on data
     See {helpb ebalfit} (Jann 2021a) for an easy to use Stata implementation
     of entropy balancing that is based on {cmd:mm_ebalance()}. For an alternative
     Stata implementation see {helpb ebalance} by Hainmueller and Xu (2011, 2013).
-
-{pstd}
-    {cmd:mm_ebalance()} requires Stata 11 or newer.
 
 
 {title:Examples}

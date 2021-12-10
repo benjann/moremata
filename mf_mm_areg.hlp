@@ -1,5 +1,5 @@
 {smcl}
-{* 27apr2021}{...}
+{* 14sep2021}{...}
 {cmd:help mata mm_areg()}
 {hline}
 
@@ -20,7 +20,7 @@ Simple syntax
 
 {p 7 20 2}{bind:       }{it:y}:  {it:real colvector} containing dependent variable{p_end}
 {p 7 20 2}{bind:      }{it:id}:  {it:real colvector} containing categorical factor to be absorbed{p_end}
-{p 7 20 2}{bind:       }{it:X}:  {it:real matrix} containing predictors{p_end}
+{p 7 20 2}{bind:       }{it:X}:  {it:real matrix} containing predictors; may specify {cmd:.} to omit predictors{p_end}
 {p 7 20 2}{bind:       }{it:w}:  {it:real colvector} containing weights; specify {cmd:1} for unweighted results{p_end}
 {p 7 20 2}{bind:    }{it:sort}:  whether to sort the data; specify {cmd:0} if the data is already sorted{p_end}
 {p 7 20 2}{bind:    }{it:quad}:  whether to use quad precision when computing cross products; specify {cmd:0} to use double precision{p_end}
@@ -33,26 +33,30 @@ Setup
 
 {p 12 24 2}
 {it:S} =
-{cmd:mm_areg(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:sort}{cmd:,} {it:quad}{cmd:)}
+{cmd:mm_areg(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:sort}{cmd:,} {it:quad}]{cmd:)}
 
 {pmore}
 Retrieve results
 
 {p2colset 9 41 43 2}{...}
-{p2col:{bind:       }{it:b} = {cmd:mm_areg_b(}{it:S}{cmd:)}}coefficient vector (column vector){p_end}
-{p2col:{bind:      }{it:xb} = {cmd:mm_areg_xb(}{it:S} [{cmd:,} {it:X}]{cmd:)}}a + xb, fitted values{p_end}
-{p2col:{bind:      }{it:ue} = {cmd:mm_areg_ue(}{it:S}{cmd:)}}u_i + e_it, the combined residual{p_end}
-{p2col:{bind:     }{it:xbu} = {cmd:mm_areg_xbu(}{it:S}{cmd:)}}a + xb + u_i, prediction including fixed effect{p_end}
-{p2col:{bind:       }{it:u} = {cmd:mm_areg_u(}{it:S}{cmd:)}}u_i, the fixed effect{p_end}
-{p2col:{bind:       }{it:e} = {cmd:mm_areg_e(}{it:S}{cmd:)}}e_it, the idiosyncratic error{p_end}
+{p2col:{bind:       }{it:b} = {cmd:mm_areg_b(}{it:S}{cmd:)}}coefficient vector ({it:beta} \ {it:alpha}){p_end}
+{p2col:{bind:    }{it:beta} = {cmd:mm_areg_beta(}{it:S}{cmd:)}}slope coefficients (column vector){p_end}
+{p2col:{bind:   }{it:alpha} = {cmd:mm_areg_alpha(}{it:S}{cmd:)}}global intercept{p_end}
+{p2col:{bind:      }{it:xb} = {cmd:mm_areg_xb(}{it:S} [{cmd:,} {it:X}]{cmd:)}}fitted values ({it:alpha} + {it:X}*{it:beta}){p_end}
+{p2col:{bind:      }{it:ue} = {cmd:mm_areg_ue(}{it:S}{cmd:)}}combined residual ({it:u} + {it:e}){p_end}
+{p2col:{bind:     }{it:xbu} = {cmd:mm_areg_xbu(}{it:S}{cmd:)}}prediction including fixed effect ({it:alpha} + {it:X}*{it:beta} + {it:u}){p_end}
+{p2col:{bind:       }{it:u} = {cmd:mm_areg_u(}{it:S}{cmd:)}}fixed effect{p_end}
+{p2col:{bind:       }{it:e} = {cmd:mm_areg_e(}{it:S}{cmd:)}}idiosyncratic error{p_end}
 {p2col:{bind:       }{it:s} = {cmd:mm_areg_s(}{it:S}{cmd:)}}scale (root mean squared error){p_end}
 {p2col:{bind:      }{it:r2} = {cmd:mm_areg_r2(}{it:S}{cmd:)}}R-squared{p_end}
 {p2col:{bind:      }{it:se} = {cmd:mm_areg_se(}{it:S}{cmd:)}}(non-robust) standard errors{p_end}
 {p2col:{bind:       }{it:V} = {cmd:mm_areg_V(}{it:S}{cmd:)}}(non-robust) variance matrix{p_end}
 {p2col:{bind:   }{it:XXinv} = {cmd:mm_areg_XXinv(}{it:S}{cmd:)}}inverse of X'X{p_end}
 {p2col:{bind:     }{it:RSS} = {cmd:mm_areg_rss(}{it:S}{cmd:)}}residual sum of squares{p_end}
-{p2col:{bind:   }{it:ymean} = {cmd:mm_areg_ymean(}{it:S}{cmd:)}}mean of y{p_end}
-{p2col:{bind:   }{it:means} = {cmd:mm_areg_means(}{it:S}{cmd:)}}means of X (row vector){p_end}
+{p2col:{bind:   }{it:ymean} = {cmd:mm_areg_ymean(}{it:S}{cmd:)}}global mean of y{p_end}
+{p2col:{bind:   }{it:means} = {cmd:mm_areg_means(}{it:S}{cmd:)}}global means of X (row vector){p_end}
+{p2col:{bind:      }{it:yd} = {cmd:mm_areg_yd(}{it:S}{cmd:)}}group-demeaned y{p_end}
+{p2col:{bind:      }{it:Xd} = {cmd:mm_areg_Xd(}{it:S}{cmd:)}}group-demeaned X (row vector){p_end}
 {p2col:{bind:    }{it:omit} = {cmd:mm_areg_omit(}{it:S}{cmd:)}}column vector flagging omitted terms{p_end}
 {p2col:{bind:  }{it:k_omit} = {cmd:mm_areg_k_omit(}{it:S}{cmd:)}}number of omitted terms{p_end}
 {p2col:{bind:       }{it:N} = {cmd:mm_areg_N(}{it:S}{cmd:)}}number of observations (sum of weights){p_end}
@@ -106,6 +110,24 @@ and the R-squared:
         : {stata end}
 
 
+{title:Two-step syntax}
+
+{pstd}
+    If several absorbing regressions are to be estimated using the same
+    sample, computer time can be saved by analyzing {it:id} upfront
+    and then pass the collected information through to the different regressions. The
+    syntax for such a two-step procedure is
+
+        {it:G} = {cmd:_mm_areg_g(}{it:id}{cmd:,} {it:sort}{cmd:)}
+        {it:S} = {cmd:_mm_areg(}{it:G}{cmd:,} {it:y} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:quad}]{cmd:)}
+
+{pstd}
+    where {it:G} is a structure holding the information collected from {it:id}
+    (declare {it:G} as {it:transmorphic}). Multiple calls to {cmd:_mm_areg()}
+    can follow, with different {it:y}, {it:X}, or {it:w} (the number of observations
+    must stay the same).
+
+
 {title:Diagnostics}
 
 {pstd}
@@ -125,7 +147,7 @@ Coefficients corresponding to omitted (collinear) terms will be set to zero.
 {title:Author}
 
 {pstd}
-Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}

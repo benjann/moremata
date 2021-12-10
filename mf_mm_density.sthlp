@@ -1,12 +1,12 @@
 {smcl}
-{* 17aug2020}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_density()}
 {hline}
 
 {title:Title}
 
 {pstd}
-    {bf:mm_density() -- Density estimation (Stata 11 required)}
+    {bf:mm_density() -- Density estimation}
 
 
 {title:Syntax}
@@ -236,7 +236,7 @@ grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
 
 {pstd}
     {cmd:mm_density()} is a class-based system for univariate kernel density
-    estimation. Stata 11 or newer is required.
+    estimation.
 
 
 {title:Examples}

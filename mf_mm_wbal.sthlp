@@ -1,12 +1,12 @@
 {smcl}
-{* 25jul2021}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_wbal()}
 {hline}
 
 {title:Title}
 
 {pstd}
-    {bf:mm_wbal() -- Generate balancing weights using entropy balancing (Stata 11 required)}
+    {bf:mm_wbal() -- Generate balancing weights using entropy balancing}
 
 
 {title:Syntax}
@@ -53,9 +53,6 @@
     as a wrapper for {helpb mf_mm_ebalance:mm_ebalance()}. See the help file
     of {helpb mf_mm_ebalance:mm_ebalance()} for technical details and 
     references.
-
-{pstd}
-    {cmd:mm_wbal()} requires Stata 11 or newer.
 
 
 {title:Examples}

@@ -1,5 +1,5 @@
 {smcl}
-{* 27jul2021}{...}
+{* 10dec2021}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -68,7 +68,7 @@
 
 {col 5}{bf:{help mf_mm_density:mm_density()}}{...}
 {col 22}{cmd:mm_density()}{...}
-{col 41}compute density (Stata 11 required)
+{col 41}compute density
 
 {col 5}{bf:{help mf_mm_ddens:mm_ddens()}}{...}
 {col 22}{cmd:mm_ddens()}{...}
@@ -168,15 +168,15 @@
 
 {col 5}{bf:{help mf_mm_ebalance:mm_ebalance()}}{...}
 {col 22}{cmd:mm_ebalance()}{...}
-{col 41}entropy balancing (Stata 11 required)
+{col 41}entropy balancing
 
 {col 5}{bf:{help mf_mm_wbal:mm_wbal()}}{...}
 {col 22}{cmd:mm_wbal()}{...}
-{col 41}wrapper for {cmd:mm_ebalance()} (Stata 11 required)
+{col 41}wrapper for {cmd:mm_ebalance()}
 
 {col 5}{bf:{help mf_mm_ebal:mm_ebal()}}{...}
 {col 22}{cmd:mm_ebal()}{...}
-{col 41}entropy balancing, older version (Stata 11 required)
+{col 41}entropy balancing, older version
 
 {col 5}{it:Sampling, resampling, & combinations}
 
@@ -493,10 +493,14 @@
 {p 4 4 2}
 The functions above are general-purpose add-ons to official Mata.
 
+{p 4 4 2}
+Although many functions have been written in Stata 9, the compiled version
+of {cmd:moremata} requires Stata 11 or newer for all functions.
+
 
 {title:Author}
 
-{p 4 4 2} Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+{p 4 4 2} Ben Jann, University of Bern, ben.jann@unibe.ch
 
 {p 4 4 2} The Cauchy-Lorentz distribution functions were provided by
 Christopher F Baum, Boston College.

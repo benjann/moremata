@@ -32,7 +32,7 @@ Functions:
   * `mm_ecdf2()`: cumulative distribution at unique values
   * `mm_ranks()`: compute ranks/cumulative frequencies
   * `mm_relrank()`: compute relative ranks (grade transformation)
-  * `mm_density()`: compute density (Stata 11 required)
+  * `mm_density()`: compute density
   * `mm_ddens()`: compute density by diffusion
   * `mm_freq()`: compute frequency counts
   * `mm_histogram()`: produce histogram data
@@ -63,9 +63,9 @@ Functions:
   * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
   * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
   * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
-  * `mm_ebalance()`: entropy balancing (Stata 11 required)
-  * `mm_wbal()`: wrapper for `mm_ebalance()` (Stata 11 required)
-  * `mm_ebal()`: entropy balancing, older version (Stata 11 required)
+  * `mm_ebalance()`: entropy balancing
+  * `mm_wbal()`: wrapper for `mm_ebalance()`
+  * `mm_ebal()`: entropy balancing, older version
   * `mm_sample()`: draw random sample
   * `mm_srswr()`: SRS with replacement
   * `mm_srswor()`: SRS without replacement
@@ -165,6 +165,15 @@ Functions:
 ---
 
 Main changes:
+
+    10dec2021
+    - functions written in Stata 9 or Stata 10 are now compiled in Stata 11; this
+      is because I no longer have access to running versions of Stata 9 and Stata
+      10; to make functions available in Stata 9 or Stata 10 users will have to
+      compile the Mata libraries manually
+    - some revisions to help of mm_quantile()
+    - mm_areg() has been revised to make it faster and more flexible; mm_aqreg()
+      updated to take account of the changes in mm_areg()
 
     06sep2021
     - mm_areg()/mm_aqreg() retured missing fixed effects for groups for which 

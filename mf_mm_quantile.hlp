@@ -1,5 +1,5 @@
 {smcl}
-{* 04jul2021}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -78,47 +78,51 @@ columns is required to be the same and quantiles are
 computed column by column.
 
 {pstd}
-Argument {it:w} specifies weights associated
-with the observations (rows) in {it:X}. Omit {it:w}, or specify {it:w} as 1 to
-obtain unweighted results. Note that missing values or negative values in
-{it:w} are not allowed. 
+Argument {it:w} specifies weights associated with the observations (rows) in
+{it:X}. Omit {it:w}, or specify {it:w} as 1 to obtain unweighted results. Note
+that missing values or negative values in {it:w} are not allowed.
 
 {pstd}
 Argument {it:def} selects the quantile definition to be used. Let Q(p) denote 
 the p-quantile of X. N is the sample size (number of observations), X_(j) 
 is the j-th observation from sorted X, w_j is the weight associated with 
-observation j (equal to 1 if weights are omitted), W_(j) is running sum of 
-weights across the sorted data up to and including observation j, and W
-is the total sum of weights. The quantile definitions then are as follows:
+observation j (equal to 1 if weights are omitted), and W is the total sum of 
+weights. The quantile definitions then are as follows:
 
 {phang2}
-    {it:def}=0: The "high" quantile defined as Q(p) = X_(j) with j selected such
-    that W_(j-1) <= p*W < W_(j).
+    {it:def}=0: The "high" quantile defined as Q(p) = X_(j) with j selected
+    such that W_(j-1) <= p*W < W_(j), where W_(j) is running sum of weights
+    across the sorted data up to and including observation j (sorting of ties
+    does not matter).
 
 {phang2}
-    {it:def}=1: Inverse of the empirical cumulative distribution function (ECDF), or
-    "low" quantile, defined as Q(p) = X_(j) with j selected such
+    {it:def}=1: Inverse of the empirical cumulative distribution function
+    (ECDF), or "low" quantile, defined as Q(p) = X_(j) with j selected such
     that W_(j-1) < p*W <= W_(j).
 
 {phang2}
-    {it:def}=2: Like definition 1 but using averages where the ECDF is flat. Again,
-    select j set such that W_(j-1) < p*W <= W_(j). Then Q(p) = X_(j) if 
+    {it:def}=2: Like definition 1 but using averages where the ECDF is flat.
+    Again, select j set such that W_(j-1) < p*W <= W_(j). Then Q(p) = X_(j) if
     W_(j-1) < p*W < W_(j) and Q(p) = (X_(j) + X_(j+1))/2 if p*W = W_(j).
 
 {phang2}
-    {it:def}=3: Nearest order statistic. Again, select j set such that
-    W_(j-1) < p*W <= W_(j). Then Q(p) = X_(j-1) if p*W is closer
-    to W_(j-1) and Q(p) = X_(j) if p*W is closer to W_(j). If p*W lies exactly
-    in the middle between W_(j-1) and W_(j), then
-    Q(p) = X_(j) if j is even and Q(p) = X_(j-1) if j is odd.
+    {it:def}=3: Nearest order statistic. Again, select j set such that W_(j-1)
+    < p*W <= W_(j). Then Q(p) = X_(j-1) if p*W is closer to W_(j-1) and Q(p) =
+    X_(j) if p*W is closer to W_(j). If p*W lies exactly in the middle between
+    W_(j-1) and W_(j), then Q(p) = X_(j) if j is even and Q(p) = X_(j-1) if j
+    is odd. For definition 3, the sorting of ties in X matters if {it:fw}=0 and
+    the weights are not constant; to obtain stable results, {cmd:mm_quantile()}
+    sorts the data in ascending order of the weights within ties of X. If
+    weights are constant or if {it:fw}!=0, the sort order of ties does not
+    matter.
 
 {phang2}
-    {it:def}=4: Linear interpolation of the EDCF. Let p_j = W_(j)/W
-    be the value of the ECDF at observations X_j. In
-    the unweighted case, Q(p) = X_(l) + (h-l)*(X_(l+1) - X_l) where l = foor(h)
-    with h = p*n and n = W. In the weighted case, Q(p) is computed by 
-    integration of X between p0 = (h-1)/n and p1 = h/n, where n = W if 
-    {it:fw}!=0 and n = W^2 / sum(w_j^2) else.
+    {it:def}=4: Linear interpolation of the EDCF. Let h = p*n where n is the
+    "effective" sample size defined as n = W^2 / sum(w_j^2) (or as n = W if
+    {it:fw}!=0). Q(p) is then computed by integration of the empirical
+    distribution of X between p0 = (h-1)/n and p1 = h/n. In the unweighted case
+    (or if all weights are equal), this boils down to Q(p) = X_(l) +
+    (h-l)*(X_(l+1) - X_l) with n = N and l = foor(h).
 
 {phang2}
     {it:def}=5: Like {it:def}=4, but with h = p*n + 0.5.
@@ -136,29 +140,31 @@ is the total sum of weights. The quantile definitions then are as follows:
     {it:def}=9: Like {it:def}=4, but with h = p*(n + 1/4) + 3/8.
 
 {phang2}
-    {it:def}=10: Harrell-Davis quantile estimator based on integration of the Beta
-    function with shape parameters p*(n+1) and (1-p)(n+1).
-
-{pmore}
-    If weights are all equal to 1, definitions 1-9 are equivalent to the 
-    quantile definitions provided by Hyndman and Fan (1996) and definition 
-    10 is as proposed by Harrell and Davis (1982). Weighted variants of 
-    quantile definitions 4-10 are implemented as suggested by Akinshin (2020). Note that
-    quantile functions based on definitions 0 to 3 are discontinuous; quantile
-    functions based on definitions 4 to 10 are continuous. Based on an analysis
-    of various properties of the different definitions, Hyndman and Fan (1996)
-    suggest definition 8 as the best choice. However, note that definition 5 is
-    the only definition that satisfies all 6 properties considered by
-    Hyndman and Fan (1996). Moreover, the Harrell-Davis estimator (definition 10), 
-    which has not been considered in the analysis by Hyndman and Fan (1996), tends to have better
-    small-sample properties than the other estimators.
+    {it:def}=10: Harrell-Davis quantile estimator based on integration of the
+    Beta function with shape parameters p*(n+1) and (1-p)(n+1).
 
 {pmore}
     Definition 2 is the default definition used by {cmd:mm_quantile()},
     {cmd:mm_iqrange()}, and {cmd:mm_median()}. Definition 2 is also the
     definition that is used by Stata commands {helpb summarize} and 
-    {helpb _pctile}, whereas Stata command {helpb centile} (as well as {helpb _pctile}
-    with option {cmd:altdef}) uses definition 6.
+    {helpb _pctile}, whereas Stata command {helpb centile} (as well as 
+    {helpb _pctile} with option {cmd:altdef}) uses definition 6. Note that
+    quantile functions based on definitions 0 to 3 are discontinuous; quantile
+    functions based on definitions 4 to 10 are continuous. Based on an analysis
+    of various properties of the different definitions, Hyndman and Fan (1996)
+    suggest definition 8 as the best choice. However, note that definition 5 is
+    the only definition that satisfies all 6 properties considered by Hyndman
+    and Fan (1996). Moreover, the Harrell-Davis estimator (definition 10),
+    which has not been considered in the analysis by Hyndman and Fan (1996),
+    may have better small-sample properties than the other estimators.
+
+{pmore}
+    If weights are all equal to 1, definitions 1-9 are equivalent to the
+    quantile definitions provided by Hyndman and Fan (1996) and definition 10
+    is as proposed by Harrell and Davis (1982). The extension to incorporate
+    weights is straightforward for quantile definitions 0-2, but somewhat
+    arbitrary for quantile definition 3. For quantile definitions 4-10,
+    the extension to weighted data is based on the approach Akinshin (2020).
 
 {pstd}
 Argument {it:fw}!=0 requests that the weights are to be treated as frequency
@@ -167,26 +173,20 @@ the distinction between frequency weights and other types of weights is
 irrelevant). If {it:fw}!=0 is specified, the quantiles are computed in a way
 such that results from the weighted data are identical to the results you would
 obtain from expanded data (i.e., from data in which the observations are
-duplicated {it:w} times and the weights are set to 1). Naturally, such an analogy only
-makes sense if {it:w} is integer, although non-integer weights are allowed. For definitions 3,
-the approach works by introducing imaginary steps in the CDF at all integer values of the
-running sum of {it:w} and then applying the above formula to the union of
-these imaginary points and the observed, possibly non-integer points. 
+duplicated {it:w} times and the weights are set to 1; naturally, such an
+analogy only makes sense if {it:w} is integer, although non-integer weights are
+allowed). For definitions 4 to 10, argument {it:fw} also determines how the
+"effective" sample size that determines the width of the integration window is
+defined. If {it:fw}!=0, the sample size is set to the sum of weights (n = W);
+if {it:fw} is omitted or if {it:fw}==0, the effective sample size is set to n =
+W^2 / sum(w_j^2) (Kish's formula). If you want to use another effective sample
+size, rescale the weights such that their sum is equal to the desired sample
+size and then specify {it:fw}!=0 when calling {cmd:mm_quantile()}.
 
 {pstd}
-For definitions 4 to 10, argument {it:fw} determines how the "effective" sample
-size that sets the width of the integration window is defined. If {it:fw}!=0, 
-the sample size is set to the sum of weights (n = W); if {it:fw}
-is omitted or if {it:fw}==0, the effective sample size is set to 
-n = W^2 / sum(w_j^2) (Kish's formula; this is in contrast to Akinshin 2020 who
-uses n = W / max(w_j)). If you want to use another effective sample size, rescale
-the weights such that their sum is equal to the desired sample size and then 
-specify {it:fw}!=0 when calling {cmd:mm_quantile()}.
-
-{pstd}
-{cmd:mm_median()} and {cmd:mm_iqrange()} are wrappers
-for {cmd:mm_quantile()} that return the median (the 0.5-quantile, using quantile definition 2)
-and the inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
+{cmd:mm_median()} and {cmd:mm_iqrange()} are wrappers for {cmd:mm_quantile()}
+that return the median (the 0.5-quantile, using quantile definition 2) and the
+inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
 
 {pstd}
 {cmd:_mm_quantile()}, {cmd:_mm_median()}, and {cmd:_mm_iqrange()} are

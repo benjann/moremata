@@ -1,5 +1,5 @@
 {smcl}
-{* 07jun2021}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_mloc()}
 {hline}
 
@@ -132,9 +132,6 @@ reweighting, based on the biweight objective function.
 {pstd}
 For methodological background and details on algorithms see Maronna et al. (2006),
 in particular chapter 2.
-
-{pstd}
-Stata 11 or newer is required.
 
 
 {title:Examples}

@@ -1,5 +1,5 @@
 {smcl}
-{* 10jul2020}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_hl()}
 {hline}
 
@@ -71,9 +71,6 @@ algorithm proposed by Johnson and Mizoguchi (1978) (also see Croux and
 Rousseeuw 1992, Brys et al. 2004). The only purpose of the {it:naive} argument
 is to provide a way to confirm that the results from the fast algorithm are
 correct. The naive algorithm will only be feasible in small datasets.
-
-{pstd}
-Stata 11 or newer is required.
 
 
 {title:Examples}

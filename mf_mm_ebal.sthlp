@@ -1,12 +1,12 @@
 {smcl}
-{* 27jul2021}{...}
+{* 10dec2021}{...}
 {cmd:help mata mm_ebal()}
 {hline}
 
 {title:Title}
 
 {pstd}
-    {bf:mm_ebal() -- Entropy balancing (Stata 11 required)}
+    {bf:mm_ebal() -- Entropy balancing}
 
 
 {title:Syntax}
@@ -234,9 +234,6 @@
     line of code is available as {helpb mf_mm_wbal:mm_wbal()}. A Stata command
     based on {helpb mf_mm_ebalance:mm_ebalance()} is available as 
     {helpb ebalfit} (Jann 2021).
-
-{pstd}
-    {cmd:mm_ebal()} requires Stata 11 or newer.
 
 {pstd}
     Remark on how {cmd:mm_ebal()} handles collinearity: (1) Terms that are

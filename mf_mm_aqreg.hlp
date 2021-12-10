@@ -1,5 +1,5 @@
 {smcl}
-{* 11may2021}{...}
+{* 15sep2021}{...}
 {cmd:help mata mm_aqreg()}
 {hline}
 
@@ -34,7 +34,7 @@ Setup
 
 {p 12 24 2}
 {it:S} =
-{cmd:mm_aqreg(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:tau}{cmd:,} {it:sort}{cmd:,} {it:quad}{cmd:)}
+{cmd:mm_aqreg(}{it:y}{cmd:,} {it:id} [{cmd:,} {it:X}{cmd:,} {it:w}{cmd:,} {it:tau}{cmd:,} {it:sort}{cmd:,} {it:quad}]{cmd:)}
 
 {pmore}
 Retrieve results
@@ -161,7 +161,7 @@ Coefficients corresponding to omitted (collinear) terms will be set to zero.
 {title:Author}
 
 {pstd}
-Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}
