@@ -1,4 +1,4 @@
-*! version 2.0.4  05jul2021  Ben Jann
+*! version 2.0.5  19dec2021  Ben Jann
 version 9.2
 mata:
 
@@ -12,8 +12,8 @@ real matrix mm_quantile(real matrix X, | real colvector w,
     if (args()<3) P = (0, .25, .50, .75, 1)'
     if (args()<4) d = 2
     if (args()<5) fw = 0
-    if (!anyof(0::10, d)) {
-        display("{err}{it:def} must be an integer in [0,10]")
+    if (!anyof(0::11, d)) {
+        display("{err}{it:def} must be an integer in [0,11]")
         _error(3300)
     }
     if (missing(X) | missing(w)) _error(3351)
@@ -196,6 +196,7 @@ real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
     if ((rows(p)*n)==0) return(J(rows(p), 1, .)) // no obs or rows(p)==0
     if (n==1)           return(J(rows(p), 1, X)) // only one obs
     if (d==10) return(_mm_quantile_d_hd(X, p))   // Harrell-Davis
+    if (d==11) return(_mm_quantile_11(X, 1, p))  // mid-quantile by Ma et al.
     if      (d==0) pn = p * n
     else if (d==1) pn = p * n
     else if (d==2) pn = p * n
@@ -208,7 +209,7 @@ real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
     else if (d==8) pn = 1/3 :+ p * (n + 1/3)   //      a = b = 1/3
     else if (d==9) pn = 3/8 :+ p * (n + 1/4)   //      a = b = 3/8
     else {
-        display("{err}{it:def} must be an integer in [0,10]")
+        display("{err}{it:def} must be an integer in [0,11]")
         _error(3300)
     }
     if (d==0) return(X[mm_clip(floor(pn):+1, 1, n)])
@@ -241,6 +242,8 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
     if (n==0)       return(J(rows(p), 1, .))
     if (n==1)       return(J(rows(p), 1, X))
     if (rows(w)==0) return(J(rows(p), 1, .))
+    // mid-quantile by Ma et al. (2011)
+    if (d==11) return(__mm_quantile_11(X, w, p))
     // definition 3 with fw==0
     if (fw==0 & d==3) {
         if (rows(w)==1) W = (1::n) * w
@@ -267,7 +270,7 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
     if (d==8)  return(_mm_quantile_w_d(W[,1], W[,2], p, d))
     if (d==9)  return(_mm_quantile_w_d(W[,1], W[,2], p, d))
     if (d==10) return(_mm_quantile_w_hd(W[,1], W[,2], p))
-    display("{err}{it:def} must be an integer in [0,10]")
+    display("{err}{it:def} must be an integer in [0,11]")
     _error(3300)
 }
 
@@ -527,6 +530,61 @@ real scalar __mm_quantile_hd(real colvector X, real colvector W, real scalar p,
     }
     w = mm_diff(ibeta(a, b, W))
     return(quadsum(w :* X)) // (faster than quadcross(w, X))
+}
+
+
+real colvector _mm_quantile_11(real colvector X, real colvector w,
+    real colvector p)
+{   // mid-quantile by Ma et al. (2011)
+    // X assumed sorted and non-missing
+    // w assumed non-missing and *strictly* positive
+    // p not assumed sorted
+    real colvector o
+    real colvector q
+    
+    o = order(p,1)
+    q = o   // just to dimension q
+    q[o] = __mm_quantile_11(X, w, p[o])
+    return(q)
+}
+
+real colvector __mm_quantile_11(real colvector X, real colvector w,
+    real colvector p)
+{   // mid-quantile by Ma et al. (2011)
+    // X assumed sorted and non-missing
+    // w assumed non-missing and *strictly* positive
+    // p assumed sorted
+    real scalar    i, pi, j, xj, pj
+    real colvector q
+    real matrix    m
+    
+    i = rows(p)
+    q = J(i,1,.)
+    m = _mm_ecdf2(X, w, 1) // mid cdf at unique values: (x, mid cdf)
+    j = rows(m)
+    // handle p > max(cdf)
+    xj = m[j,1]; pj = m[j,2]
+    for (; i; i--) {
+        if (pj>=p[i]) break
+        q[i] = xj
+    }
+    // handle rest
+    for (; i; i--) {
+        pi = p[i]
+        while (j) {
+            pj = m[j,2]
+            if (pj<pi) break
+            j--
+        }
+        if (!j) { // reached bottom (p <= min(cdf))
+            q[|1\i|] = J(i, 1, m[1,1])
+            break
+        }
+        // note: j must be lower than rows(m) at this point
+        xj = m[j,1]
+        q[i] = xj + (pi-pj)/(m[j+1,2]-pj) * (m[j+1,1] - xj)
+    }
+    return(q)
 }
 
 end

@@ -166,6 +166,9 @@ Functions:
 
 Main changes:
 
+    19dec2021
+    - mid-quantile by Ma et al. (2011) added to mm_quantile() (definition 11)
+
     10dec2021
     - functions written in Stata 9 or Stata 10 are now compiled in Stata 11; this
       is because I no longer have access to running versions of Stata 9 and Stata

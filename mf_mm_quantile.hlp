@@ -1,5 +1,5 @@
 {smcl}
-{* 10dec2021}{...}
+{* 19dec2021}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -46,7 +46,7 @@ where
 
 {p 14 18 2}{it:P}:  {it:real matrix} containing evaluation probabilities; default is {it:P} = (0, .25, .5, .75, 1)'
 
-{p 12 18 2}{it:def}:  {it:real scalar} selecting quantile definition; default is {it:def} = 2
+{p 12 18 2}{it:def}:  {it:real scalar} selecting quantile definition; {it:def} in {c -(}0,...,11{c )-}; default is {it:def} = 2
 
 {p 13 18 2}{it:fw}:  {it:real scalar} causing weights to be interpreted as frequency weights
 
@@ -64,8 +64,8 @@ probabilities provided by {it:P}. For example,
 {cmd:mm_quantile(x, 1, 0.25)}
 
 {pstd}
-returns the first quartile (i.e. the 0.25-quantile) of {cmd:x}. Note that
-missing values in {it:X} are not allowed.
+returns the first quartile (i.e. the 0.25-quantile) of {cmd:x}. Missing values
+in {it:X} are not allowed.
 
 {pstd}
 {cmd:mm_quantile()} works column by column. If
@@ -79,14 +79,14 @@ computed column by column.
 
 {pstd}
 Argument {it:w} specifies weights associated with the observations (rows) in
-{it:X}. Omit {it:w}, or specify {it:w} as 1 to obtain unweighted results. Note
-that missing values or negative values in {it:w} are not allowed.
+{it:X}. Omit {it:w}, or specify {it:w} as 1 to obtain unweighted results. Missing
+values or negative values in {it:w} are not allowed.
 
 {pstd}
-Argument {it:def} selects the quantile definition to be used. Let Q(p) denote 
-the p-quantile of X. N is the sample size (number of observations), X_(j) 
-is the j-th observation from sorted X, w_j is the weight associated with 
-observation j (equal to 1 if weights are omitted), and W is the total sum of 
+Argument {it:def} selects the quantile definition to be used. Let Q(p) denote
+the p-quantile of X. N is the sample size (number of observations), X_(j)
+is the j-th observation from sorted X, w_j is the weight associated with
+observation j (equal to 1 if weights are omitted), and W is the total sum of
 weights. The quantile definitions then are as follows:
 
 {phang2}
@@ -143,39 +143,49 @@ weights. The quantile definitions then are as follows:
     {it:def}=10: Harrell-Davis quantile estimator based on integration of the
     Beta function with shape parameters p*(n+1) and (1-p)(n+1).
 
+{phang2}
+    {it:def}=11: Mid-quantile by Ma, Genton, and Parzen (2011). The quantile
+    is obtained by linear interpolation of the empirical mid-distribution
+    function at unique values of X. The mid-distribution
+    function is defined as F_mid(x) = Pr(X<=x) - 0.5*Pr(X=x).
+
 {pmore}
     Definition 2 is the default definition used by {cmd:mm_quantile()},
     {cmd:mm_iqrange()}, and {cmd:mm_median()}. Definition 2 is also the
-    definition that is used by Stata commands {helpb summarize} and 
-    {helpb _pctile}, whereas Stata command {helpb centile} (as well as 
+    definition that is used by Stata commands {helpb summarize} and
+    {helpb _pctile}, whereas Stata command {helpb centile} (as well as
     {helpb _pctile} with option {cmd:altdef}) uses definition 6. Note that
-    quantile functions based on definitions 0 to 3 are discontinuous; quantile
-    functions based on definitions 4 to 10 are continuous. Based on an analysis
-    of various properties of the different definitions, Hyndman and Fan (1996)
-    suggest definition 8 as the best choice. However, note that definition 5 is
-    the only definition that satisfies all 6 properties considered by Hyndman
-    and Fan (1996). Moreover, the Harrell-Davis estimator (definition 10),
-    which has not been considered in the analysis by Hyndman and Fan (1996),
-    may have better small-sample properties than the other estimators.
+    quantile functions based on definitions 0-3 are discontinuous; quantile
+    functions based on definitions 4-11 are continuous (but note that quantile
+    functions according to definitions 4-9 may have flat regions). Based on an
+    analysis of various properties of the different definitions, Hyndman and
+    Fan (1996) suggest definition 8 as the best choice. However, note that
+    definition 5 is the only definition that satisfies all 6 properties
+    considered by Hyndman and Fan (1996). Moreover, the Harrell-Davis estimator
+    (definition 10), which has not been considered in the analysis by Hyndman
+    and Fan (1996), may have better small-sample properties than the other
+    estimators. Furthermore, Ma et al. (2011) suggest definition 11 for
+    data with heaping or discrete data.
 
 {pmore}
     If weights are all equal to 1, definitions 1-9 are equivalent to the
-    quantile definitions provided by Hyndman and Fan (1996) and definition 10
-    is as proposed by Harrell and Davis (1982). The extension to incorporate
-    weights is straightforward for quantile definitions 0-2, but somewhat
-    arbitrary for quantile definition 3. For quantile definitions 4-10,
-    the extension to weighted data is based on the approach Akinshin (2020).
+    quantile definitions provided by Hyndman and Fan (1996), definition 10 is
+    as proposed by Harrell and Davis (1982), and definition 11 is as proposed
+    by Ma et al. (2011). The extension to incorporate weights is
+    straightforward for quantile definitions 0-2 and 11, but somewhat arbitrary
+    for quantile definition 3. For quantile definitions 4-10, the extension to
+    weighted data is based on the approach by Akinshin (2020).
 
 {pstd}
 Argument {it:fw}!=0 requests that the weights are to be treated as frequency
-weights (this is only relevant for definitions 3 to 10; for definitions 0 to 2,
-the distinction between frequency weights and other types of weights is
+weights (this is only relevant for definitions 3-10; for definitions 0-2 and
+11, the distinction between frequency weights and other types of weights is
 irrelevant). If {it:fw}!=0 is specified, the quantiles are computed in a way
 such that results from the weighted data are identical to the results you would
 obtain from expanded data (i.e., from data in which the observations are
 duplicated {it:w} times and the weights are set to 1; naturally, such an
 analogy only makes sense if {it:w} is integer, although non-integer weights are
-allowed). For definitions 4 to 10, argument {it:fw} also determines how the
+allowed). For definitions 4-10, argument {it:fw} also determines how the
 "effective" sample size that determines the width of the integration window is
 defined. If {it:fw}!=0, the sample size is set to the sum of weights (n = W);
 if {it:fw} is omitted or if {it:fw}==0, the effective sample size is set to n =
@@ -193,7 +203,7 @@ inter-quartile range (IQR = 0.75-quantile - 0.25-quantile).
 like {cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()}, but assume
 that the data is sorted (in ascending order) and non-missing and that the
 weights are non-negative and non-missing. The functions are fast, especially
-in the unweighted case for definitions 0-9 (once the data is sorted, 
+in the unweighted case for definitions 0-9 (once the data is sorted,
 unweighted quantiles of definition 0-9 can be taken in practically no time;
 Harrell-Davis quantiles are more expensive to compute). However, the functions
 will return invalid results if applied to unsorted data (or if any of the other
@@ -276,7 +286,7 @@ resulting in the observed minimum or maximum, respectively.
 {pstd}
 {cmd:mm_quantile()}, {cmd:mm_median()}, and {cmd:mm_iqrange()} return error if
 {it:X} contains missing values or if {it:w} contains negative values or missing
-values (zero weights are allowed, but will be omitted from the 
+values (zero weights are allowed, but will be omitted from the
 computations). Missing is returned if {it:X} is void. Void is returned if {it:P} is void.
 
 {pstd}
@@ -297,7 +307,7 @@ are violated. Missing is returned if {it:x} is void. Void is returned if {it:p} 
 {title:References}
 
 {phang}
-    Akinshin, A. (2020). Weighted quantile 
+    Akinshin, A. (2020). Weighted quantile
     estimators. {browse "http://aakinshin.net/posts/weighted-quantiles/"}.
     {p_end}
 {phang}
@@ -308,12 +318,17 @@ are violated. Missing is returned if {it:x} is void. Void is returned if {it:p} 
     Hyndman, R.J., Y. Fan (1996). Sample Quantiles in Statistical
     Packages. The American Statistician 50:361-365.
     {p_end}
+{phang}
+    Ma, Y., M.G. Genton, E. Parzen (2011). Asymptotic properties of sample
+    quantiles of discrete distributions. Annals of the Institute of Statistical
+    Mathematics 63:227–243.
+    {p_end}
 
 
 {title:Author}
 
 {pstd}
-Ben Jann, University of Bern, ben.jann@soz.unibe.ch
+Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}
