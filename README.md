@@ -166,6 +166,12 @@ Functions:
 
 Main changes:
 
+    30dec2021
+    - mm_ranks() with midpoint-adjustment and argument -ties- equal to 1, 2, or 3
+      returned incorrect results at points where the ECDF took a zero-step (a
+      zero-step occurs if the sum of weights within a set of ties is zero); this is
+      fixed
+
     19dec2021
     - mid-quantile by Ma et al. (2011) added to mm_quantile() (definition 11)
 
