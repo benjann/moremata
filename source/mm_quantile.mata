@@ -1,9 +1,9 @@
-*! version 2.0.5  19dec2021  Ben Jann
+*! version 2.0.6  14jan2022  Ben Jann
 version 9.2
 mata:
 
 real matrix mm_quantile(real matrix X, | real colvector w,
-    real matrix P, real scalar d, real scalar fw)
+    real matrix P, real scalar d, real scalar fw, real scalar wd)
 {
     real colvector o
     pointer (real matrix) scalar XX, ww
@@ -45,13 +45,13 @@ real matrix mm_quantile(real matrix X, | real colvector w,
     }
     // compute quantiles
     if (cols(X)==1 & cols(P)!=1 & rows(P)==1)
-        return(_mm_quantile_sort(*XX, *ww, P', d, fw)')
+        return(_mm_quantile_sort(*XX, *ww, P', d, fw, wd)')
     if (cols(X)!=1 & cols(P)!=1 & cols(X)!=cols(P)) _error(3200)
-    return(_mm_quantile_sort(*XX, *ww, P, d, fw))
+    return(_mm_quantile_sort(*XX, *ww, P, d, fw, wd))
 }
 
 real matrix _mm_quantile_sort(real matrix X, real colvector w,
-    real matrix P, real scalar d, real scalar fw)
+    real matrix P, real scalar d, real scalar fw, real scalar wd)
 {
     real scalar    i, c, c1, c2
     real colvector p, sX, sw, pP, sP
@@ -63,21 +63,21 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
     if (c1==c2) {
         if (w==1) {
             for (i=c; i; i--) {
-                Q[,i] = _mm_quantile_d(sort(X[,i],1), editmissing(P[,i],1), d)
+                Q[,i] = _mm_quantile_d(sort(X[,i],1), editmissing(P[,i],1), d, wd)
             }
             return(Q)
         }
         if (rows(w)==1) {
             for (i=c; i; i--) {
                 pP = order(P[,i],1); sP = P[pP,i]
-                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw)
+                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw, wd)
             }
             return(Q)
         }
         for (i=c; i; i--) {
             p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]
             pP = order(P[,i],1); sP = P[pP,i]
-            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw, wd)
         }
         return(Q)
     }
@@ -85,7 +85,7 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
         if (w==1) {
             sX = sort(X,1)
             for (i=c; i; i--) {
-                Q[,i] = _mm_quantile_d(sX, editmissing(P[,i],1), d)
+                Q[,i] = _mm_quantile_d(sX, editmissing(P[,i],1), d, wd)
             }
             return(Q)
         }
@@ -93,14 +93,14 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
             sX = sort(X,1)
             for (i=c; i; i--) {
                 pP = order(P[,i],1); sP = P[pP,i]
-                Q[pP,i] = _mm_quantile_w(sX, w, sP, d, fw)
+                Q[pP,i] = _mm_quantile_w(sX, w, sP, d, fw, wd)
             }
             return(Q)
         }
         p = order((X,w),(1,2)); sX = X[p]; sw = w[p]
         for (i=c; i; i--) {
             pP = order(P[,i],1); sP = P[pP,i]
-            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw, wd)
         }
         return(Q)
     }
@@ -108,21 +108,21 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
         if (w==1) {
             sP = editmissing(P,1)
             for (i=c; i; i--) {
-                Q[,i] = _mm_quantile_d(sort(X[,i],1), sP, d)
+                Q[,i] = _mm_quantile_d(sort(X[,i],1), sP, d, wd)
             }
             return(Q)
         }
         if (rows(w)==1) {
             pP = order(P,1); sP = P[pP]
             for (i=c; i; i--) {
-                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw)
+                Q[pP,i] = _mm_quantile_w(sort(X[,i],1), w, sP, d, fw, wd)
             }
             return(Q)
         }
         pP = order(P,1); sP = P[pP]
         for (i=c; i; i--) {
             p = order((X[,i],w),(1,2)); sX = X[p,i]; sw = w[p]
-            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw)
+            Q[pP,i] = _mm_quantile_w(sX, sw, sP, d, fw, wd)
         }
         return(Q)
     }
@@ -130,7 +130,7 @@ real matrix _mm_quantile_sort(real matrix X, real colvector w,
 }
 
 real matrix _mm_quantile(real colvector X, | real colvector w, 
-    real matrix P, real scalar d, real scalar fw)
+    real matrix P, real scalar d, real scalar fw, real scalar wd)
 {   // X assumed sorted and non-missing
     // w assumed non-negative and non-missing
     real scalar    i
@@ -169,34 +169,37 @@ real matrix _mm_quantile(real colvector X, | real colvector w,
         if (rows(P)==1) {
             o = order(P',1)
             Q = o // just to dimension q
-            Q[o] = _mm_quantile_w(*XX, *ww, P[o]', d, fw)
+            Q[o] = _mm_quantile_w(*XX, *ww, P[o]', d, fw, wd)
             return(Q')
         }
         Q = J(rows(P), cols(P), .)
         for (i=cols(P); i; i--) {
             o = order(P[,i],1)
-            Q[o,i] = _mm_quantile_w(*XX, *ww, P[o,i], d, fw)
+            Q[o,i] = _mm_quantile_w(*XX, *ww, P[o,i], d, fw, wd)
         }
         return(Q)
     }
     // compute unweighted quantiles
-    if (rows(P)==1) return(_mm_quantile_d(*XX, editmissing(P',1), d)')
+    if (rows(P)==1) return(_mm_quantile_d(*XX, editmissing(P',1), d, wd)')
     Q = J(rows(P), cols(P), .)
-    for (i=cols(P); i; i--) Q[,i] = _mm_quantile_d(*XX, editmissing(P[,i],1), d)
+    for (i=cols(P); i; i--) {
+        Q[,i] = _mm_quantile_d(*XX, editmissing(P[,i],1), d, wd)
+    }
     return(Q)
 }
 
-real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
+real colvector _mm_quantile_d(real colvector X, real colvector p, 
+    real scalar d, real scalar wd)
 {   // X assumed sorted and non-missing
     // p assumed nonmissing
     real scalar     n, eps
     real colvector  pn, j, j1, h
 
     n = rows(X)
-    if ((rows(p)*n)==0) return(J(rows(p), 1, .)) // no obs or rows(p)==0
-    if (n==1)           return(J(rows(p), 1, X)) // only one obs
-    if (d==10) return(_mm_quantile_d_hd(X, p))   // Harrell-Davis
-    if (d==11) return(_mm_quantile_11(X, 1, p))  // mid-quantile by Ma et al.
+    if ((rows(p)*n)==0) return(J(rows(p), 1, .))   // no obs or rows(p)==0
+    if (n==1)           return(J(rows(p), 1, X))   // only one obs
+    if (d==10) return(_mm_quantile_d_hd(X, p, wd)) // Harrell-Davis
+    if (d==11) return(_mm_quantile_11(X, 1, p))    // mid-quantile by Ma et al.
     if      (d==0) pn = p * n
     else if (d==1) pn = p * n
     else if (d==2) pn = p * n
@@ -231,7 +234,7 @@ real colvector _mm_quantile_d(real colvector X, real colvector p, real scalar d)
 }
 
 real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector p, 
-    real scalar d, real scalar fw)
+    real scalar d, real scalar fw, real scalar wd)
 {   // X assumed sorted and non-missing
     // w assumed non-missing and *strictly* positive
     // p assumed sorted
@@ -269,7 +272,7 @@ real colvector _mm_quantile_w(real colvector X, real colvector w, real colvector
     if (d==7)  return(_mm_quantile_w_d(W[,1], W[,2], p, d))
     if (d==8)  return(_mm_quantile_w_d(W[,1], W[,2], p, d))
     if (d==9)  return(_mm_quantile_w_d(W[,1], W[,2], p, d))
-    if (d==10) return(_mm_quantile_w_hd(W[,1], W[,2], p))
+    if (d==10) return(_mm_quantile_w_hd(W[,1], W[,2], p, wd))
     display("{err}{it:def} must be an integer in [0,11]")
     _error(3300)
 }
@@ -487,7 +490,8 @@ real colvector _mm_quantile_w_d(real colvector x, real colvector W,
     return(q)
 }
 
-real colvector _mm_quantile_d_hd(real colvector X, real colvector p)
+real colvector _mm_quantile_d_hd(real colvector X, real colvector p,
+    real scalar wd)
 {
     real scalar    n, i
     real colvector q, W
@@ -496,12 +500,12 @@ real colvector _mm_quantile_d_hd(real colvector X, real colvector p)
     q = J(i,1,.)
     n = rows(X)
     W = 0 \ (1::n)/n
-    for (; i; i--) q[i] = __mm_quantile_hd(X, W, p[i], n)
+    for (; i; i--) q[i] = __mm_quantile_hd(X, W, p[i], n, wd)
     return(q)
 }
 
 real colvector _mm_quantile_w_hd(real colvector X, real colvector W,
-    real colvector p)  // modifies W
+    real colvector p, real scalar wd)  // modifies W
 {
     real scalar    n, i
     real colvector q
@@ -510,14 +514,14 @@ real colvector _mm_quantile_w_hd(real colvector X, real colvector W,
     q = J(i,1,.)
     n = W[rows(W)] 
     W = 0 \ W/n
-    for (; i; i--) q[i] = __mm_quantile_hd(X, W, max((0,min((1,p[i])))), n)
+    for (; i; i--) q[i] = __mm_quantile_hd(X, W, max((0,min((1,p[i])))), n, wd)
     return(q)
 }
 
 real scalar __mm_quantile_hd(real colvector X, real colvector W, real scalar p,
-    real scalar n)
+    real scalar n, real scalar wd0)
 {   // note: domain of a and b in ibeta() is 1e-10 to 1e+17; see help ibeta()
-    real scalar    a, b
+    real scalar    a, b, wd, l, r, il, ir
     real colvector w
     
     a = (n + 1) * p
@@ -528,10 +532,45 @@ real scalar __mm_quantile_hd(real colvector X, real colvector W, real scalar p,
         display("{err}sample size too large; cannot evaluate {bf:ibeta()}")
         _error(3498)
     }
+    // trimmed estimator (Akinshin 2021)
+    if (wd0<1) {
+        wd = wd0<=0 ? 1 / sqrt(n) : wd0
+        if      (a<=1 & b<=1) {; l=.   ; r=. ; } // can only happen if n=1
+        else if (a<=1 & b>1 ) {; l=0   ; r=wd; } // left border
+        else if (a>1  & b<=1) {; l=1-wd; r=1 ; } // right border
+        else {; l = __mm_quantile_hd_l(a, b, wd); r = l+wd; }
+        if (l<.) { // (else use untrimmed estimator)
+            // find lower index
+            if (l<=0) il = 1
+            else      mm_hunt(W, l, il = floor(l*rows(X)))
+            // find upper index
+            if (r>=1) ir = rows(W)
+            else      {; mm_hunt(W, r, ir = il); ir++; }
+            // compute weights
+            w = W[|il\ir|]; w[1] = l; w[rows(w)] = r
+            w = (ibeta(a, b, w) :- ibeta(a,b,l)) / mm_diff(ibeta(a, b, l\r))
+            return(quadsum(mm_diff(w) :* X[|il\ir-1|]))
+        }
+    }
+    // untrimmed estimator
     w = mm_diff(ibeta(a, b, W))
     return(quadsum(w :* X)) // (faster than quadcross(w, X))
 }
 
+real scalar __mm_quantile_hd_l(real scalar a, real scalar b, real scalar wd)
+{
+    real scalar m, lo, up, l, rc
+    
+    m = (a - 1) / (a + b - 2)
+    lo = max((0, m-wd))
+    up = min((m, 1-wd))
+    rc = mm_root(l=., &___mm_quantile_hd_l(), lo, up, 0, 1000, a, b, wd)
+    if (rc) _error(3498, "could not locate highest density interval")
+    return(l)
+}
+
+real scalar ___mm_quantile_hd_l(real scalar x, real scalar a, real scalar b,
+    real scalar wd) return(betaden(a, b, x) - betaden(a, b, x+wd))
 
 real colvector _mm_quantile_11(real colvector X, real colvector w,
     real colvector p)

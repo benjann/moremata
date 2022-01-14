@@ -1,5 +1,5 @@
 {smcl}
-{* 19dec2021}{...}
+{* 14jan2022}{...}
 {cmd:help mata mm_quantile()}
 {hline}
 
@@ -13,27 +13,27 @@
 
 {p 8 23 2}
 {it:real matrix}{bind:    }
-{cmd:mm_quantile(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:mm_quantile(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 8 23 2}
 {it:real rowvector}{bind: }
-{cmd:mm_median(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:mm_median(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 8 23 2}
 {it:real rowvector}{bind: }
-{cmd:mm_iqrange(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:mm_iqrange(}{it:X} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 8 23 2}
 {it:real colvector}{bind: }
-{cmd:_mm_quantile(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:_mm_quantile(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 8 23 2}
 {it:real scalar}{bind:    }
-{cmd:_mm_median(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:_mm_median(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 8 23 2}
 {it:real scalar}{bind:    }
-{cmd:_mm_iqrange(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}]{cmd:)}
+{cmd:_mm_iqrange(}{it:x} [{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}]{cmd:)}
 
 {p 4 8 2}
 where
@@ -49,6 +49,12 @@ where
 {p 12 18 2}{it:def}:  {it:real scalar} selecting quantile definition; {it:def} in {c -(}0,...,11{c )-}; default is {it:def} = 2
 
 {p 13 18 2}{it:fw}:  {it:real scalar} causing weights to be interpreted as frequency weights
+
+{p 13 18 2}{it:wd}:  {it:real scalar} setting width of evaluation interval for trimmed Harrell-Davis
+estimator; argument {it:wd} is only relevant with {it:def}=10; 
+{it:wd}<=0 sets the width to 1/sqrt(n), where n is the effective sample size; 
+0<{it:wd}<1 sets the width to {it:wd}; {it:wd}>=1 uses the untrimmed estimator;
+the untrimmed estimator is also used if {it:wd} is omitted or set to missing
 
 
 {title:Description}
@@ -141,7 +147,9 @@ weights. The quantile definitions then are as follows:
 
 {phang2}
     {it:def}=10: Harrell-Davis quantile estimator based on integration of the
-    Beta function with shape parameters p*(n+1) and (1-p)(n+1).
+    Beta function with shape parameters p*(n+1) and (1-p)(n+1). Specify argument
+    {it:wd} to use the trimmed Harrell-Davis estimator as suggested by 
+    Akinshin (2021).
 
 {phang2}
     {it:def}=11: Mid-quantile by Ma, Genton, and Parzen (2011). The quantile
@@ -232,48 +240,54 @@ these functions.
 
 {title:Conformability}
 
-    {cmd:mm_quantile(}{it:X}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:mm_quantile(}{it:X}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:X}:  {it:r1 x c1}
              {it:w}:  {it:r1 x} 1 or 1 {it:x} 1
              {it:P}:  {it:r2 x c2}
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  {it:r2 x c2} or {it:r2 x c1}
 
-    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:mm_median(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:X}:  {it:r x c}
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  1 {it:x c}
 
-    {cmd:mm_iqrange(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:mm_iqrange(}{it:X}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:X}:  {it:r x c}
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  1 {it:x c}
 
-    {cmd:_mm_quantile(}{it:x}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:_mm_quantile(}{it:x}{cmd:,} {it:w}{cmd:,} {it:P}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:x}:  {it:r1 x} 1
              {it:w}:  {it:r1 x} 1 or 1 {it:x} 1
              {it:p}:  {it:r2 x c2}
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  {it:r2 x c2}
 
-    {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:_mm_median(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:X}:  {it:r x} 1
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  1 {it:x} 1
 
-    {cmd:_mm_iqrange(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:)}:
+    {cmd:_mm_iqrange(}{it:x}{cmd:,} {it:w}{cmd:,} {it:def}{cmd:,} {it:fw}{cmd:,} {it:wd}{cmd:)}:
              {it:x}:  {it:r x} 1
              {it:w}:  {it:r x} 1 or 1 {it:x} 1
            {it:def}:  1 {it:x} 1
             {it:fw}:  1 {it:x} 1
+            {it:wd}:  1 {it:x} 1
         {it:result}:  1 {it:x} 1
 
 
@@ -309,6 +323,11 @@ are violated. Missing is returned if {it:x} is void. Void is returned if {it:p} 
 {phang}
     Akinshin, A. (2020). Weighted quantile
     estimators. {browse "http://aakinshin.net/posts/weighted-quantiles/"}.
+    {p_end}
+{phang}
+    Akinshin, A. (2021). Trimmed Harrell-Davis quantile estimator based on the
+    highest density interval of the given 
+    width. {browse "http://arxiv.org/abs/2111.11776":arXiv:2111.11776} [stat.ME].
     {p_end}
 {phang}
     Harrell, F.E., C.E. Davis (1982). A New Distribution-Free Quantile

@@ -166,6 +166,10 @@ Functions:
 
 Main changes:
 
+    14jan2022
+    - added optional argument -wd- to -mm_quantile()- for trimmed Harrell-Davis
+      quantiles 
+
     30dec2021
     - mm_ranks() with midpoint-adjustment and argument -ties- equal to 1, 2, or 3
       returned incorrect results at points where the ECDF took a zero-step (a
