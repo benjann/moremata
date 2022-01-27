@@ -161,10 +161,14 @@ Functions:
   * `mm_outsheet()`: write spreadsheet file
   * `mm_callf()`: pass optional args to function
   * `mm_callf_setup()`: setup for `mm_callf()`
+  * `mm_version()`: moremata version
 
 ---
 
 Main changes:
+
+    27jan2022 (2.0.0)
+    - mm_version() added
 
     14jan2022
     - added optional argument -wd- to -mm_quantile()- for trimmed Harrell-Davis

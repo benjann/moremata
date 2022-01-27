@@ -1,5 +1,5 @@
 {smcl}
-{* 10dec2021}{...}
+{* 27jan2022}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -485,6 +485,10 @@
 {col 41}pass optional args to function
 {col 22}{cmd:mm_callf_setup()}{...}
 {col 41}setup for {cmd:mm_callf()}
+
+{col 5}{bf:{help mf_mm_version:mm_version()}}{...}
+{col 22}{cmd:mm_version()}{...}
+{col 41}moremata version
 {col 5}{hline}
 
 
