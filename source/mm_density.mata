@@ -1,4 +1,4 @@
-*! version 1.1.0  24aug2020  Ben Jann
+*! version 1.1.1  19nov2022  Ben Jann
 version 11.2
 
 // class & struct
@@ -168,7 +168,7 @@ void `MAIN'::data(`RC' X, | `RC' w, `Bool' pw, `Bool' sorted)
     if (sorted==`FALSE') {
         if (missing(X) | missing(w)) _error(3351)
         if (any(w:<0)) {
-            display("{err}{it:w} must not be negative")
+            errprintf("{it:w} must not be negative\n")
             _error(3300)
         }
     }
@@ -430,13 +430,13 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
     if (rows(X)==0) return // no data
     if (lb<.) {
         if (min(X)<lb) {
-            display("{err}{it:X} contains values out of support")
+            errprintf("{it:X} contains values out of support\n")
             _error(3300)
         }
     }
     if (ub<.) {
         if (max(X)>ub) {
-            display("{err}{it:X} contains values out of support")
+            errprintf("{it:X} contains values out of support\n")
             _error(3300)
         }
     }
@@ -510,7 +510,7 @@ void `MAIN'::checksuprt(`RC' X, `RS' lb, `RS' ub)
 `RS' `MAIN'::_h()
 {
     if (h()>=.) {
-        display("{err}bandwidth could not be determined")
+        errprintf("bandwidth could not be determined\n")
         _error(3498)
     }
     return(h)
@@ -1095,25 +1095,35 @@ void `MAIN'::dexact()
     `RR' range, minmax
     
     range = J(1,2,.)
-    if (from<.)       range[1] = from
-    else if (lb()<.)  range[1] = lb()
-    if (to<.)         range[2] = to
-    else if (ub()<.)  range[2] = ub()
+    if (from<.)                 range[1] = from
+    else if (lb()<. & from<.y)  range[1] = lb()
+    if (to<.)                   range[2] = to
+    else if (ub()<. & to<.y)    range[2] = ub()
     if (missing(range)) {
-        // if h is not provided:
-        // - extend grid below min(x) and above max(x) by pad()% of data range
-        // if h is provided:
-        // - extend grid by the kernel halfwidth such that density can go to 
-        //   zero outside data range (only approximately for gaussian kernel or
-        //   in case of adaptive estimator), but limit by pad()% of data range
         minmax = minmax(X())
-        tau = (minmax[2]-minmax[1]) * pad()
-        if (h<.) {
-            tau = min((tau, h * (kernel()=="epanechnikov" ? sqrt(5) : 
+        if (range[1]>=. & from==.z) range[1] = minmax[1]
+        if (range[2]>=. & to==.z)   range[2] = minmax[2]
+        if (missing(range)) {
+            // if h is not provided:
+            // - extend grid below min(x) and above max(x) by pad()% of data range
+            // if h is provided:
+            // - extend grid by the kernel halfwidth such that density can go to 
+            //   zero outside data range (only approximately for gaussian kernel or
+            //   in case of adaptive estimator), but limit by pad()% of data range
+            tau = (minmax[2]-minmax[1]) * pad()
+            if (h<.) tau = min((tau, h * (kernel()=="epanechnikov" ? sqrt(5) : 
                 (kernel()=="cosine" ? .5 : (kernel()=="gaussian" ? 3 : 1)))))
+            minmax[1] = minmax[1] - tau
+            minmax[2] = minmax[2] + tau
+            if (range[1]>=.) {
+                if (lb()<.) minmax[1] = max((lb(),minmax[1]))
+                range[1] = minmax[1]
+            }
+            if (range[2]>=.) {
+                if (ub()<.) minmax[2] = min((ub(),minmax[2]))
+                range[2] = minmax[2]
+            }
         }
-        if (range[1]>=.)  range[1] = minmax[1] - tau
-        if (range[2]>=.)  range[2] = minmax[2] + tau
     }
     if (range[1]>range[2]) _error(3300)
     return(rangen(range[1], range[2], n))

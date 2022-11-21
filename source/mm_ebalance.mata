@@ -1,4 +1,4 @@
-*! version 1.0.7  14aug2021  Ben Jann
+*! version 1.0.8  27apr2022  Ben Jann
 
 version 11.2
 
@@ -159,6 +159,7 @@ void `MAIN'::new()
     setup.btol      = 1e-6
     setup.nowarn    = 0
     setup.adj       = .
+    b               = .z
 }
 
 void `MAIN'::clear()
@@ -166,7 +167,7 @@ void `MAIN'::clear()
     mu   = J(1,0,.)
     adj  = noadj = J(0,0,.)
     tau  = wsum = .
-    b    = J(0,1,.)
+    b    = .z
     a    = .
     xb   = wbal = J(0,1,.)
     madj = J(1,0,.)
@@ -567,38 +568,38 @@ void `MAIN'::_setadj() // assumes that data has been set
 
 `RC' `MAIN'::b()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(b)
 }
 
 `RS' `MAIN'::a()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(a)
 }
 
 `RC' `MAIN'::wbal()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(wbal)
 }
 
 `RC' `MAIN'::xb()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(xb :+ a)
 }
 
 `RC' `MAIN'::pr()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(invlogit(xb :+ (a + ln(Wref()/tau()))))
 }
 
 `RR' `MAIN'::madj()
 {
     if (length(madj)) return(madj)
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     madj = mean(X(), wbal)
     return(madj)
 }
@@ -606,41 +607,40 @@ void `MAIN'::_setadj() // assumes that data has been set
 `RS' `MAIN'::wsum()
 {
     if (wsum<.) return(wsum)
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     wsum = quadsum(wbal)
     return(wsum)
 }
 
 `RS' `MAIN'::loss()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(loss)
 }
 
 `RS' `MAIN'::balanced()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(balanced)
 }
 
 `RS' `MAIN'::value()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(value)
 }
 
 `Int' `MAIN'::iter()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(iter)
 }
 
 `Bool' `MAIN'::converged()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     return(conv)
 }
-
 
 `RM' `MAIN'::IF_b()
 {
@@ -905,7 +905,7 @@ void _mm_ebalance_mma(`Int' todo, `RR' b, `RM' X, `RR' mu, `RC' w0, `RS' tau,
 
 void `MAIN'::_IF_b()
 {
-    if (length(b)==0) Fit()
+    if (b==.z) Fit()
     _mm_ebalance_IF_b(IF, X(), Xref(), w(), wbal, madj(), mu(), tau(), W(),
         Wref(), adj(), noadj(), omit())
 }
@@ -934,7 +934,7 @@ void _mm_ebalance_IF_b(`If' IF, `RM' X, `RM' Xref, `RC' w, `RC' wbal, `RR' madj,
         k = cols(X)
         p = select(1::k, omit:==0)
         Q = J(k, k, 0)
-        Q[p,p] = -luinv(G[p,p])
+        if (length(p)) Q[p,p] = -luinv(G[p,p])
     }
     else {
         // no omitted terms; save to use luinv()

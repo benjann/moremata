@@ -1,5 +1,5 @@
 {smcl}
-{* 10dec2021}{...}
+{* 19nov2022}{...}
 {cmd:help mata mm_density()}
 {hline}
 
@@ -176,10 +176,27 @@ will span the defined support); specifying {cmd:.} (missing) selects the default
 (regular grid with {it:k} points)
 
 {p 12 14 2}{it:from} is a {it:real scalar} specifying the lowest value of the
-grid; specify {it:from} = {cmd:.} (missing) to determine the value automatically
+grid; specify {it:from} >= {cmd:.} to determine the value automatically. Let {it:xmin}
+be the minimum of the data, let {it:tau} be a padding value depending on
+bandwidth and kernel, and let {it:lb} be the lower bound of the support as set
+by {it:D}{cmd:.support()} (or minus infinity if unbounded). The lowest value of
+the grid is then determined as follows:
+
+{p2colset 17 37 39 2}{...}
+{p2col:if {it:from} < {cmd:.}:}{it:from}
+    {p_end}
+{p2col:else if {it:from} = {cmd:.z}:}{it:xmin}
+    {p_end}
+{p2col:else if {it:from} = {cmd:.y}:}max({it:lb}, {it:xmin}-{it:tau})
+    {p_end}
+{p2col:else if bounded:}{it:lb}
+    {p_end}
+{p2col:else:}{it:xmin}-{it:tau}
+    {p_end}
 
 {p 12 14 2}{it:to} is a {it:real scalar} specifying the largest value of the
-grid; specify {it:to} = {cmd:.} (missing) to determine the value automatically
+grid; specify {it:to} >= {cmd:.} to determine the value automatically (analogously to
+{it:from})
 
 {p 12 14 2}{it:exact}!=0 requests the exact density estimator to be used; default is
 {it:exact} = 0 (approximation estimator)

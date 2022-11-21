@@ -167,6 +167,16 @@ Functions:
 
 Main changes:
 
+    19nov2022 (2.0.1)
+    - mm_density()
+      o from/to set to .z or .y in D.d() now uses alternative methods to determine
+        the range of the evaluation grid
+    - mm_ebalance()
+      o computation of influence functions returned error if all terms were excluded
+        due to collinearity; this is fixed
+      o fitting was repeated with each request for results if data had 0 columns; this
+        is fixed
+
     27jan2022 (2.0.0)
     - mm_version() added
 
