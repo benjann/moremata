@@ -1,5 +1,5 @@
 {smcl}
-{* 31aug2007}{...}
+{* 05dec2024}{...}
 {cmd:help mata mm_matlist()}
 {hline}
 
@@ -26,7 +26,7 @@
 where
 
 {p 12 16 2}
-{it:X}:  {it:real matrix X}
+{it:X}:  {it:transmorphic matrix X}
 
 {p 10 16 2}
 {it:fmt}:  {it:string matrix fmt}
@@ -54,11 +54,9 @@ where
     format. Wide matrices are broken into pieces to fit the window width.
 
 {pstd}
-    {it:fmt} set the display format(s). Available formats are the usual
-    numeric and date formats (see help
-    {helpb format}) as well as {cmd:"%f"} and {cmd:"%g"} meaning %11.0g,
-    compressed, and {cmd:"%e"} meaning %11.8e, compressed (see help
-    {helpb mf_printf:[M-5] printf()}). The default format is {cmd:"%9.0g"}.
+    {it:fmt} set the display format(s). Available formats are as described
+    in {helpb mf_printf:[M-5] printf()}). The default format is {cmd:"%9.0g"}
+    if {it:X} is numeric and {cmd:"%s"} if {it:X} is string.
 
 {pstd}
     {it:border} sets border style. {it:border}==0 omits the border lines.
@@ -194,6 +192,12 @@ rows containing borders and column labels.
 {title:Diagnostics}
 
 {pstd}
+    {cmd:mm_matlist()} and {cmd:mm_smatlist()} abort with error if the type
+    of {it:X} and the formats specified in {it:fmt} are not
+    compatible (e.g., if {it:X} is numeric and {it:fmt} contains string
+    formats).
+
+{pstd}
     Using SMCL tags within {it:fmt}, {it:rstripe}, or {it:cstripe}
     (see help {help smcl}) or specifying special
     characters in {it:fmt} such as, e.g., {cmd:\n} (see help
@@ -209,7 +213,7 @@ rows containing borders and column labels.
 {title:Author}
 
 {pstd}
-    Ben Jann, University of Bern, jann@soz.unibe.ch
+    Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}

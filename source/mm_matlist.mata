@@ -1,9 +1,9 @@
-*! version 1.0.4  31aug2007  Ben Jann
+*! version 1.0.5  05dec2024  Ben Jann
 version 9.2
 mata:
 
 void mm_matlist(
-    real matrix X,
+    transmorphic matrix X,
     | string matrix fmt,
       real scalar b,
       string vector rstripe,
@@ -18,7 +18,7 @@ void mm_matlist(
     pointer(real scalar) scalar     fi, fj
     pointer(string vector) scalar   rstr, cstr
 
-    if (args()<2) fmt = "%9.0g"
+    if (args()<2) fmt = isstring(X) ? "%s" : "%9.0g"
     if (args()<3) b = 1
     save = (args()==7)
     //wd = strlen(sprintf(fmt,-1/3))
@@ -88,7 +88,7 @@ void mm_matlist(
 }
 
 string colvector mm_smatlist(
-    real matrix X,
+    transmorphic matrix X,
     | string matrix fmt,
       real scalar b,
       string vector rstripe,
@@ -98,7 +98,7 @@ string colvector mm_smatlist(
 {
     string colvector res
 
-    if (args()<2) fmt = "%9.0g"
+    if (args()<2) fmt = isstring(X) ? "%s" : "%9.0g"
     if (args()<3) b = 1
     if (args()<4) rstripe = J(0,1,"")
     if (args()<5) cstripe = J(1,0,"")
@@ -108,7 +108,7 @@ string colvector mm_smatlist(
 }
 
 void _mm_matlist(
-    real matrix X,
+    transmorphic matrix X,
     string matrix fmt,
     real scalar b,
     string vector rstripe,

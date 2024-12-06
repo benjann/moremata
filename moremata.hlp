@@ -1,5 +1,5 @@
 {smcl}
-{* 27jan2022}{...}
+{* 05dec2024}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -466,7 +466,7 @@
 
 {col 5}{bf:{help mf_mm_matlist:mm_matlist()}}{...}
 {col 22}{cmd:mm_matlist()}{...}
-{col 41}display a (real) matrix
+{col 41}display a matrix
 
 {col 5}{bf:{help mf_mm_insheet:mm_insheet()}}{...}
 {col 22}{cmd:mm_insheet()}{...}

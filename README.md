@@ -155,7 +155,7 @@ Functions:
   * `mm_invtokens()`: reverse of `tokens()`
   * `mm_realofstr()`: convert string into real
   * `mm_strexpand()`: expand string argument
-  * `mm_matlist()`: display a (real) matrix
+  * `mm_matlist()`: display a matrix
   * `mm_insheet()`: read spreadsheet file
   * `mm_infile()`: read free-format file
   * `mm_outsheet()`: write spreadsheet file
@@ -166,6 +166,10 @@ Functions:
 ---
 
 Main changes:
+
+    19nov2022 (2.0.2)
+    - mm_matlist() can now also be applied to a string matrix, not only a real
+      matrix
 
     19nov2022 (2.0.1)
     - mm_density()
