@@ -159,6 +159,7 @@ Functions:
   * `mm_insheet()`: read spreadsheet file
   * `mm_infile()`: read free-format file
   * `mm_outsheet()`: write spreadsheet file
+  * `mm_read_csv()`: import CSV file
   * `mm_callf()`: pass optional args to function
   * `mm_callf_setup()`: setup for `mm_callf()`
   * `mm_version()`: moremata version
@@ -167,7 +168,11 @@ Functions:
 
 Main changes:
 
-    19nov2022 (2.0.2)
+
+    01may2025 (2.0.3)
+    - function mm_read_csv() added
+
+    06dec2024 (2.0.2)
     - mm_matlist() can now also be applied to a string matrix, not only a real
       matrix
 

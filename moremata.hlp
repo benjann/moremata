@@ -1,5 +1,5 @@
 {smcl}
-{* 05dec2024}{...}
+{* 01may2025}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -475,6 +475,10 @@
 {col 41}read free-format file
 {col 22}{cmd:mm_outsheet()}{...}
 {col 41}write spreadsheet file
+
+{col 5}{bf:{help mf_mm_read_csv:mm_read_csv()}}{...}
+{col 22}{cmd:mm_read_csv()}{...}
+{col 41}import CSV file
 
 {col 5}   {c TLC}{hline 23}{c TRC}
 {col 5}{hline 3}{c RT}{it: Programming functions }{c LT}{hline}

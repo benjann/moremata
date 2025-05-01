@@ -1,5 +1,5 @@
 {smcl}
-{* 28jun2006}{...}
+{* 01may2025}{...}
 {cmd:help mata mm_insheet()}
 {hline}
 
@@ -46,7 +46,9 @@ are separated by, e.g., tabs or commas and rows are
 separated by the newline character. {it:filename} specifies the
 filename. {it:delimiter} specifies the character used to
 separate the values. The default value for {it:delimiter}
-is {cmd:char(9)} (the tab-character).
+is {cmd:char(9)} (the tab-character). Note that {cmd:mm_insheet()} does not take
+account of double-quote binding; use function {bf:{help mf_mm_read_csv:mm_read_csv()}}
+to import a file in which double quotes are used for binding.
 
 {p 4 4 2} {cmd:mm_infile()} returns as a string matrix the
 contents of a free-format file (ASCII) in which columns are
@@ -129,7 +131,7 @@ bytes if {it:s} is a void string matrix (see
 
 {title:Author}
 
-{p 4 4 2} Ben Jann, University of Bern, jann@soz.unibe.ch
+{p 4 4 2} Ben Jann, University of Bern, ben.jann@unibe.ch
 
 
 {title:Also see}
@@ -138,4 +140,5 @@ bytes if {it:s} is a void string matrix (see
 Online:  help for
 {bf:{help m4_io:[M-4] io -- I/O functions}},
 {bf:{help mf_cat:[M-5] cat()}},
+{bf:{help mf_mm_read_csv:mm_read_csv()}},
 {bf:{help moremata}}
