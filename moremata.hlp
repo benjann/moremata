@@ -1,5 +1,5 @@
 {smcl}
-{* 01may2025}{...}
+{* 28may2025}{...}
 {cmd:help moremata}{...}
 {right:{browse "http://github.com/benjann/moremata/"}}
 {hline}
@@ -155,6 +155,10 @@
 {col 5}{bf:{help mf_mm_aqreg:mm_aqreg()}}{...}
 {col 22}{cmd:mm_aqreg()}{...}
 {col 41}quantile regression with absorbing factor
+
+{col 5}{bf:{help mf_mm_loclin:mm_loclin()}}{...}
+{col 22}{cmd:mm_loclin()}{...}
+{col 41}kernel-weighted local linear smoothing
 
 {col 5}{it:Matching/reweighting}
 
@@ -365,6 +369,10 @@
 {col 41}fast exact binning
 {col 22}{cmd:mm_makegrid()}{...}
 {col 41}equally spaced grid points
+
+{col 5}{bf:{help mf_mm_linbin2:mm_linbin2()}}{...}
+{col 22}{cmd:mm_linbin2()}{...}
+{col 41}aggregate data by linear binning
 
 {col 5}{bf:{help mf_mm_seq:mm_seq()}}{...}
 {col 22}{cmd:mm_seq()}{...}

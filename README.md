@@ -60,6 +60,7 @@ Functions:
   * `mm_areg()`: linear regression with absorbing factor
   * `mm_qr()`: quantile regression
   * `mm_aqreg()`: quantile regression with absorbing factor
+  * `mm_loclin()`: kernel-weighted local linear smoothing
   * `mm_greedy()`: one-to-one and one-to-many matching w/o replacement
   * `mm_greedy2()`: like `mm_greedy()`, but returning edge-list
   * `mm_greedy_pairs()`: transform result from `mm_greedy()` into edge-list
@@ -128,6 +129,7 @@ Functions:
   * `mm_exactbin()`: exact binning
   * `mm_fastexactbin()`: fast exact binning
   * `mm_makegrid()`: equally spaced grid points
+  * `mm_linbin2()`: aggregate data by linear binning
   * `mm_seq()`: generate regular sequence
   * `mm_cut()`: categorize data vector
   * `mm_posof()`: find element in vector
@@ -168,6 +170,9 @@ Functions:
 
 Main changes:
 
+
+    13jun2025 (2.0.4)
+    - functions mm_loclin() and mm_linbin2() added
 
     01may2025 (2.0.3)
     - function mm_read_csv() added

@@ -3,7 +3,7 @@ d moremata: module providing various Mata functions
 d 
 d Author: Ben Jann, University of Bern, ben.jann@unibe.ch
 d
-d Distribution-Date: 20250501
+d Distribution-Date: 20250613
 f lmoremata.mlib
 f lmoremata10.mlib
 f lmoremata11.mlib
@@ -44,7 +44,9 @@ f mf_mm_isconstant.hlp
 f mf_mm_jk.hlp
 f mf_mm_kern.hlp
 f mf_mm_linbin.hlp
+f mf_mm_linbin2.hlp
 f mf_mm_locate.hlp
+f mf_mm_loclin.hlp
 f mf_mm_ls.hlp
 f mf_mm_matlist.hlp
 f mf_mm_mgof.hlp
