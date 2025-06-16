@@ -3,7 +3,7 @@ d moremata: module providing various Mata functions
 d 
 d Author: Ben Jann, University of Bern, ben.jann@unibe.ch
 d
-d Distribution-Date: 20250613
+d Distribution-Date: 20250616
 f lmoremata.mlib
 f lmoremata10.mlib
 f lmoremata11.mlib

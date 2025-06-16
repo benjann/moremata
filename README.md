@@ -170,6 +170,9 @@ Functions:
 
 Main changes:
 
+    16jun2025 (2.0.5)
+    - mm_loclin(): version control now set to 14.2 so that use of function
+      selectindex() no longer causes error
 
     13jun2025 (2.0.4)
     - functions mm_loclin() and mm_linbin2() added

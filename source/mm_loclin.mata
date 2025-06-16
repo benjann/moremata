@@ -1,5 +1,5 @@
-*! version 1.0.0  27may2025  Ben Jann
-version 9.2
+*! version 1.0.1  16jun2025  Ben Jann
+version 14.2
 mata:
 
 real vector mm_loclin(real colvector Y, real colvector X, real colvector w,

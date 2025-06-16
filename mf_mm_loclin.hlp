@@ -1,5 +1,5 @@
 {smcl}
-{* 13jun2025}{...}
+{* 16jun2025}{...}
 {cmd:help mata mm_loclin()}
 {hline}
 
@@ -132,7 +132,7 @@
 {title:Source code}
 
 {pstd}
-    {help moremata_source##mm_loclin:mm_loclin.mata}
+    {help moremata14_source##mm_loclin:mm_loclin.mata}
 
 
 {title:Author}
